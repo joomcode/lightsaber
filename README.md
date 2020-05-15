@@ -1,3 +1,5 @@
+[![Build](https://github.com/joomcode/lightsaber/workflows/Build/badge.svg)](https://github.com/joomcode/lightsaber/actions)
+
 Lightsaber
 ==========
 
