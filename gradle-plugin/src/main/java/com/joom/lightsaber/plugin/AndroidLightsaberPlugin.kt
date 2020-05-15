@@ -25,19 +25,10 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     super.apply(project)
 
     if (project.hasAndroid) {
-      addDependencies(getConfigurationName())
+      addDependencies(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
       project.android.registerTransform(LightsaberTransform(project))
     } else {
       throw GradleException("Lightsaber plugin must be applied *AFTER* Android plugin")
-    }
-  }
-
-  private fun getConfigurationName(): String {
-    return if (PluginVersion.major >= 3) {
-      JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME
-    } else {
-      @Suppress("DEPRECATION")
-      JavaPlugin.COMPILE_CONFIGURATION_NAME
     }
   }
 }

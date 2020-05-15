@@ -19,11 +19,6 @@ package com.joom.lightsaber
 import javax.inject.Provider
 import kotlin.reflect.KClass
 
-@Suppress("DeprecatedCallableAddReplaceWith", "Deprecation")
-@Deprecated("Use Lightsaber.Builder instead")
-val lightsaber: Lightsaber
-  get() = Lightsaber.get()
-
 fun <T : Any> Injector.getInstance(type: Class<out T>, annotation: Annotation): T =
   Lightsaber.getInstance(this, type, annotation)
 

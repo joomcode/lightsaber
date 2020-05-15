@@ -33,16 +33,6 @@ public class Lightsaber {
     interceptors = builder.interceptors == null ? null : new ArrayList<com.joom.lightsaber.ProviderInterceptor>(builder.interceptors);
   }
 
-  /**
-   * @return A {@link Lightsaber} instance.
-   * @deprecated Use {@link Lightsaber.Builder} instead.
-   */
-  @Nonnull
-  @Deprecated
-  public static Lightsaber get() {
-    return Holder.INSTANCE;
-  }
-
   @Nonnull
   public Builder newBuilder() {
     return new Builder(this);
@@ -51,21 +41,6 @@ public class Lightsaber {
   @Nonnull
   public Injector createInjector(@Nonnull final Object component) {
     return new LightsaberInjector(component, null, interceptors);
-  }
-
-  /** @deprecated Use {@link Injector#createChildInjector(Object)} instead. */
-  @Nonnull
-  public Injector createChildInjector(@Nonnull final Injector parentInjector, @Nonnull final Object component) {
-    // noinspection ConstantConditions
-    if (parentInjector == null) {
-      throw new NullPointerException("Parent injector cannot be null");
-    }
-
-    if (!(parentInjector instanceof LightsaberInjector)) {
-      throw new IllegalArgumentException("Cannot create a child injector for a non-Lightsaber injector");
-    }
-
-    return new LightsaberInjector(component, (LightsaberInjector) parentInjector, interceptors);
   }
 
   @Nonnull

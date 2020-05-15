@@ -16,7 +16,6 @@
 
 package com.joom.lightsaber.processor.watermark
 
-import com.joom.lightsaber.processor.io.readBytes
 import org.objectweb.asm.Attribute
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
