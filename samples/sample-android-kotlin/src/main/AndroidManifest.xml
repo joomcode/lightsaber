@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright 2020 Michael Rozumyanskiy
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2020 SIA Joom
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -15,13 +16,13 @@
   -->
 
 <manifest
-  package="io.michaelrocks.lightsaber.kotlin"
+  package="com.joom.lightsaber.kotlin"
   xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application android:label="@string/app_name">
 
     <activity
-      android:name="io.michaelrocks.lightsaber.sample.MainActivity"
+      android:name="com.joom.lightsaber.sample.MainActivity"
       android:label="@string/app_name">
 
       <intent-filter>

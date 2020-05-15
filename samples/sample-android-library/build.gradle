@@ -20,7 +20,7 @@ android {
 }
 
 dependencies {
-  implementation "io.michaelrocks:lightsaber-core:$version"
+  implementation "com.joom.lightsaber:lightsaber-core:$version"
   implementation "androidx.annotation:annotation:$androidxAnnotationVersion"
 
   androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoVersion"

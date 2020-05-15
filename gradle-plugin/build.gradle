@@ -30,10 +30,10 @@ task generateBuildClass {
   outputs.dir generatedDir
 
   doLast {
-    def buildClassFile = new File(generatedJavaSourcesDir, "io/michaelrocks/lightsaber/plugin/Build.java")
+    def buildClassFile = new File(generatedJavaSourcesDir, "com/joom/lightsaber/plugin/Build.java")
     buildClassFile.parentFile.mkdirs()
     buildClassFile.text = "" +
-        "package io.michaelrocks.lightsaber.plugin;\n" +
+        "package com.joom.lightsaber.plugin;\n" +
         "\n" +
         "public class Build {\n" +
         "    public static final String VERSION = \"$version\";\n" +
@@ -63,7 +63,7 @@ idea {
 }
 
 shadowJar {
-  relocate 'io.michaelrocks.lightsaber', 'io.michaelrocks.lightsaber'
+  relocate 'com.joom.lightsaber', 'com.joom.lightsaber'
 }
 
 pablo {
