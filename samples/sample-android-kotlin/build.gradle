@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'io.michaelrocks.lightsaber.android'
+apply plugin: 'com.joom.lightsaber.android'
 
 android {
   compileSdkVersion androidCompileSdkVersion
   buildToolsVersion androidBuildToolsVersion
 
   defaultConfig {
-    applicationId 'io.michaelrocks.lightsaber.sample'
+    applicationId 'com.joom.lightsaber.sample'
     minSdkVersion androidMinSdkVersion
     targetSdkVersion androidTargetSdkVersion
     versionCode 1

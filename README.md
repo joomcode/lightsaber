@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/MichaelRocks/lightsaber.svg?branch=develop)](https://travis-ci.org/MichaelRocks/lightsaber)
-
 Lightsaber
 ==========
 
@@ -28,21 +26,21 @@ buildscript {
   }
 
   dependencies {
-    classpath 'io.michaelrocks:lightsaber-gradle-plugin:0.15.0-beta'
+    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:0.15.0-beta'
   }
 }
 
 // For Android projects.
 apply plugin: 'com.android.application'
-apply plugin: 'io.michaelrocks.lightsaber.android'
+apply plugin: 'com.joom.lightsaber.android'
 
 // For other projects.
 apply plugin: 'java'
-apply plugin: 'io.michaelrocks.lightsaber'
+apply plugin: 'com.joom.lightsaber'
 
 // Optional, just if you need Kotlin extension functions.
 dependencies {
-  implementation 'io.michaelrocks:lightsaber-core-kotlin:0.15.0-beta'
+  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:0.15.0-beta'
 }
 ```
 
@@ -819,7 +817,7 @@ To simplify unit testing and dependency substitution you can add a special testi
 
 ```groovy
 dependencies {
-  testImplementation 'io.michaelrocks:lightsaber-test:0.15.0-beta'
+  testImplementation 'com.joom.lightsaber:lightsaber-test:0.15.0-beta'
 }
 ```
 
@@ -854,7 +852,7 @@ Lightsaber lightsaber = new Lightsaber.Builder()
 License
 -------
 
-    Copyright 2019 Michael Rozumyanskiy
+    Copyright 2020 SIA Joom
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

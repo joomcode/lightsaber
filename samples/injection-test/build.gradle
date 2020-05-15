@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Michael Rozumyanskiy
+ * Copyright 2020 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
-apply plugin: 'io.michaelrocks.lightsaber'
+apply plugin: 'com.joom.lightsaber'
 
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
@@ -24,7 +24,7 @@ targetCompatibility = javaVersion
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
-  testImplementation "io.michaelrocks:lightsaber-core-kotlin:$version"
+  testImplementation "com.joom.lightsaber:lightsaber-core-kotlin:$version"
   testImplementation "junit:junit:$junitVersion"
 }
 

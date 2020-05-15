@@ -1,11 +1,11 @@
 apply plugin: 'java'
 apply plugin: 'application'
-apply plugin: 'io.michaelrocks.lightsaber'
+apply plugin: 'com.joom.lightsaber'
 
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
 
-mainClassName = 'io.michaelrocks.lightsaber.sample.LightsaberSample'
+mainClassName = 'com.joom.lightsaber.sample.LightsaberSample'
 
 dependencies {
   testImplementation "junit:junit:$junitVersion"

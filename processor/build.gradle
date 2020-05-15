@@ -6,7 +6,7 @@ apply plugin: 'io.michaelrocks.pablo'
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
 
-mainClassName = 'io.michaelrocks.lightsaber.processor.LightsaberProcessor'
+mainClassName = 'com.joom.lightsaber.processor.LightsaberProcessor'
 
 dependencies {
   implementation project(':core')
@@ -34,7 +34,7 @@ jar {
 }
 
 shadowJar {
-  relocate 'io.michaelrocks.lightsaber', 'io.michaelrocks.lightsaber'
-  relocate 'io.michaelrocks.grip', 'io.michaelrocks.lightsaber.grip'
-  relocate 'org.objectweb.asm', 'io.michaelrocks.lightsaber.asm'
+  relocate 'com.joom.lightsaber', 'com.joom.lightsaber'
+  relocate 'io.michaelrocks.grip', 'com.joom.lightsaber.grip'
+  relocate 'org.objectweb.asm', 'com.joom.lightsaber.asm'
 }
