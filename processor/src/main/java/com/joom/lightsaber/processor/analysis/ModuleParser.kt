@@ -51,7 +51,6 @@ import io.michaelrocks.grip.mirrors.getMethodType
 import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 import io.michaelrocks.grip.mirrors.signature.GenericType
 import io.michaelrocks.grip.not
-import io.michaelrocks.grip.or
 import io.michaelrocks.grip.returns
 import org.objectweb.asm.Opcodes.ACC_PRIVATE
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
@@ -120,7 +119,7 @@ class ModuleParserImpl(
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>
   ): Collection<Provider> {
-    val isProvidable = (annotatedWith(Types.PROVIDES_TYPE) or annotatedWith(Types.PROVIDE_TYPE)) and not(isStatic())
+    val isProvidable = annotatedWith(Types.PROVIDE_TYPE) and not(isStatic())
     val methodsQuery = grip select methods from module where (isProvidable and methodType(not(returns(Type.Primitive.Void))))
     val fieldsQuery = grip select fields from module where isProvidable
 

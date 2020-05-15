@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("Deprecation")
-
 package com.joom.lightsaber.processor.commons
 
 import com.joom.lightsaber.Component
@@ -29,7 +27,6 @@ import com.joom.lightsaber.Module
 import com.joom.lightsaber.Provide
 import com.joom.lightsaber.ProvidedAs
 import com.joom.lightsaber.ProvidedBy
-import com.joom.lightsaber.Provides
 import io.michaelrocks.bimap.BiMap
 import io.michaelrocks.bimap.HashBiMap
 import io.michaelrocks.grip.mirrors.Type
@@ -47,7 +44,6 @@ object Types {
   val IMPORT_TYPE = getObjectType<Import>()
   val IMPORTED_BY_TYPE = getObjectType<ImportedBy>()
   val PROVIDE_TYPE = getObjectType<Provide>()
-  val PROVIDES_TYPE = getObjectType<Provides>()
   val PROVIDED_AS_TYPE = getObjectType<ProvidedAs>()
   val PROVIDED_BY_TYPE = getObjectType<ProvidedBy>()
   val COMPONENT_TYPE = getObjectType<Component>()

@@ -30,14 +30,12 @@ import io.michaelrocks.grip.fields
 import io.michaelrocks.grip.from
 import io.michaelrocks.grip.methodType
 import io.michaelrocks.grip.methods
-import io.michaelrocks.grip.mirrors.Annotated
 import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.signature.GenericType
 import io.michaelrocks.grip.not
-import io.michaelrocks.grip.or
 import io.michaelrocks.grip.returns
 
 interface ModuleProviderParser {
@@ -62,7 +60,7 @@ class ModuleProviderParserImpl(
     importeeModuleTypes: Collection<Type.Object>,
     isComponentDefaultModule: Boolean
   ): Collection<ModuleProvider> {
-    val isImportable = createImportAnnotationMatcher(includeProvidesAnnotation = !isComponentDefaultModule)
+    val isImportable = annotatedWith(Types.IMPORT_TYPE)
     val methodsQuery = grip select methods from mirror where (isImportable and methodType(not(returns(Type.Primitive.Void))))
     val fieldsQuery = grip select fields from mirror where isImportable
 
@@ -85,11 +83,6 @@ class ModuleProviderParserImpl(
     }
 
     return methods + fields + inverseImports
-  }
-
-  private fun createImportAnnotationMatcher(includeProvidesAnnotation: Boolean): (Grip, Annotated) -> Boolean {
-    val annotatedWithImport = annotatedWith(Types.IMPORT_TYPE)
-    return if (includeProvidesAnnotation) annotatedWithImport or annotatedWith(Types.PROVIDES_TYPE) else annotatedWithImport
   }
 
   private fun tryParseModuleProvider(method: MethodMirror, moduleRegistry: ModuleRegistry): ModuleProvider? {
