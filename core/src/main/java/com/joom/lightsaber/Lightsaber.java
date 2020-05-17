@@ -27,10 +27,10 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 public class Lightsaber {
-  private final List<com.joom.lightsaber.ProviderInterceptor> interceptors;
+  private final List<ProviderInterceptor> interceptors;
 
   Lightsaber(final Builder builder) {
-    interceptors = builder.interceptors == null ? null : new ArrayList<com.joom.lightsaber.ProviderInterceptor>(builder.interceptors);
+    interceptors = builder.interceptors == null ? null : new ArrayList<ProviderInterceptor>(builder.interceptors);
   }
 
   @Nonnull
@@ -51,7 +51,7 @@ public class Lightsaber {
   @Nonnull
   public static <T> T getInstance(@Nonnull final Injector injector, @Nonnull final Class<? extends T> type,
       @Nullable final Annotation annotation) {
-    return injector.getInstance(com.joom.lightsaber.Key.of(type, annotation));
+    return injector.getInstance(Key.of(type, annotation));
   }
 
   @Nonnull
@@ -66,28 +66,28 @@ public class Lightsaber {
   }
 
   public static class Builder {
-    private List<com.joom.lightsaber.ProviderInterceptor> interceptors;
+    private List<ProviderInterceptor> interceptors;
 
     public Builder() {
     }
 
     Builder(@Nonnull final Lightsaber lightsaber) {
-      interceptors = lightsaber.interceptors == null ? null : new ArrayList<com.joom.lightsaber.ProviderInterceptor>(lightsaber.interceptors);
+      interceptors = lightsaber.interceptors == null ? null : new ArrayList<ProviderInterceptor>(lightsaber.interceptors);
     }
 
     /**
-     * Adds a {@link com.joom.lightsaber.ProviderInterceptor} to the interceptor chain. Added interceptors will be invoked in the reverse order.
+     * Adds a {@link ProviderInterceptor} to the interceptor chain. Added interceptors will be invoked in the reverse order.
      * <p>
      * <strong>WARNING!</strong> Provider interception affects performance negatively. If a single interceptor is added each dependency resolution
      * produces at least two additional allocations even if it's not affected by the interceptor.
      * </p>
      *
      * @param interceptor
-     *     The {@link com.joom.lightsaber.ProviderInterceptor} to add to the interceptor chain.
+     *     The {@link ProviderInterceptor} to add to the interceptor chain.
      * @return The current {@link Builder} instance.
      */
     @Nonnull
-    public Builder addProviderInterceptor(@Nonnull final com.joom.lightsaber.ProviderInterceptor interceptor) {
+    public Builder addProviderInterceptor(@Nonnull final ProviderInterceptor interceptor) {
       // noinspection ConstantConditions
       if (interceptor == null) {
         throw new NullPointerException("Interceptor is null");

@@ -27,28 +27,28 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
-public class LightsaberInjector implements com.joom.lightsaber.Injector {
+public class LightsaberInjector implements Injector {
   private final LightsaberInjector parent;
   private final List<ProviderInterceptor> interceptors;
-  private final com.joom.lightsaber.internal.IterableMap<Object, Provider<?>> providers = new PolymorphicKeyHashMap<Provider<?>>();
+  private final IterableMap<Object, Provider<?>> providers = new PolymorphicKeyHashMap<Provider<?>>();
 
   public LightsaberInjector(@Nonnull final Object component, final LightsaberInjector parent, final List<ProviderInterceptor> interceptors) {
     this.parent = parent;
     this.interceptors = interceptors;
-    registerProvider(com.joom.lightsaber.Injector.class, new Provider<com.joom.lightsaber.Injector>() {
+    registerProvider(Injector.class, new Provider<Injector>() {
       @Override
-      public com.joom.lightsaber.Injector get() {
+      public Injector get() {
         return LightsaberInjector.this;
       }
     });
 
-    final com.joom.lightsaber.internal.InjectorConfigurator configurator = (InjectorConfigurator) component;
+    final InjectorConfigurator configurator = (InjectorConfigurator) component;
     configurator.configureInjector(this);
   }
 
   @Nonnull
   @Override
-  public com.joom.lightsaber.Injector createChildInjector(@Nonnull final Object component) {
+  public Injector createChildInjector(@Nonnull final Object component) {
     // noinspection ConstantConditions
     if (component == null) {
       throw new NullPointerException("Trying to create an injector with a null component");
@@ -59,8 +59,8 @@ public class LightsaberInjector implements com.joom.lightsaber.Injector {
 
   @Override
   public void injectMembers(@Nonnull final Object target) {
-    if (target instanceof com.joom.lightsaber.internal.MembersInjector) {
-      final com.joom.lightsaber.internal.MembersInjector membersInjector = (MembersInjector) target;
+    if (target instanceof MembersInjector) {
+      final MembersInjector membersInjector = (MembersInjector) target;
       membersInjector.injectFields(this);
       membersInjector.injectMethods(this);
     }
@@ -146,7 +146,7 @@ public class LightsaberInjector implements com.joom.lightsaber.Injector {
       if (parent != null) {
         try {
           return parent.getProviderInternal(key);
-        } catch (final com.joom.lightsaber.ConfigurationException exception) {
+        } catch (final ConfigurationException exception) {
           throwConfigurationException(key, exception);
         }
       } else {
@@ -160,13 +160,12 @@ public class LightsaberInjector implements com.joom.lightsaber.Injector {
   private <T> void registerProviderInternal(final Object key, final Provider<? extends T> provider) {
     final Provider<?> oldProvider = providers.put(key, provider);
     if (oldProvider != null) {
-      throw new com.joom.lightsaber.ConfigurationException("Provider for " + key + " already registered in " + this);
+      throw new ConfigurationException("Provider for " + key + " already registered in " + this);
     }
   }
 
   private void throwConfigurationException(@Nonnull final Object key, final Throwable cause) {
-    final com.joom.lightsaber.ConfigurationException exception =
-        new ConfigurationException("Provider for " + key + " not found in " + this);
+    final ConfigurationException exception = new ConfigurationException("Provider for " + key + " not found in " + this);
     if (cause != null) {
       exception.initCause(cause);
     }

@@ -36,7 +36,7 @@ public class PolymorphicKeyHashMap<V> extends LightweightHashMap<Object, V> {
       return key.hashCode();
     }
     if (key instanceof Type) {
-      return com.joom.lightsaber.internal.TypeUtils.hashCode((Type) key);
+      return TypeUtils.hashCode((Type) key);
     } else {
       return key.hashCode();
     }

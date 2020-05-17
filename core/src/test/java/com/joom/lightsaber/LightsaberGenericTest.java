@@ -47,7 +47,7 @@ public class LightsaberGenericTest {
 
     final Injector injector = lightsaber.createInjector(parentComponent);
 
-    verify(parentComponent).configureInjector((com.joom.lightsaber.internal.LightsaberInjector) injector);
+    verify(parentComponent).configureInjector((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     assertEquals(Collections.singletonList("Parent List"), injector.getInstance(getJvmStringListType()));
     assertEquals(Collections.singletonList("Parent List"), injector.getInstance(Key.of(getJvmStringListType())));
@@ -60,7 +60,7 @@ public class LightsaberGenericTest {
     doAnswer(new Answer<Object>() {
       @Override
       public Object answer(final InvocationOnMock invocation) {
-        final com.joom.lightsaber.internal.LightsaberInjector injector = (com.joom.lightsaber.internal.LightsaberInjector) invocation.getArguments()[0];
+        final LightsaberInjector injector = (LightsaberInjector) invocation.getArguments()[0];
         injector.registerProvider(getJvmStringListType(), new Provider<List<String>>() {
           @Nonnull
           @Override

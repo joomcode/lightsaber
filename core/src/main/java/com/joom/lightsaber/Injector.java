@@ -34,7 +34,7 @@ public interface Injector {
   <T> T getInstance(@Nonnull Type type);
 
   @Nonnull
-  <T> T getInstance(@Nonnull com.joom.lightsaber.Key<? extends T> type);
+  <T> T getInstance(@Nonnull Key<? extends T> type);
 
   @Nonnull
   <T> Provider<T> getProvider(@Nonnull Class<? extends T> type);

@@ -39,58 +39,58 @@ import static org.mockito.Mockito.when;
 public class LightsaberTest {
   @Test
   public void testCreateInjector() {
-    final com.joom.lightsaber.Lightsaber lightsaber = new com.joom.lightsaber.Lightsaber.Builder().build();
+    final Lightsaber lightsaber = new Lightsaber.Builder().build();
     final InjectorConfigurator parentComponent = createParentComponent();
 
-    final com.joom.lightsaber.Injector injector = lightsaber.createInjector(parentComponent);
+    final Injector injector = lightsaber.createInjector(parentComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
-    assertSame(injector, injector.getInstance(com.joom.lightsaber.Key.of(com.joom.lightsaber.Injector.class)));
+    assertSame(injector, injector.getInstance(Key.of(Injector.class)));
     assertEquals("Parent String", injector.getInstance(String.class));
-    assertEquals("Parent String", injector.getInstance(com.joom.lightsaber.Key.of(String.class)));
+    assertEquals("Parent String", injector.getInstance(Key.of(String.class)));
   }
 
   @Test
   public void testCreateChildInjector() {
-    final com.joom.lightsaber.Lightsaber lightsaber = new com.joom.lightsaber.Lightsaber.Builder().build();
+    final Lightsaber lightsaber = new Lightsaber.Builder().build();
     final InjectorConfigurator parentComponent = createParentComponent();
     final InjectorConfigurator childComponent = createChildComponent();
 
-    final com.joom.lightsaber.Injector injector = lightsaber.createInjector(parentComponent);
-    final com.joom.lightsaber.Injector childInjector = injector.createChildInjector(childComponent);
+    final Injector injector = lightsaber.createInjector(parentComponent);
+    final Injector childInjector = injector.createChildInjector(childComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     verify(childComponent).configureInjector((LightsaberInjector) childInjector);
     verifyNoMoreInteractions(childComponent);
-    assertSame(injector, injector.getInstance(com.joom.lightsaber.Key.of(com.joom.lightsaber.Injector.class)));
-    assertSame(childInjector, childInjector.getInstance(com.joom.lightsaber.Key.of(com.joom.lightsaber.Injector.class)));
+    assertSame(injector, injector.getInstance(Key.of(Injector.class)));
+    assertSame(childInjector, childInjector.getInstance(Key.of(Injector.class)));
     assertEquals("Parent String", childInjector.getInstance(String.class));
-    assertEquals("Parent String", childInjector.getInstance(com.joom.lightsaber.Key.of(String.class)));
+    assertEquals("Parent String", childInjector.getInstance(Key.of(String.class)));
     assertEquals("Child Object", childInjector.getInstance(Object.class));
-    assertEquals("Child Object", childInjector.getInstance(com.joom.lightsaber.Key.of(Object.class)));
+    assertEquals("Child Object", childInjector.getInstance(Key.of(Object.class)));
   }
 
   @Test
   public void testCreateChildInjectorWithAnnotation() {
-    final com.joom.lightsaber.Lightsaber lightsaber = new com.joom.lightsaber.Lightsaber.Builder().build();
+    final Lightsaber lightsaber = new Lightsaber.Builder().build();
     final InjectorConfigurator parentComponent = createParentComponent();
     final InjectorConfigurator childAnnotatedComponent = createChildAnnotatedComponent();
 
-    final com.joom.lightsaber.Injector injector = lightsaber.createInjector(parentComponent);
-    final com.joom.lightsaber.Injector childInjector = injector.createChildInjector(childAnnotatedComponent);
+    final Injector injector = lightsaber.createInjector(parentComponent);
+    final Injector childInjector = injector.createChildInjector(childAnnotatedComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     verify(childAnnotatedComponent).configureInjector((LightsaberInjector) childInjector);
     verifyNoMoreInteractions(childAnnotatedComponent);
     final Named annotation = createNamedAnnotation("Annotated");
-    assertSame(injector, injector.getInstance(com.joom.lightsaber.Key.of(com.joom.lightsaber.Injector.class)));
-    assertSame(childInjector, childInjector.getInstance(com.joom.lightsaber.Key.of(com.joom.lightsaber.Injector.class)));
+    assertSame(injector, injector.getInstance(Key.of(Injector.class)));
+    assertSame(childInjector, childInjector.getInstance(Key.of(Injector.class)));
     assertEquals("Parent String", childInjector.getInstance(String.class));
-    assertEquals("Parent String", childInjector.getInstance(com.joom.lightsaber.Key.of(String.class)));
-    assertEquals("Child Annotated String", childInjector.getInstance(com.joom.lightsaber.Key.of(String.class, annotation)));
+    assertEquals("Parent String", childInjector.getInstance(Key.of(String.class)));
+    assertEquals("Child Annotated String", childInjector.getInstance(Key.of(String.class, annotation)));
   }
 
   @Test
@@ -106,25 +106,25 @@ public class LightsaberTest {
         .addProviderForClass(Object.class, objectProvider)
         .build();
 
-    final com.joom.lightsaber.Lightsaber lightsaber = new Lightsaber.Builder().addProviderInterceptor(interceptor).build();
+    final Lightsaber lightsaber = new Lightsaber.Builder().addProviderInterceptor(interceptor).build();
     final InjectorConfigurator parentComponent = createParentComponent();
     final InjectorConfigurator childAnnotatedComponent = createChildAnnotatedComponent();
 
-    final com.joom.lightsaber.Injector injector = lightsaber.createInjector(parentComponent);
+    final Injector injector = lightsaber.createInjector(parentComponent);
     final Injector childInjector = injector.createChildInjector(childAnnotatedComponent);
 
     assertEquals("StringInstanceClass", childInjector.getInstance(String.class));
-    assertEquals("StringInstanceKey", childInjector.getInstance(com.joom.lightsaber.Key.of(String.class)));
+    assertEquals("StringInstanceKey", childInjector.getInstance(Key.of(String.class)));
     assertEquals("StringProviderClass", childInjector.getProvider(String.class).get());
-    assertEquals("StringProviderKey", childInjector.getProvider(com.joom.lightsaber.Key.of(String.class)).get());
+    assertEquals("StringProviderKey", childInjector.getProvider(Key.of(String.class)).get());
 
     assertEquals("ObjectInstanceClass", childInjector.getInstance(Object.class));
-    assertEquals("ObjectInstanceKey", childInjector.getInstance(com.joom.lightsaber.Key.of(Object.class)));
+    assertEquals("ObjectInstanceKey", childInjector.getInstance(Key.of(Object.class)));
     assertEquals("ObjectProviderClass", childInjector.getProvider(Object.class).get());
-    assertEquals("ObjectProviderKey", childInjector.getProvider(com.joom.lightsaber.Key.of(Object.class)).get());
+    assertEquals("ObjectProviderKey", childInjector.getProvider(Key.of(Object.class)).get());
 
     final Named annotation = createNamedAnnotation("Annotated");
-    assertEquals("Child Annotated String", childInjector.getInstance(com.joom.lightsaber.Key.of(String.class, annotation)));
+    assertEquals("Child Annotated String", childInjector.getInstance(Key.of(String.class, annotation)));
   }
 
   private static InjectorConfigurator createParentComponent() {
@@ -153,7 +153,7 @@ public class LightsaberTest {
       @Override
       public Object answer(final InvocationOnMock invocation) {
         final LightsaberInjector injector = (LightsaberInjector) invocation.getArguments()[0];
-        injector.registerProvider(com.joom.lightsaber.Key.of(Object.class), new Provider<Object>() {
+        injector.registerProvider(Key.of(Object.class), new Provider<Object>() {
           @Nonnull
           @Override
           public Object get() {

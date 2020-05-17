@@ -39,7 +39,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForClass() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, provider)
         .build();
 
@@ -51,7 +51,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForType() {
     @SuppressWarnings("unchecked")
     final Provider<List<String>> provider = mock(Provider.class);
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), provider)
         .build();
 
@@ -63,7 +63,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForKey() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForKey(Key.of(String.class), provider)
         .build();
 
@@ -80,7 +80,7 @@ public class ProviderInterceptorBuilderTest {
     @SuppressWarnings("unchecked")
     final Provider<String> provider3 = mock(Provider.class);
 
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, provider1)
         .addProviderForClass(String.class, Annotated.class, provider2)
         .addProviderForClass(String.class, createAnnotation("explicit"), provider3)
@@ -103,7 +103,7 @@ public class ProviderInterceptorBuilderTest {
     @SuppressWarnings("unchecked")
     final Provider<List<String>> provider3 = mock(Provider.class);
 
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), provider1)
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), Annotated.class, provider2)
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), createAnnotation("explicit"), provider3)
@@ -126,7 +126,7 @@ public class ProviderInterceptorBuilderTest {
     @SuppressWarnings("unchecked")
     final Provider<String> provider3 = mock(Provider.class);
 
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForKey(Key.of(String.class), provider1)
         .addProviderForKey(Key.of(String.class, createAnnotation()), provider2)
         .addProviderForKey(Key.of(String.class, createAnnotation("explicit")), provider3)
@@ -155,7 +155,7 @@ public class ProviderInterceptorBuilderTest {
     @SuppressWarnings("unchecked")
     final Provider<String> provider6 = mock(Provider.class);
 
-    final ProviderInterceptor interceptor = new com.joom.lightsaber.ProviderInterceptorBuilder()
+    final ProviderInterceptor interceptor = new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, provider1)
         .addProviderForClass(String.class, Annotated.class, provider2)
         .addProviderForKey(Key.of(String.class, createAnnotation("explicit")), provider3)
@@ -182,7 +182,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameClassThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, provider)
         .addProviderForClass(String.class, provider)
         .build();
@@ -192,7 +192,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameClassWithImplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, Annotated.class, provider)
         .addProviderForClass(String.class, Annotated.class, provider)
         .build();
@@ -202,7 +202,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameClassWithExplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, createAnnotation("explicit"), provider)
         .addProviderForClass(String.class, createAnnotation("explicit"), provider)
         .build();
@@ -212,7 +212,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameTypeThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), provider)
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), provider)
         .build();
@@ -222,7 +222,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameTypeWithImplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), Annotated.class, provider)
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), Annotated.class, provider)
         .build();
@@ -232,7 +232,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameTypeWithExplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), createAnnotation("explicit"), provider)
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), createAnnotation("explicit"), provider)
         .build();
@@ -242,7 +242,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameKeyThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForKey(Key.of(String.class), provider)
         .addProviderForKey(Key.of(String.class), provider)
         .build();
@@ -252,7 +252,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForSameKeyWithExplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForKey(Key.of(String.class, createAnnotation("explicit")), provider)
         .addProviderForKey(Key.of(String.class, createAnnotation("explicit")), provider)
         .build();
@@ -262,7 +262,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForClassAndEqualKeyThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, provider)
         .addProviderForKey(Key.of(String.class), provider)
         .build();
@@ -272,7 +272,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForClassAndEqualKeyWithImplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, Annotated.class, provider)
         .addProviderForKey(Key.of(String.class, createAnnotation()), provider)
         .build();
@@ -282,7 +282,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForClassAndEqualKeyWithExplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForClass(String.class, createAnnotation("explicit"), provider)
         .addProviderForKey(Key.of(String.class, createAnnotation("explicit")), provider)
         .build();
@@ -292,7 +292,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForTypeAndEqualKeyThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), provider)
         .addProviderForKey(Key.of(new TypeToken<List<String>>() {}.getType()), provider)
         .build();
@@ -302,7 +302,7 @@ public class ProviderInterceptorBuilderTest {
   public void testAddProviderForTypeAndEqualKeyWithImplicitAnnotationThrowsException() {
     @SuppressWarnings("unchecked")
     final Provider<String> provider = mock(Provider.class);
-    new com.joom.lightsaber.ProviderInterceptorBuilder()
+    new ProviderInterceptorBuilder()
         .addProviderForType(new TypeToken<List<String>>() {}.getType(), Annotated.class, provider)
         .addProviderForKey(Key.of(new TypeToken<List<String>>() {}.getType(), createAnnotation()), provider)
         .build();
