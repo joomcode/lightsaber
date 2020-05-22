@@ -35,10 +35,10 @@ import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.signature.GenericType
 
 interface AnalyzerHelper {
-  fun convertToInjectionPoint(method: MethodMirror, container: Type.Object): InjectionPoint.Method
-  fun convertToInjectionPoint(field: FieldMirror, container: Type.Object): InjectionPoint.Field
-  fun convertToInjectee(method: MethodMirror, parameterIndex: Int): Injectee
-  fun convertToInjectee(field: FieldMirror): Injectee
+  fun convertMethodToInjectionPoint(method: MethodMirror, container: Type.Object): InjectionPoint.Method
+  fun convertFieldToInjectionPoint(field: FieldMirror, container: Type.Object): InjectionPoint.Field
+  fun convertMethodParameterToInjectee(method: MethodMirror, parameterIndex: Int): Injectee
+  fun convertFieldToInjectee(field: FieldMirror): Injectee
   fun findQualifier(annotated: Annotated): AnnotationMirror?
   fun findScope(annotated: Annotated): Scope
 }
@@ -49,20 +49,20 @@ class AnalyzerHelperImpl(
   private val errorReporter: ErrorReporter
 ) : AnalyzerHelper {
 
-  override fun convertToInjectionPoint(method: MethodMirror, container: Type.Object): InjectionPoint.Method {
+  override fun convertMethodToInjectionPoint(method: MethodMirror, container: Type.Object): InjectionPoint.Method {
     return InjectionPoint.Method(container, method, getInjectees(method))
   }
 
-  override fun convertToInjectionPoint(field: FieldMirror, container: Type.Object): InjectionPoint.Field {
+  override fun convertFieldToInjectionPoint(field: FieldMirror, container: Type.Object): InjectionPoint.Field {
     return InjectionPoint.Field(container, field, getInjectee(field))
   }
 
-  override fun convertToInjectee(method: MethodMirror, parameterIndex: Int): Injectee {
+  override fun convertMethodParameterToInjectee(method: MethodMirror, parameterIndex: Int): Injectee {
     val type = method.signature.parameterTypes[parameterIndex]
     return newInjectee(type, method.parameters[parameterIndex])
   }
 
-  override fun convertToInjectee(field: FieldMirror): Injectee {
+  override fun convertFieldToInjectee(field: FieldMirror): Injectee {
     return newInjectee(field.signature.type, field)
   }
 

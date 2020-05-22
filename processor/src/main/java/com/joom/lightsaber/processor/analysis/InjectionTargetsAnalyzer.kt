@@ -81,12 +81,12 @@ class InjectionTargetsAnalyzerImpl(
 
       context.methods[type]?.mapNotNullTo(injectionPoints) { method ->
         logger.debug("  Method: {}", method)
-        given(!method.isConstructor) { analyzerHelper.convertToInjectionPoint(method, type) }
+        given(!method.isConstructor) { analyzerHelper.convertMethodToInjectionPoint(method, type) }
       }
 
       context.fields[type]?.mapTo(injectionPoints) { field ->
         logger.debug("  Field: {}", field)
-        analyzerHelper.convertToInjectionPoint(field, type)
+        analyzerHelper.convertFieldToInjectionPoint(field, type)
       }
 
       given(injectionPoints.isNotEmpty()) { InjectionTarget(type, injectionPoints) }
@@ -98,7 +98,7 @@ class InjectionTargetsAnalyzerImpl(
       logger.debug("Target: {}", type)
       val constructors = context.methods[type].orEmpty().mapNotNull { method ->
         logger.debug("  Method: {}", method)
-        given(method.isConstructor) { analyzerHelper.convertToInjectionPoint(method, type) }
+        given(method.isConstructor) { analyzerHelper.convertMethodToInjectionPoint(method, type) }
       }
 
       given(constructors.isNotEmpty()) {

@@ -177,7 +177,7 @@ class ModuleParserImpl(
   private fun newMethodProvider(container: Type.Object, method: MethodMirror, index: Int): Provider {
     val providerType = getObjectTypeByInternalName("${container.internalName}\$MethodProvider\$$index\$$projectName")
     val dependency = Dependency(method.signature.returnType, analyzerHelper.findQualifier(method))
-    val injectionPoint = analyzerHelper.convertToInjectionPoint(method, container)
+    val injectionPoint = analyzerHelper.convertMethodToInjectionPoint(method, container)
     val provisionPoint = ProvisionPoint.Method(dependency, injectionPoint, null).withBridge()
     val scope = analyzerHelper.findScope(method)
     return Provider(providerType, provisionPoint, container, scope)
