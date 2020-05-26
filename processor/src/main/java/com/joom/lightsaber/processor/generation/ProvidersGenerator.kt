@@ -32,6 +32,7 @@ class ProvidersGenerator(
     injectionContext.components.asSequence()
       .flatMap { it.getModulesWithDescendants() }
       .flatMap { it.providers.asSequence() }
+      .distinctBy { it.type }
       .forEach { provider ->
         logger.debug("Generating provider {}", provider.type.internalName)
         val generator = ProviderClassGenerator(classRegistry, generationContext.keyRegistry, provider)
