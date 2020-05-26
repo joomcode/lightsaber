@@ -144,9 +144,9 @@ class ModuleParserImpl(
       bindingRegistry.findBindingsByDependency(provider.dependency)
     }
 
-    val bindingProviders = moduleBindings.mapIndexed { index, binding ->
+    val bindingProviders = moduleBindings.map { binding ->
       logger.debug("  Binding: {} -> {}", binding.dependency, binding.ancestor)
-      newBindingProvider(module.type, binding, index)
+      newBindingProvider(module.type, binding)
     }
 
     val factoryProviders = factories.map { factory ->
@@ -191,16 +191,17 @@ class ModuleParserImpl(
     return Provider(providerType, provisionPoint, container, scope)
   }
 
-  private fun newBindingProvider(container: Type.Object, binding: Binding, index: Int): Provider {
-    val bindingType = binding.dependency.type.rawType as Type.Object
-    val providerType = getObjectTypeByInternalName("${container.internalName}\$${bindingType.internalName}\$BindingProvider\$$index\$$projectName")
+  private fun newBindingProvider(container: Type.Object, binding: Binding): Provider {
+    val dependencyType = binding.dependency.type.rawType as Type.Object
+    val ancestorType = binding.ancestor.type.rawType as Type.Object
+    val providerType = getObjectTypeByInternalName("${dependencyType.internalName}\$${ancestorType.internalName}\$BindingProvider\$$projectName")
     val provisionPoint = ProvisionPoint.Binding(container, binding.ancestor, binding.dependency)
     return Provider(providerType, provisionPoint, container, Scope.None)
   }
 
   private fun newFactoryProvider(container: Type.Object, factory: Factory): Provider {
     val mirror = grip.classRegistry.getClassMirror(factory.type)
-    val providerType = getObjectTypeByInternalName("${container.internalName}\$${factory.type.internalName}\$FactoryProvider\$$projectName")
+    val providerType = getObjectTypeByInternalName("${factory.type.internalName}\$FactoryProvider\$$projectName")
     val constructorMirror = MethodMirror.Builder()
       .access(ACC_PUBLIC)
       .name(MethodDescriptor.CONSTRUCTOR_NAME)
