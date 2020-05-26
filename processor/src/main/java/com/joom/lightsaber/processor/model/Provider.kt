@@ -29,5 +29,13 @@ data class Provider(
     get() = provisionPoint.dependency
 }
 
+val Provider.requiresModule: Boolean
+  get() = when (provisionPoint) {
+    is ProvisionPoint.Method,
+    is ProvisionPoint.Field -> true
+    is ProvisionPoint.Constructor,
+    is ProvisionPoint.Binding -> false
+  }
+
 val Provider.isConstructorProvider: Boolean
   get() = provisionPoint is ProvisionPoint.Constructor

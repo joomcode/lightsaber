@@ -30,7 +30,7 @@ import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.Provider
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.model.isConstructorProvider
+import com.joom.lightsaber.processor.model.requiresModule
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.Type
@@ -64,12 +64,10 @@ class ProviderClassGenerator(
   }
 
   private val providerConstructor: MethodDescriptor
-    get() {
-      if (provider.provisionPoint is ProvisionPoint.Constructor) {
-        return MethodDescriptor.forConstructor(Types.INJECTOR_TYPE)
-      } else {
-        return MethodDescriptor.forConstructor(provider.moduleType, Types.INJECTOR_TYPE)
-      }
+    get() = if (!provider.requiresModule) {
+      MethodDescriptor.forConstructor(Types.INJECTOR_TYPE)
+    } else {
+      MethodDescriptor.forConstructor(provider.moduleType, Types.INJECTOR_TYPE)
     }
 
   fun generate(): ByteArray {
@@ -94,7 +92,7 @@ class ProviderClassGenerator(
 
   private fun generateFields(classVisitor: ClassVisitor) {
     generateInjectorField(classVisitor)
-    if (!provider.isConstructorProvider) {
+    if (provider.requiresModule) {
       generateModuleField(classVisitor)
     }
   }
@@ -127,7 +125,7 @@ class ProviderClassGenerator(
       loadThis()
       invokeConstructor(Types.OBJECT_TYPE, MethodDescriptor.forDefaultConstructor())
 
-      if (provider.isConstructorProvider) {
+      if (!provider.requiresModule) {
         loadThis()
         loadArg(0)
         putField(provider.type, INJECTOR_FIELD)

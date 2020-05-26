@@ -31,7 +31,7 @@ import com.joom.lightsaber.processor.generation.registerProvider
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.Provider
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.model.isConstructorProvider
+import com.joom.lightsaber.processor.model.requiresModule
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.isStatic
@@ -130,7 +130,7 @@ class ModulePatcher(
     module.providers.forEach { provider ->
       loadArg(0)
       registerProvider(keyRegistry, provider) {
-        if (provider.isConstructorProvider) {
+        if (!provider.requiresModule) {
           newConstructorProvider(provider)
         } else {
           newModuleProvider(provider)
