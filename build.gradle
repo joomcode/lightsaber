@@ -22,7 +22,7 @@ allprojects {
   ext.androidTargetSdkVersion = 29
   ext.androidMinSdkVersion = 16
   ext.androidBuildToolsVersion = '29.0.3'
-  ext.androidToolsVersion = '3.6.3'
+  ext.androidToolsVersion = '4.0.0'
   ext.androidxAnnotationVersion = '1.1.0'
   ext.androidxEspressoVersion = '3.2.0'
   ext.androidxTestRunnerVersion = '1.2.0'
