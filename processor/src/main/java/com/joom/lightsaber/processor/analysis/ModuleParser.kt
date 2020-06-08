@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ProcessingException
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.contains
@@ -25,6 +26,7 @@ import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Binding
+import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
@@ -62,6 +64,7 @@ interface ModuleParser {
     importeeModuleTypes: Collection<Type.Object>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
+    contracts: Collection<Contract>,
     moduleRegistry: ModuleRegistry
   ): Module
 }
@@ -83,9 +86,17 @@ class ModuleParserImpl(
     importeeModuleTypes: Collection<Type.Object>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
+    contracts: Collection<Contract>,
     moduleRegistry: ModuleRegistry
   ): Module {
-    return parseModule(grip.classRegistry.getClassMirror(type), importeeModuleTypes, providableTargets, factories, moduleRegistry)
+    return parseModule(
+      grip.classRegistry.getClassMirror(type),
+      importeeModuleTypes,
+      providableTargets,
+      factories,
+      contracts,
+      moduleRegistry
+    )
   }
 
   private fun parseModule(
@@ -93,6 +104,7 @@ class ModuleParserImpl(
     importeeModuleTypes: Collection<Type.Object>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
+    contracts: Collection<Contract>,
     moduleRegistry: ModuleRegistry
   ): Module {
     if (mirror.signature.typeVariables.isNotEmpty()) {
@@ -110,14 +122,15 @@ class ModuleParserImpl(
     bridgeRegistry.clear()
     mirror.methods.forEach { bridgeRegistry.reserveMethod(it.toMethodDescriptor()) }
 
-    val providers = createProviders(mirror, providableTargets, factories)
-    return Module(mirror.type, imports, providers, factories)
+    val providers = createProviders(mirror, providableTargets, factories, contracts)
+    return Module(mirror.type, imports, providers, factories, contracts)
   }
 
   private fun createProviders(
     module: ClassMirror,
     providableTargets: Collection<InjectionTarget>,
-    factories: Collection<Factory>
+    factories: Collection<Factory>,
+    contracts: Collection<Contract>
   ): Collection<Provider> {
     val isProvidable = annotatedWith(Types.PROVIDE_TYPE) and not(isStatic())
     val methodsQuery = grip select methods from module where (isProvidable and methodType(not(returns(Type.Primitive.Void))))
@@ -154,13 +167,20 @@ class ModuleParserImpl(
       newFactoryProvider(module.type, factory)
     }
 
-    val providerCount = constructorProviders.size + methodProviders.size + fieldProviders.size + bindingProviders.size + factoryProviders.size
+    val contractProviders = contracts.map { contract ->
+      logger.debug("  Contract: {}", contract)
+      newContractProvider(module.type, contract)
+    }
+
+    val providerCount =
+      constructorProviders.size + methodProviders.size + fieldProviders.size + bindingProviders.size + factoryProviders.size + contractProviders.size
     return ArrayList<Provider>(providerCount).apply {
       addAll(constructorProviders)
       addAll(methodProviders)
       addAll(fieldProviders)
       addAll(bindingProviders)
       addAll(factoryProviders)
+      addAll(contractProviders)
     }
   }
 
@@ -211,6 +231,20 @@ class ModuleParserImpl(
     val injectionPoint = InjectionPoint.Method(factory.implementationType, constructorMirror, listOf(constructorInjectee))
     val provisionPoint = ProvisionPoint.Constructor(factory.dependency, injectionPoint)
     val scope = analyzerHelper.findScope(mirror)
+    return Provider(providerType, provisionPoint, container, scope)
+  }
+
+  private fun newContractProvider(container: Type.Object, contract: Contract): Provider {
+    val providerType = getObjectTypeByInternalName("${contract.type.internalName}\$ContractProvider\$$projectName")
+    val constructorMirror = MethodMirror.Builder()
+      .access(ACC_PUBLIC)
+      .name(MethodDescriptor.CONSTRUCTOR_NAME)
+      .type(getMethodType(Type.Primitive.Void, Types.INJECTOR_TYPE))
+      .build()
+    val constructorInjectee = Injectee(Dependency(GenericType.Raw(Types.INJECTOR_TYPE)), Converter.Instance)
+    val injectionPoint = InjectionPoint.Method(contract.implementationType, constructorMirror, listOf(constructorInjectee))
+    val provisionPoint = ProvisionPoint.Constructor(contract.dependency, injectionPoint)
+    val scope = Scope.Class(LightsaberTypes.SINGLETON_PROVIDER_TYPE)
     return Provider(providerType, provisionPoint, container, scope)
   }
 

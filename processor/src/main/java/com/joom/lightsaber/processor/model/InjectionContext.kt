@@ -23,7 +23,8 @@ data class InjectionContext(
   val injectableTargets: Collection<InjectionTarget>,
   val providableTargets: Collection<InjectionTarget>,
   val factories: Collection<Factory>,
-  val bindings: Collection<Binding>
+  val bindings: Collection<Binding>,
+  val contracts: Collection<Contract>
 ) {
 
   private val componentsByType = components.associateBy { it.type }

@@ -22,7 +22,8 @@ data class Module(
   val type: Type.Object,
   val imports: Collection<Import>,
   val providers: Collection<Provider>,
-  val factories: Collection<Factory>
+  val factories: Collection<Factory>,
+  val contracts: Collection<Contract>
 ) {
 
   val modules: Collection<Module> = imports.map { it.module }
