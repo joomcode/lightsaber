@@ -161,18 +161,17 @@ class Validator(
     }
   }
 
-  private fun validateFactories(component: Component, resolver: DependencyResolver) {
-    resolver.add(component, includeAncestors = true)
+  private fun validateFactories(component: Component, dependencyResolver: DependencyResolver) {
+    dependencyResolver.add(component, includeAncestors = true)
     component.getModulesWithDescendants()
       .flatMap { module -> module.factories.asSequence() }
       .distinctBy { factory -> factory.type }
       .forEach { factory ->
         for (provisionPoint in factory.provisionPoints) {
           val injectees = provisionPoint.injectionPoint.injectees
-          val resolvedDependencies = resolver.getResolvedDependencies()
           for (injectee in injectees) {
             val shouldBeResolved = shouldFactoryInjecteeBeResolved(injectee)
-            validateFactoryDependency(component, factory, injectee.dependency, resolvedDependencies, shouldBeResolved)
+            validateFactoryDependency(component, factory, injectee.dependency, dependencyResolver, shouldBeResolved)
           }
         }
       }
@@ -189,10 +188,10 @@ class Validator(
     component: Component,
     factory: Factory,
     dependency: Dependency,
-    resolvedDependencies: Set<Dependency>,
+    dependencyResolver: DependencyResolver,
     shouldBeResolved: Boolean
   ) {
-    val isResolved = dependency.boxed() in resolvedDependencies
+    val isResolved = dependencyResolver.isResolved(dependency)
     if (!isResolved && shouldBeResolved) {
       val factoryName = factory.type.className
       val componentName = component.type.className
@@ -206,11 +205,10 @@ class Validator(
   ) {
     val dependencyResolver = DependencyResolver(context)
     components.forEach { dependencyResolver.add(it, includeAncestors = false) }
-    val resolvedDependencies = dependencyResolver.getResolvedDependencies()
 
     injectionTargets.forEach { injectionTarget ->
       injectionTarget.injectionPoints.forEach { injectionPoint ->
-        validateInjectionPointIsResolved(injectionTarget.type, injectionPoint, resolvedDependencies)
+        validateInjectionPointIsResolved(injectionTarget.type, injectionPoint, dependencyResolver)
       }
     }
   }
@@ -218,12 +216,12 @@ class Validator(
   private fun validateInjectionPointIsResolved(
     injectionTargetType: Type.Object,
     injectionPoint: InjectionPoint,
-    resolvedDependencies: Set<Dependency>
+    dependencyResolver: DependencyResolver
   ) {
     val dependencies = getDependenciesForInjectionPoint(injectionPoint)
     val element = getElementForInjectionPoint(injectionPoint)
 
-    val unresolvedDependencies = dependencies.filter { it !in resolvedDependencies }
+    val unresolvedDependencies = dependencies.filterNot { dependencyResolver.isResolved(it) }
     if (unresolvedDependencies.isNotEmpty()) {
       val injectionTargetName = injectionTargetType.className
       unresolvedDependencies.forEach { dependency ->
@@ -236,8 +234,8 @@ class Validator(
 
   private fun getDependenciesForInjectionPoint(injectionPoint: InjectionPoint): Collection<Dependency> {
     return when (injectionPoint) {
-      is InjectionPoint.Field -> listOf(injectionPoint.injectee.dependency.boxed())
-      is InjectionPoint.Method -> injectionPoint.injectees.map { it.dependency.boxed() }
+      is InjectionPoint.Field -> listOf(injectionPoint.injectee.dependency)
+      is InjectionPoint.Method -> injectionPoint.injectees.map { it.dependency }
     }
   }
 

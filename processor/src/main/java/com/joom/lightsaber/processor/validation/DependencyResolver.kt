@@ -58,6 +58,10 @@ class DependencyResolver(
     add(component.defaultModule)
   }
 
+  fun isResolved(dependency: Dependency): Boolean {
+    return dependency.boxed() in providedDependencies
+  }
+
   fun getResolvedDependencies(): Set<Dependency> {
     return providedDependencies.toSet()
   }
