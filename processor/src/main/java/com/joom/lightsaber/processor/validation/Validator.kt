@@ -17,7 +17,6 @@
 package com.joom.lightsaber.processor.validation
 
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.commons.boxed
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Dependency
@@ -59,6 +58,7 @@ class Validator(
         validateDependenciesAreResolved(component, DependencyResolver(context))
         validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
         validateFactories(component, DependencyResolver(context))
+        validateContracts(component, DependencyResolver(context))
       }
 
     validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
@@ -197,6 +197,23 @@ class Validator(
       val componentName = component.type.className
       errorReporter.reportError("Unresolved dependency $dependency in factory $factoryName in component $componentName")
     }
+  }
+
+  private fun validateContracts(component: Component, dependencyResolver: DependencyResolver) {
+    dependencyResolver.add(component, includeAncestors = true)
+    component.getModulesWithDescendants()
+      .flatMap { module -> module.contracts.asSequence() }
+      .distinctBy { contract -> contract.type }
+      .forEach { contract ->
+        for (provisionPoint in contract.provisionPoints) {
+          val dependency = provisionPoint.injectee.dependency
+          if (!dependencyResolver.isResolved(dependency)) {
+            val contractName = contract.type.className
+            val componentName = component.type.className
+            errorReporter.reportError("Unresolved dependency $dependency in contract $contractName in component $componentName")
+          }
+        }
+      }
   }
 
   private fun validateInjectionTargetsAreResolved(
