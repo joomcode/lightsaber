@@ -17,6 +17,7 @@
 package com.joom.lightsaber.processor.annotations.proxy
 
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
+import com.joom.lightsaber.processor.commons.Methods
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
@@ -55,9 +56,6 @@ class AnnotationProxyGenerator(
     private val OBJECT_ARRAY_TYPE = getArrayType<Array<Any>>()
     private val STRING_BUILDER_TYPE = getObjectType<StringBuilder>()
 
-    private val HASH_CODE_METHOD = MethodDescriptor.forMethod("hashCode", Type.Primitive.Int)
-    private val EQUALS_METHOD = MethodDescriptor.forMethod("equals", Type.Primitive.Boolean, Types.OBJECT_TYPE)
-    private val TO_STRING_METHOD = MethodDescriptor.forMethod("toString", Types.STRING_TYPE)
     private val FLOAT_TO_INT_BITS_METHOD =
       MethodDescriptor.forMethod("floatToIntBits", Type.Primitive.Int, Type.Primitive.Float)
     private val DOUBLE_TO_LONG_BITS_METHOD =
@@ -148,7 +146,7 @@ class AnnotationProxyGenerator(
   }
 
   private fun generateEqualsMethod(classVisitor: ClassVisitor) {
-    val generator = GeneratorAdapter(classVisitor, ACC_PUBLIC, EQUALS_METHOD)
+    val generator = GeneratorAdapter(classVisitor, ACC_PUBLIC, Methods.EQUALS_METHOD)
     generator.visitCode()
 
     // if (this == object) return true;
@@ -216,7 +214,7 @@ class AnnotationProxyGenerator(
       val elementType = fieldType.elementType
       val argumentType = if (elementType.isPrimitive) fieldType else OBJECT_ARRAY_TYPE
       val equalsMethod =
-        MethodDescriptor.forMethod(EQUALS_METHOD.name, Type.Primitive.Boolean, argumentType, argumentType)
+        MethodDescriptor.forMethod(Methods.EQUALS_METHOD.name, Type.Primitive.Boolean, argumentType, argumentType)
       generator.invokeStatic(ARRAYS_TYPE, equalsMethod)
       generator.ifZCmp(EQ, fieldsNotEqualLabel)
     } else if (fieldType is Type.Primitive) {
@@ -226,7 +224,7 @@ class AnnotationProxyGenerator(
       }
     } else {
       // Call equals() on the instances on the stack.
-      generator.invokeVirtual(Types.OBJECT_TYPE, EQUALS_METHOD)
+      generator.invokeVirtual(Types.OBJECT_TYPE, Methods.EQUALS_METHOD)
       generator.ifZCmp(EQ, fieldsNotEqualLabel)
     }
   }
@@ -239,7 +237,7 @@ class AnnotationProxyGenerator(
   }
 
   private fun generateHashCodeMethod(classVisitor: ClassVisitor) {
-    val generator = GeneratorAdapter(classVisitor, ACC_PUBLIC, HASH_CODE_METHOD)
+    val generator = GeneratorAdapter(classVisitor, ACC_PUBLIC, Methods.HASH_CODE_METHOD)
     generator.visitCode()
 
     val cacheHashCodeIsNullLabel = generator.newLabel()
@@ -272,7 +270,7 @@ class AnnotationProxyGenerator(
   private fun generateHashCodeComputationForField(generator: GeneratorAdapter, fieldName: String, fieldType: Type) {
     // Compute hash code of the field name.
     generator.push(fieldName)
-    generator.invokeVirtual(Types.STRING_TYPE, HASH_CODE_METHOD)
+    generator.invokeVirtual(Types.STRING_TYPE, Methods.HASH_CODE_METHOD)
     // Multiple it by 127.
     generator.push(127)
     generator.math(MUL, Type.Primitive.Int)
@@ -286,13 +284,13 @@ class AnnotationProxyGenerator(
       // Call Arrays.hashCode() with a corresponding signature.
       val elementType = fieldType.elementType
       val argumentType = if (elementType.isPrimitive) fieldType else OBJECT_ARRAY_TYPE
-      val hashCodeMethod = MethodDescriptor.forMethod(HASH_CODE_METHOD.name, Type.Primitive.Int, argumentType)
+      val hashCodeMethod = MethodDescriptor.forMethod(Methods.HASH_CODE_METHOD.name, Type.Primitive.Int, argumentType)
       generator.invokeStatic(ARRAYS_TYPE, hashCodeMethod)
     } else {
       // If the field has primitive type then box it.
       generator.valueOf(fieldType)
       // Call hashCode() on the instance on the stack.
-      generator.invokeVirtual(Types.OBJECT_TYPE, HASH_CODE_METHOD)
+      generator.invokeVirtual(Types.OBJECT_TYPE, Methods.HASH_CODE_METHOD)
     }
 
     // Xor the field name and the field value hash codes.
@@ -300,7 +298,7 @@ class AnnotationProxyGenerator(
   }
 
   private fun generateToStringMethod(classVisitor: ClassVisitor) {
-    val generator = GeneratorAdapter(classVisitor, ACC_PUBLIC, TO_STRING_METHOD)
+    val generator = GeneratorAdapter(classVisitor, ACC_PUBLIC, Methods.TO_STRING_METHOD)
     generator.visitCode()
 
     val cachedToStringIsNullLabel = generator.newLabel()
@@ -327,7 +325,7 @@ class AnnotationProxyGenerator(
 
     generator.push(')'.toInt())
     generateStringBuilderAppendInvocation(generator, Type.Primitive.Char)
-    generator.invokeVirtual(STRING_BUILDER_TYPE, TO_STRING_METHOD)
+    generator.invokeVirtual(STRING_BUILDER_TYPE, Methods.TO_STRING_METHOD)
 
     generator.dup()
     generator.loadThis()
@@ -358,7 +356,7 @@ class AnnotationProxyGenerator(
   private fun generateArraysToStringInvocation(generator: GeneratorAdapter, fieldType: Type.Array) {
     val elementType = fieldType.elementType
     val argumentType = if (elementType.isPrimitive) fieldType else OBJECT_ARRAY_TYPE
-    val toStringMethod = MethodDescriptor.forMethod(TO_STRING_METHOD.name, Types.STRING_TYPE, argumentType)
+    val toStringMethod = MethodDescriptor.forMethod(Methods.TO_STRING_METHOD.name, Types.STRING_TYPE, argumentType)
     generator.invokeStatic(ARRAYS_TYPE, toStringMethod)
   }
 
