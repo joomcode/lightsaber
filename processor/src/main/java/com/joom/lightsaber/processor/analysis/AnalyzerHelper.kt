@@ -38,6 +38,7 @@ interface AnalyzerHelper {
   fun convertMethodToInjectionPoint(method: MethodMirror, container: Type.Object): InjectionPoint.Method
   fun convertFieldToInjectionPoint(field: FieldMirror, container: Type.Object): InjectionPoint.Field
   fun convertMethodParameterToInjectee(method: MethodMirror, parameterIndex: Int): Injectee
+  fun convertMethodResultToInjectee(method: MethodMirror): Injectee
   fun convertFieldToInjectee(field: FieldMirror): Injectee
   fun findQualifier(annotated: Annotated): AnnotationMirror?
   fun findScope(annotated: Annotated): Scope
@@ -60,6 +61,10 @@ class AnalyzerHelperImpl(
   override fun convertMethodParameterToInjectee(method: MethodMirror, parameterIndex: Int): Injectee {
     val type = method.signature.parameterTypes[parameterIndex]
     return newInjectee(type, method.parameters[parameterIndex])
+  }
+
+  override fun convertMethodResultToInjectee(method: MethodMirror): Injectee {
+    return newInjectee(method.signature.returnType, method)
   }
 
   override fun convertFieldToInjectee(field: FieldMirror): Injectee {
