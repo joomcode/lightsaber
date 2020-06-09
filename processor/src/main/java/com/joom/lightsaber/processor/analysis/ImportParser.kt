@@ -79,20 +79,20 @@ class ImportParserImpl(
     val inverse = importeeModuleTypes.map { importeeType ->
       logger.debug("  Inverse import: {}", importeeType.className)
       val module = moduleRegistry.getModule(importeeType)
-      Import(module, ImportPoint.Inverse(mirror.type, importeeType))
+      Import.Module(module, ImportPoint.Inverse(mirror.type, importeeType))
     }
 
     return methods + fields + inverse
   }
 
-  private fun tryParseImports(method: MethodMirror, moduleRegistry: ModuleRegistry): Import? {
+  private fun tryParseImports(method: MethodMirror, moduleRegistry: ModuleRegistry): Import.Module? {
     val module = tryParseModule(method.signature.returnType, moduleRegistry) ?: return null
-    return Import(module, ImportPoint.Method(method))
+    return Import.Module(module, ImportPoint.Method(method))
   }
 
-  private fun tryParseImports(field: FieldMirror, moduleRegistry: ModuleRegistry): Import? {
+  private fun tryParseImports(field: FieldMirror, moduleRegistry: ModuleRegistry): Import.Module? {
     val module = tryParseModule(field.signature.type, moduleRegistry) ?: return null
-    return Import(module, ImportPoint.Field(field))
+    return Import.Module(module, ImportPoint.Field(field))
   }
 
   private fun tryParseModule(generic: GenericType, moduleRegistry: ModuleRegistry): Module? {

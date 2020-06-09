@@ -43,10 +43,16 @@ class InjectorConfiguratorImplementor(
   }
 
   private fun GeneratorAdapter.configureInjector(imports: Collection<Import>) {
-    imports.forEach { configureInjectorWithModule(it) }
+    imports.forEach { configureInjectorWithImport(it) }
   }
 
-  private fun GeneratorAdapter.configureInjectorWithModule(import: Import) {
+  private fun GeneratorAdapter.configureInjectorWithImport(import: Import) {
+    return when (import) {
+      is Import.Module -> configureInjectorWithModule(import)
+    }
+  }
+
+  private fun GeneratorAdapter.configureInjectorWithModule(import: Import.Module) {
     loadModule(import.importPoint)
     // TODO: It would be better to throw ConfigurationException here.
     checkCast(LightsaberTypes.INJECTOR_CONFIGURATOR_TYPE)

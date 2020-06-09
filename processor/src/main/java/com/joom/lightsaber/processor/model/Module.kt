@@ -26,5 +26,5 @@ data class Module(
   val contracts: Collection<Contract>
 ) {
 
-  val modules: Collection<Module> = imports.map { it.module }
+  val modules: Collection<Module> = imports.mapNotNull { (it as? Import.Module)?.module }
 }
