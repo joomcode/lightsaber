@@ -24,9 +24,9 @@ import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.FactoryProvisionPoint
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
-import com.joom.lightsaber.processor.model.ModuleProvisionPoint
 import com.joom.lightsaber.processor.model.isConstructorProvider
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.ClassMirror
@@ -125,12 +125,12 @@ class SanityChecker(
 
   private fun checkModulesWithImportedByAreDefaultConstructible(context: InjectionContext) {
     context.components.asSequence()
-      .flatMap { component -> component.getModuleProvidersWithDescendants() }
-      .map { provider -> provider.provisionPoint }
-      .filterIsInstance<ModuleProvisionPoint.InverseImport>()
-      .distinctBy { provisionPoint -> provisionPoint.importeeType }
-      .forEach { provisionPoint ->
-        val type = provisionPoint.importeeType
+      .flatMap { component -> component.getImportsWithDescendants() }
+      .map { import -> import.importPoint }
+      .filterIsInstance<ImportPoint.Inverse>()
+      .distinctBy { importPoint -> importPoint.importeeType }
+      .forEach { importPoint ->
+        val type = importPoint.importeeType
         val mirror = classRegistry.getClassMirror(type)
         if (mirror.constructors.none { it.isDefaultConstructor }) {
           errorReporter.reportError("Module ${type.className} with @ImportedBy annotation must have a default constructor")

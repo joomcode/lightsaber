@@ -20,9 +20,9 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.ProcessingException
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.logging.getLogger
+import com.joom.lightsaber.processor.model.Import
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.Module
-import com.joom.lightsaber.processor.model.ModuleProvider
-import com.joom.lightsaber.processor.model.ModuleProvisionPoint
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.and
 import io.michaelrocks.grip.annotatedWith
@@ -38,28 +38,28 @@ import io.michaelrocks.grip.mirrors.signature.GenericType
 import io.michaelrocks.grip.not
 import io.michaelrocks.grip.returns
 
-interface ModuleProviderParser {
-  fun parseModuleProviders(
+interface ImportParser {
+  fun parseImports(
     mirror: ClassMirror,
     moduleRegistry: ModuleRegistry,
     importeeModuleTypes: Collection<Type.Object>,
     isComponentDefaultModule: Boolean
-  ): Collection<ModuleProvider>
+  ): Collection<Import>
 }
 
-class ModuleProviderParserImpl(
+class ImportParserImpl(
   private val grip: Grip,
   private val errorReporter: ErrorReporter
-) : ModuleProviderParser {
+) : ImportParser {
 
   private val logger = getLogger()
 
-  override fun parseModuleProviders(
+  override fun parseImports(
     mirror: ClassMirror,
     moduleRegistry: ModuleRegistry,
     importeeModuleTypes: Collection<Type.Object>,
     isComponentDefaultModule: Boolean
-  ): Collection<ModuleProvider> {
+  ): Collection<Import> {
     val isImportable = annotatedWith(Types.IMPORT_TYPE)
     val methodsQuery = grip select methods from mirror where (isImportable and methodType(not(returns(Type.Primitive.Void))))
     val fieldsQuery = grip select fields from mirror where isImportable
@@ -68,31 +68,31 @@ class ModuleProviderParserImpl(
     logger.debug("{}: {}", kind, mirror.type.className)
     val methods = methodsQuery.execute()[mirror.type].orEmpty().mapNotNull { method ->
       logger.debug("  Method: {}", method)
-      tryParseModuleProvider(method, moduleRegistry)
+      tryParseImports(method, moduleRegistry)
     }
 
     val fields = fieldsQuery.execute()[mirror.type].orEmpty().mapNotNull { field ->
       logger.debug("  Field: {}", field)
-      tryParseModuleProvider(field, moduleRegistry)
+      tryParseImports(field, moduleRegistry)
     }
 
-    val inverseImports = importeeModuleTypes.map { importeeType ->
+    val inverse = importeeModuleTypes.map { importeeType ->
       logger.debug("  Inverse import: {}", importeeType.className)
       val module = moduleRegistry.getModule(importeeType)
-      ModuleProvider(module, ModuleProvisionPoint.InverseImport(mirror.type, importeeType))
+      Import(module, ImportPoint.Inverse(mirror.type, importeeType))
     }
 
-    return methods + fields + inverseImports
+    return methods + fields + inverse
   }
 
-  private fun tryParseModuleProvider(method: MethodMirror, moduleRegistry: ModuleRegistry): ModuleProvider? {
+  private fun tryParseImports(method: MethodMirror, moduleRegistry: ModuleRegistry): Import? {
     val module = tryParseModule(method.signature.returnType, moduleRegistry) ?: return null
-    return ModuleProvider(module, ModuleProvisionPoint.Method(method))
+    return Import(module, ImportPoint.Method(method))
   }
 
-  private fun tryParseModuleProvider(field: FieldMirror, moduleRegistry: ModuleRegistry): ModuleProvider? {
+  private fun tryParseImports(field: FieldMirror, moduleRegistry: ModuleRegistry): Import? {
     val module = tryParseModule(field.signature.type, moduleRegistry) ?: return null
-    return ModuleProvider(module, ModuleProvisionPoint.Field(field))
+    return Import(module, ImportPoint.Field(field))
   }
 
   private fun tryParseModule(generic: GenericType, moduleRegistry: ModuleRegistry): Module? {

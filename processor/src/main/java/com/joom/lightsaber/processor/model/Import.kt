@@ -16,7 +16,7 @@
 
 package com.joom.lightsaber.processor.model
 
-data class ModuleProvider(
+data class Import(
   val module: Module,
-  val provisionPoint: ModuleProvisionPoint
+  val importPoint: ImportPoint
 )

@@ -20,12 +20,12 @@ import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
 
-sealed class ModuleProvisionPoint {
-  data class Method(val method: MethodMirror) : ModuleProvisionPoint()
-  data class Field(val field: FieldMirror) : ModuleProvisionPoint()
+sealed class ImportPoint {
+  data class Method(val method: MethodMirror) : ImportPoint()
+  data class Field(val field: FieldMirror) : ImportPoint()
 
-  data class InverseImport(
+  data class Inverse(
     val importerType: Type.Object,
     val importeeType: Type.Object
-  ) : ModuleProvisionPoint()
+  ) : ImportPoint()
 }

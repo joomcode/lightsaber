@@ -20,10 +20,10 @@ import io.michaelrocks.grip.mirrors.Type
 
 data class Module(
   val type: Type.Object,
-  val moduleProviders: Collection<ModuleProvider>,
+  val imports: Collection<Import>,
   val providers: Collection<Provider>,
   val factories: Collection<Factory>
 ) {
 
-  val modules: Collection<Module> = moduleProviders.map { it.module }
+  val modules: Collection<Module> = imports.map { it.module }
 }

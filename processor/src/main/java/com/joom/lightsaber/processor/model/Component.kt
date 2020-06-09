@@ -29,8 +29,8 @@ data class Component(
     yieldModulesWithDescendants(listOf(defaultModule))
   }
 
-  fun getModuleProvidersWithDescendants(): Sequence<ModuleProvider> = sequence {
-    yieldModuleProvidersWithDescendants(defaultModule.moduleProviders)
+  fun getImportsWithDescendants(): Sequence<Import> = sequence {
+    yieldImportsWithDescendants(defaultModule.imports)
   }
 
   private suspend fun SequenceScope<Module>.yieldModulesWithDescendants(modules: Iterable<Module>) {
@@ -40,10 +40,10 @@ data class Component(
     }
   }
 
-  private suspend fun SequenceScope<ModuleProvider>.yieldModuleProvidersWithDescendants(providers: Iterable<ModuleProvider>) {
-    providers.forEach { provider ->
-      yield(provider)
-      yieldModuleProvidersWithDescendants(provider.module.moduleProviders)
+  private suspend fun SequenceScope<Import>.yieldImportsWithDescendants(imports: Iterable<Import>) {
+    imports.forEach { import ->
+      yield(import)
+      yieldImportsWithDescendants(import.module.imports)
     }
   }
 }

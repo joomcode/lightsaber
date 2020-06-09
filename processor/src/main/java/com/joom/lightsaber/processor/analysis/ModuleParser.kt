@@ -68,7 +68,7 @@ interface ModuleParser {
 
 class ModuleParserImpl(
   private val grip: Grip,
-  private val moduleProviderParser: ModuleProviderParser,
+  private val importParser: ImportParser,
   private val bindingRegistry: BindingRegistry,
   private val analyzerHelper: AnalyzerHelper,
   private val projectName: String
@@ -105,13 +105,13 @@ class ModuleParserImpl(
       else -> throw ModuleParserException("Class ${mirror.type.className} is neither a component nor a module")
     }
 
-    val moduleProviders = moduleProviderParser.parseModuleProviders(mirror, moduleRegistry, importeeModuleTypes, isComponentDefaultModule)
+    val imports = importParser.parseImports(mirror, moduleRegistry, importeeModuleTypes, isComponentDefaultModule)
 
     bridgeRegistry.clear()
     mirror.methods.forEach { bridgeRegistry.reserveMethod(it.toMethodDescriptor()) }
 
     val providers = createProviders(mirror, providableTargets, factories)
-    return Module(mirror.type, moduleProviders, providers, factories)
+    return Module(mirror.type, imports, providers, factories)
   }
 
   private fun createProviders(

@@ -23,8 +23,8 @@ import com.joom.lightsaber.processor.commons.newMethod
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import com.joom.lightsaber.processor.model.ModuleProvider
-import com.joom.lightsaber.processor.model.ModuleProvisionPoint
+import com.joom.lightsaber.processor.model.Import
+import com.joom.lightsaber.processor.model.ImportPoint
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.isStatic
 import org.objectweb.asm.ClassVisitor
@@ -35,55 +35,55 @@ class InjectorConfiguratorImplementor(
   private val containerType: Type.Object
 ) {
 
-  fun implementInjectorConfigurator(moduleProviders: Collection<ModuleProvider>, configurator: GeneratorAdapter.() -> Unit = {}) {
+  fun implementInjectorConfigurator(imports: Collection<Import>, configurator: GeneratorAdapter.() -> Unit = {}) {
     classVisitor.newMethod(Opcodes.ACC_PUBLIC, CONFIGURE_INJECTOR_METHOD) {
       configurator()
-      configureInjector(moduleProviders)
+      configureInjector(imports)
     }
   }
 
-  private fun GeneratorAdapter.configureInjector(moduleProviders: Collection<ModuleProvider>) {
-    moduleProviders.forEach { configureInjectorWithModule(it) }
+  private fun GeneratorAdapter.configureInjector(imports: Collection<Import>) {
+    imports.forEach { configureInjectorWithModule(it) }
   }
 
-  private fun GeneratorAdapter.configureInjectorWithModule(moduleProvider: ModuleProvider) {
-    loadModule(moduleProvider.provisionPoint)
+  private fun GeneratorAdapter.configureInjectorWithModule(import: Import) {
+    loadModule(import.importPoint)
     // TODO: It would be better to throw ConfigurationException here.
     checkCast(LightsaberTypes.INJECTOR_CONFIGURATOR_TYPE)
     loadArg(0)
     invokeInterface(LightsaberTypes.INJECTOR_CONFIGURATOR_TYPE, CONFIGURE_INJECTOR_METHOD)
   }
 
-  private fun GeneratorAdapter.loadModule(provisionPoint: ModuleProvisionPoint) {
-    return when (provisionPoint) {
-      is ModuleProvisionPoint.Method -> loadModule(provisionPoint)
-      is ModuleProvisionPoint.Field -> loadModule(provisionPoint)
-      is ModuleProvisionPoint.InverseImport -> loadModule(provisionPoint)
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint) {
+    return when (importPoint) {
+      is ImportPoint.Method -> loadModule(importPoint)
+      is ImportPoint.Field -> loadModule(importPoint)
+      is ImportPoint.Inverse -> loadModule(importPoint)
     }
   }
 
-  private fun GeneratorAdapter.loadModule(provisionPoint: ModuleProvisionPoint.Method) {
-    if (!provisionPoint.method.isStatic) {
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Method) {
+    if (!importPoint.method.isStatic) {
       loadThis()
-      invokeMethod(containerType, provisionPoint.method)
+      invokeMethod(containerType, importPoint.method)
     } else {
-      invokeStatic(containerType, provisionPoint.method.toMethodDescriptor())
+      invokeStatic(containerType, importPoint.method.toMethodDescriptor())
     }
   }
 
-  private fun GeneratorAdapter.loadModule(provisionPoint: ModuleProvisionPoint.Field) {
-    if (!provisionPoint.field.isStatic) {
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Field) {
+    if (!importPoint.field.isStatic) {
       loadThis()
-      getField(containerType, provisionPoint.field.toFieldDescriptor())
+      getField(containerType, importPoint.field.toFieldDescriptor())
     } else {
-      getStatic(containerType, provisionPoint.field.toFieldDescriptor())
+      getStatic(containerType, importPoint.field.toFieldDescriptor())
     }
   }
 
-  private fun GeneratorAdapter.loadModule(provisionPoint: ModuleProvisionPoint.InverseImport) {
-    newInstance(provisionPoint.importeeType)
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Inverse) {
+    newInstance(importPoint.importeeType)
     dup()
-    invokeConstructor(provisionPoint.importeeType, MethodDescriptor.forDefaultConstructor())
+    invokeConstructor(importPoint.importeeType, MethodDescriptor.forDefaultConstructor())
   }
 
   companion object {

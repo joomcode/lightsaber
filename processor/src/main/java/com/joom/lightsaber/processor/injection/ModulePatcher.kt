@@ -82,7 +82,7 @@ class ModulePatcher(
   override fun visitEnd() {
     if (!isInjectorConfigurator) {
       generateBridges()
-      InjectorConfiguratorImplementor(this, module.type).implementInjectorConfigurator(module.moduleProviders) {
+      InjectorConfiguratorImplementor(this, module.type).implementInjectorConfigurator(module.imports) {
         registerProviders()
       }
     }
