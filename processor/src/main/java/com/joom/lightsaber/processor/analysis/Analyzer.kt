@@ -34,7 +34,7 @@ class Analyzer(
     val factories = FactoriesAnalyzerImpl(grip, analyzerHelper, errorReporter, projectName).analyze(files)
     val contractParser = ContractParserImpl(grip, analyzerHelper, errorReporter, projectName)
     val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(files)
-    val importParser = ImportParserImpl(grip, errorReporter)
+    val importParser = ImportParserImpl(grip, contractParser, errorReporter)
     val moduleParser = ModuleParserImpl(grip, importParser, bindingRegistry, analyzerHelper, projectName)
     val moduleRegistry = ModuleRegistryImpl(grip, moduleParser, errorReporter, providableTargets, factories, contracts, files)
     val components = ComponentsAnalyzerImpl(grip, moduleRegistry, errorReporter).analyze(files)

@@ -49,6 +49,7 @@ class InjectorConfiguratorImplementor(
   private fun GeneratorAdapter.configureInjectorWithImport(import: Import) {
     return when (import) {
       is Import.Module -> configureInjectorWithModule(import)
+      is Import.Contract -> configureInjectorWithContract(import)
     }
   }
 
@@ -90,6 +91,10 @@ class InjectorConfiguratorImplementor(
     newInstance(importPoint.importeeType)
     dup()
     invokeConstructor(importPoint.importeeType, MethodDescriptor.forDefaultConstructor())
+  }
+
+  private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
+    TODO()
   }
 
   companion object {

@@ -30,6 +30,7 @@ import io.michaelrocks.grip.fields
 import io.michaelrocks.grip.from
 import io.michaelrocks.grip.methodType
 import io.michaelrocks.grip.methods
+import io.michaelrocks.grip.mirrors.Annotated
 import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
@@ -49,6 +50,7 @@ interface ImportParser {
 
 class ImportParserImpl(
   private val grip: Grip,
+  private val contractParser: ContractParser,
   private val errorReporter: ErrorReporter
 ) : ImportParser {
 
@@ -68,12 +70,12 @@ class ImportParserImpl(
     logger.debug("{}: {}", kind, mirror.type.className)
     val methods = methodsQuery.execute()[mirror.type].orEmpty().mapNotNull { method ->
       logger.debug("  Method: {}", method)
-      tryParseImports(method, moduleRegistry)
+      tryParseMethodImport(mirror, method, moduleRegistry)
     }
 
     val fields = fieldsQuery.execute()[mirror.type].orEmpty().mapNotNull { field ->
       logger.debug("  Field: {}", field)
-      tryParseImports(field, moduleRegistry)
+      tryParseFieldImport(mirror, field, moduleRegistry)
     }
 
     val inverse = importeeModuleTypes.map { importeeType ->
@@ -85,34 +87,53 @@ class ImportParserImpl(
     return methods + fields + inverse
   }
 
-  private fun tryParseImports(method: MethodMirror, moduleRegistry: ModuleRegistry): Import.Module? {
-    val module = tryParseModule(method.signature.returnType, moduleRegistry) ?: return null
-    return Import.Module(module, ImportPoint.Method(method))
-  }
-
-  private fun tryParseImports(field: FieldMirror, moduleRegistry: ModuleRegistry): Import.Module? {
-    val module = tryParseModule(field.signature.type, moduleRegistry) ?: return null
-    return Import.Module(module, ImportPoint.Field(field))
-  }
-
-  private fun tryParseModule(generic: GenericType, moduleRegistry: ModuleRegistry): Module? {
-    if (generic !is GenericType.Raw) {
-      errorReporter.reportError("Module provider cannot have a generic type: $generic")
+  private fun tryParseMethodImport(mirror: ClassMirror, method: MethodMirror, moduleRegistry: ModuleRegistry): Import? {
+    if (method.parameters.isNotEmpty()) {
+      errorReporter.reportError("Import method cannot have parameters: ${mirror.type.className}.${method.name}")
       return null
     }
 
-    val type = generic.type
-    if (type !is Type.Object) {
-      errorReporter.reportError("Module provider cannot have an array type: $generic")
-      return null
-    }
+    val type = getImportTypeOrNull(method.signature.returnType, "${mirror.type.className}.${method.name}") ?: return null
+    return tryParseImport(method, type, ImportPoint.Method(method), moduleRegistry)
+  }
 
+  private fun tryParseFieldImport(mirror: ClassMirror, field: FieldMirror, moduleRegistry: ModuleRegistry): Import? {
+    val type = getImportTypeOrNull(field.signature.type, "${mirror.type.className}.${field.name}") ?: return null
+    return tryParseImport(field, type, ImportPoint.Field(field), moduleRegistry)
+  }
+
+  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleRegistry: ModuleRegistry): Import? {
+    if (Types.CONTRACT_TYPE in element.annotations) {
+      val contract = contractParser.parseContract(type)
+      return Import.Contract(contract, importPoint)
+    } else {
+      val module = tryParseModule(type, moduleRegistry) ?: return null
+      return Import.Module(module, importPoint)
+    }
+  }
+
+  private fun tryParseModule(type: Type.Object, moduleRegistry: ModuleRegistry): Module? {
     return try {
       moduleRegistry.getModule(type)
     } catch (exception: ProcessingException) {
       errorReporter.reportError(exception)
       null
     }
+  }
+
+  private fun getImportTypeOrNull(importType: GenericType, source: String): Type.Object? {
+    if (importType !is GenericType.Raw) {
+      errorReporter.reportError("Import cannot have a generic type: $importType from $source")
+      return null
+    }
+
+    val type = importType.type
+    if (type !is Type.Object) {
+      errorReporter.reportError("Import must be a class: $importType from $source")
+      return null
+    }
+
+    return type
   }
 }
 

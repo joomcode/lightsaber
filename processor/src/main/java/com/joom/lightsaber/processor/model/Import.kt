@@ -23,4 +23,9 @@ sealed class Import {
     val module: com.joom.lightsaber.processor.model.Module,
     override val importPoint: ImportPoint
   ) : Import()
+
+  data class Contract(
+    val contract: com.joom.lightsaber.processor.model.Contract,
+    override val importPoint: ImportPoint
+  ) : Import()
 }
