@@ -22,8 +22,8 @@ import io.michaelrocks.grip.mirrors.Type
 
 data class Provider(
   val type: Type.Object,
-  val provisionPoint: ProvisionPoint,
-  val moduleType: Type.Object
+  val moduleType: Type.Object,
+  val provisionPoint: ProvisionPoint
 ) {
 
   val dependency: Dependency get() = provisionPoint.dependency

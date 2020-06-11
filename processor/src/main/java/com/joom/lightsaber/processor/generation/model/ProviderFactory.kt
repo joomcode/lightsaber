@@ -67,17 +67,17 @@ class ProviderFactoryImpl(
   private fun newConstructorProvider(module: Module, provisionPoint: ProvisionPoint.Constructor): Provider {
     val moduleType = provisionPoint.containerType
     val providerType = getObjectTypeByInternalName("${moduleType.internalName}\$ConstructorProvider\$$projectName")
-    return Provider(providerType, provisionPoint, module.type)
+    return Provider(providerType, module.type, provisionPoint)
   }
 
   private fun newMethodProvider(module: Module, provisionPoint: ProvisionPoint.Method, index: Int): Provider {
     val providerType = getObjectTypeByInternalName("${module.type.internalName}\$MethodProvider\$$index\$$projectName")
-    return Provider(providerType, provisionPoint, module.type)
+    return Provider(providerType, module.type, provisionPoint)
   }
 
   private fun newFieldProvider(module: Module, provisionPoint: ProvisionPoint.Field, index: Int): Provider {
     val providerType = getObjectTypeByInternalName("${module.type.internalName}\$FieldProvider\$$index\$$projectName")
-    return Provider(providerType, provisionPoint, module.type)
+    return Provider(providerType, module.type, provisionPoint)
   }
 
   private fun newBindingProvider(module: Module, binding: Binding): Provider {
@@ -85,7 +85,7 @@ class ProviderFactoryImpl(
     val ancestorType = binding.ancestor.type.rawType as Type.Object
     val providerType = getObjectTypeByInternalName("${dependencyType.internalName}\$${ancestorType.internalName}\$BindingProvider\$$projectName")
     val provisionPoint = ProvisionPoint.Binding(module.type, binding.ancestor, binding.dependency)
-    return Provider(providerType, provisionPoint, module.type)
+    return Provider(providerType, module.type, provisionPoint)
   }
 
   private fun newFactoryProvider(module: Module, factory: Factory): Provider {
@@ -98,7 +98,7 @@ class ProviderFactoryImpl(
     val constructorInjectee = Injectee(Dependency(GenericType.Raw(Types.INJECTOR_TYPE)), Converter.Instance)
     val injectionPoint = InjectionPoint.Method(factory.implementationType, constructorMirror, listOf(constructorInjectee))
     val provisionPoint = ProvisionPoint.Constructor(factory.dependency, Scope.None, injectionPoint)
-    return Provider(providerType, provisionPoint, module.type)
+    return Provider(providerType, module.type, provisionPoint)
   }
 
   private fun newContractProvider(module: Module, contract: Contract): Provider {
@@ -112,6 +112,6 @@ class ProviderFactoryImpl(
     val constructorInjectee = Injectee(Dependency(GenericType.Raw(Types.INJECTOR_TYPE)), Converter.Instance)
     val injectionPoint = InjectionPoint.Method(contract.implementationType, constructorMirror, listOf(constructorInjectee))
     val provisionPoint = ProvisionPoint.Constructor(contract.dependency, scope, injectionPoint)
-    return Provider(providerType, provisionPoint, module.type)
+    return Provider(providerType, module.type, provisionPoint)
   }
 }
