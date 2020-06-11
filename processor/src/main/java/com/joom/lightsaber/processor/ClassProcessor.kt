@@ -161,8 +161,6 @@ class ClassProcessor(
             logger.debug("${nextIntent}Method: {}", provisionPoint.method)
           is ProvisionPoint.Field ->
             logger.debug("${nextIntent}Field: {}", provisionPoint.field)
-          is ProvisionPoint.Binding ->
-            logger.debug("${nextIntent}Binding: {} -> {}", provisionPoint.dependency, provisionPoint.binding)
         }
       )
     }

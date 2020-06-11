@@ -25,6 +25,7 @@ import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.model.Key
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.Provider
+import com.joom.lightsaber.processor.generation.model.scope
 import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Injectee
@@ -103,7 +104,7 @@ fun GeneratorAdapter.getInstance(keyRegistry: KeyRegistry, dependency: Dependenc
 fun GeneratorAdapter.registerProvider(keyRegistry: KeyRegistry, provider: Provider, providerCreator: () -> Unit) {
   val key = pushTypeOrKey(keyRegistry, provider.dependency)
 
-  when (val scope = provider.provisionPoint.scope) {
+  when (val scope = provider.scope) {
     is Scope.Class -> newDelegator(scope.scopeType, providerCreator)
     is Scope.None -> providerCreator()
   }

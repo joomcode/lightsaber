@@ -58,7 +58,6 @@ class ModulePatcher(
           is ProvisionPoint.Field -> providableFields.add(provisionPoint.field.toFieldDescriptor())
           is ProvisionPoint.Constructor -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
           is ProvisionPoint.Method -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
-          is ProvisionPoint.Binding -> Unit
         }
       )
     }

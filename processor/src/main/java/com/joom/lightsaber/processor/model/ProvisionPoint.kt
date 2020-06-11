@@ -58,14 +58,4 @@ sealed class ProvisionPoint {
     override val bridge: Method?,
     val field: FieldMirror
   ) : ProvisionPoint()
-
-  data class Binding(
-    override val containerType: Type.Object,
-    override val dependency: Dependency,
-    val binding: Dependency
-  ) : ProvisionPoint() {
-
-    override val bridge: Method? get() = null
-    override val scope: Scope get() = Scope.None
-  }
 }

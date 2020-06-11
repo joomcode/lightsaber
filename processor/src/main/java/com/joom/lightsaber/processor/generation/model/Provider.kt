@@ -18,21 +18,34 @@ package com.joom.lightsaber.processor.generation.model
 
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import com.joom.lightsaber.processor.model.Scope
 import io.michaelrocks.grip.mirrors.Type
 
 data class Provider(
   val type: Type.Object,
   val moduleType: Type.Object,
-  val provisionPoint: ProvisionPoint
+  val medium: ProviderMedium
 ) {
 
-  val dependency: Dependency get() = provisionPoint.dependency
+  val dependency: Dependency get() = medium.dependency
 }
 
 val Provider.requiresModule: Boolean
-  get() = when (provisionPoint) {
-    is ProvisionPoint.Method,
-    is ProvisionPoint.Field -> true
-    is ProvisionPoint.Constructor,
-    is ProvisionPoint.Binding -> false
+  get() = when (medium) {
+    is ProviderMedium.ProvisionPoint -> when (medium.provisionPoint) {
+      is ProvisionPoint.Constructor -> false
+      is ProvisionPoint.Method,
+      is ProvisionPoint.Field -> true
+    }
+    is ProviderMedium.Binding,
+    is ProviderMedium.Factory,
+    is ProviderMedium.Contract -> false
+  }
+
+val Provider.scope: Scope
+  get() = when (medium) {
+    is ProviderMedium.ProvisionPoint -> medium.provisionPoint.scope
+    is ProviderMedium.Binding,
+    is ProviderMedium.Factory,
+    is ProviderMedium.Contract -> Scope.None
   }

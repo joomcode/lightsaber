@@ -93,7 +93,6 @@ class SanityChecker(
       is ProvisionPoint.Constructor -> "${provisionPoint.containerType.className}()"
       is ProvisionPoint.Method -> "${provisionPoint.containerType.className}.${provisionPoint.injectionPoint.method.name}"
       is ProvisionPoint.Field -> "${provisionPoint.containerType.className}.${provisionPoint.field.name}"
-      is ProvisionPoint.Binding -> "$provisionPoint.dependency -> $provisionPoint.binding"
     }
   }
 
