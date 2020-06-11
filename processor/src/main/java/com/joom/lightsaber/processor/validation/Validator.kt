@@ -20,8 +20,6 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Dependency
-import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.FactoryInjectee
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
@@ -57,8 +55,6 @@ class Validator(
         validateNoDependencyDuplicates(component, emptyMap())
         validateDependenciesAreResolved(component, DependencyResolver(context))
         validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
-        validateFactories(component, DependencyResolver(context))
-        validateContracts(component, DependencyResolver(context))
       }
 
     validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
@@ -159,61 +155,6 @@ class Validator(
         errorReporter.reportError("Dependency cycle $cycleString in component $componentName")
       }
     }
-  }
-
-  private fun validateFactories(component: Component, dependencyResolver: DependencyResolver) {
-    dependencyResolver.add(component, includeAncestors = true)
-    component.getModulesWithDescendants()
-      .flatMap { module -> module.factories.asSequence() }
-      .distinctBy { factory -> factory.type }
-      .forEach { factory ->
-        for (provisionPoint in factory.provisionPoints) {
-          val injectees = provisionPoint.injectionPoint.injectees
-          for (injectee in injectees) {
-            val shouldBeResolved = shouldFactoryInjecteeBeResolved(injectee)
-            validateFactoryDependency(component, factory, injectee.dependency, dependencyResolver, shouldBeResolved)
-          }
-        }
-      }
-  }
-
-  private fun shouldFactoryInjecteeBeResolved(injectee: FactoryInjectee): Boolean {
-    return when (injectee) {
-      is FactoryInjectee.FromInjector -> true
-      is FactoryInjectee.FromMethod -> false
-    }
-  }
-
-  private fun validateFactoryDependency(
-    component: Component,
-    factory: Factory,
-    dependency: Dependency,
-    dependencyResolver: DependencyResolver,
-    shouldBeResolved: Boolean
-  ) {
-    val isResolved = dependencyResolver.isResolved(dependency)
-    if (!isResolved && shouldBeResolved) {
-      val factoryName = factory.type.className
-      val componentName = component.type.className
-      errorReporter.reportError("Unresolved dependency $dependency in factory $factoryName in component $componentName")
-    }
-  }
-
-  private fun validateContracts(component: Component, dependencyResolver: DependencyResolver) {
-    dependencyResolver.add(component, includeAncestors = true)
-    component.getModulesWithDescendants()
-      .flatMap { module -> module.contracts.asSequence() }
-      .distinctBy { contract -> contract.type }
-      .forEach { contract ->
-        for (provisionPoint in contract.provisionPoints) {
-          val dependency = provisionPoint.injectee.dependency
-          if (!dependencyResolver.isResolved(dependency)) {
-            val contractName = contract.type.className
-            val componentName = component.type.className
-            errorReporter.reportError("Unresolved dependency $dependency in contract $contractName in component $componentName")
-          }
-        }
-      }
   }
 
   private fun validateInjectionTargetsAreResolved(
