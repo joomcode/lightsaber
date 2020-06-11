@@ -40,9 +40,9 @@ class DependencyGraphBuilder(
   }
 
   fun add(module: Module): DependencyGraphBuilder = apply {
-    for (provider in module.providers) {
-      val returnType = provider.dependency.boxed()
-      graph.put(returnType, provider.getDependencies(context, includeDependenciesOnlyWithInstanceConverter))
+    for (provisionPoint in module.provisionPoints) {
+      val returnType = provisionPoint.dependency.boxed()
+      graph.put(returnType, provisionPoint.getDependencies(context, includeDependenciesOnlyWithInstanceConverter))
     }
 
     add(module.modules)

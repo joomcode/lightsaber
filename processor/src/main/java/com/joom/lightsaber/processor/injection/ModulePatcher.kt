@@ -27,11 +27,11 @@ import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
+import com.joom.lightsaber.processor.generation.model.Provider
+import com.joom.lightsaber.processor.generation.model.requiresModule
 import com.joom.lightsaber.processor.generation.registerProvider
 import com.joom.lightsaber.processor.model.Module
-import com.joom.lightsaber.processor.model.Provider
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.model.requiresModule
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.isStatic
@@ -42,19 +42,17 @@ import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 class ModulePatcher(
   classVisitor: ClassVisitor,
   private val keyRegistry: KeyRegistry,
-  private val module: Module
+  private val module: Module,
+  private val providers: Collection<Provider>
 ) : BaseInjectionClassVisitor(classVisitor) {
 
-  private val providableFields: MutableSet<FieldDescriptor>
-  private val providableMethods: MutableSet<MethodDescriptor>
+  private val providableFields = mutableSetOf<FieldDescriptor>()
+  private val providableMethods = mutableSetOf<MethodDescriptor>()
 
   private var isInjectorConfigurator = false
 
   init {
-    providableFields = HashSet(module.providers.size)
-    providableMethods = HashSet(module.providers.size)
-    for (provider in module.providers) {
-      val provisionPoint = provider.provisionPoint
+    for (provisionPoint in module.provisionPoints) {
       exhaustive(
         when (provisionPoint) {
           is ProvisionPoint.Field -> providableFields.add(provisionPoint.field.toFieldDescriptor())
@@ -90,8 +88,7 @@ class ModulePatcher(
   }
 
   private fun generateBridges() {
-    module.providers.forEach { provider ->
-      val provisionPoint = provider.provisionPoint
+    module.provisionPoints.forEach { provisionPoint ->
       val bridge = provisionPoint.bridge
       if (bridge != null) {
         newMethod(ACC_PUBLIC or ACC_SYNTHETIC, bridge.method.toMethodDescriptor()) {
@@ -127,7 +124,7 @@ class ModulePatcher(
   }
 
   private fun GeneratorAdapter.registerProviders() {
-    module.providers.forEach { provider ->
+    providers.forEach { provider ->
       loadArg(0)
       registerProvider(keyRegistry, provider) {
         if (!provider.requiresModule) {

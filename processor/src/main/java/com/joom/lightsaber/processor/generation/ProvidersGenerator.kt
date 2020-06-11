@@ -18,7 +18,6 @@ package com.joom.lightsaber.processor.generation
 
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.logging.getLogger
-import com.joom.lightsaber.processor.model.InjectionContext
 import io.michaelrocks.grip.ClassRegistry
 
 class ProvidersGenerator(
@@ -28,10 +27,8 @@ class ProvidersGenerator(
 
   private val logger = getLogger()
 
-  fun generate(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    injectionContext.components.asSequence()
-      .flatMap { it.getModulesWithDescendants() }
-      .flatMap { it.providers.asSequence() }
+  fun generate(generationContext: GenerationContext) {
+    generationContext.providers
       .distinctBy { it.type }
       .forEach { provider ->
         logger.debug("Generating provider {}", provider.type.internalName)

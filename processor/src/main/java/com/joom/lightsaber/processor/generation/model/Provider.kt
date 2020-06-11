@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber.processor.generation.model
 
+import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.mirrors.Type
 
 data class Provider(
   val type: Type.Object,
   val provisionPoint: ProvisionPoint,
-  val moduleType: Type.Object,
-  val scope: Scope
+  val moduleType: Type.Object
 ) {
 
-  val dependency: Dependency
-    get() = provisionPoint.dependency
+  val dependency: Dependency get() = provisionPoint.dependency
 }
 
 val Provider.requiresModule: Boolean
@@ -36,6 +36,3 @@ val Provider.requiresModule: Boolean
     is ProvisionPoint.Constructor,
     is ProvisionPoint.Binding -> false
   }
-
-val Provider.isConstructorProvider: Boolean
-  get() = provisionPoint is ProvisionPoint.Constructor

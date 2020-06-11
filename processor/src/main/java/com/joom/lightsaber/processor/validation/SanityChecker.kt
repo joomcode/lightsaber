@@ -27,7 +27,7 @@ import com.joom.lightsaber.processor.model.FactoryProvisionPoint
 import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
-import com.joom.lightsaber.processor.model.isConstructorProvider
+import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.Type
@@ -80,12 +80,21 @@ class SanityChecker(
     context.components.asSequence()
       .flatMap { component -> component.getModulesWithDescendants() }
       .distinctBy { module -> module.type }
-      .flatMap { module -> module.providers.asSequence() }
-      .forEach { provider ->
-        if (!provider.isConstructorProvider && provider.dependency.type.rawType == Type.Primitive.Void) {
-          errorReporter.reportError("Provider returns void: " + provider.provisionPoint)
+      .flatMap { module -> module.provisionPoints.asSequence() }
+      .forEach { provisionPoint ->
+        if (provisionPoint !is ProvisionPoint.Constructor && provisionPoint.dependency.type.rawType == Type.Primitive.Void) {
+          errorReporter.reportError("Provider returns void: ${composeProvisionPointDescription(provisionPoint)}")
         }
       }
+  }
+
+  private fun composeProvisionPointDescription(provisionPoint: ProvisionPoint): String {
+    return when (provisionPoint) {
+      is ProvisionPoint.Constructor -> "${provisionPoint.containerType.className}()"
+      is ProvisionPoint.Method -> "${provisionPoint.containerType.className}.${provisionPoint.injectionPoint.method.name}"
+      is ProvisionPoint.Field -> "${provisionPoint.containerType.className}.${provisionPoint.field.name}"
+      is ProvisionPoint.Binding -> "$provisionPoint.dependency -> $provisionPoint.binding"
+    }
   }
 
   private fun checkProvidableTargetIsConstructable(providableTarget: Type.Object) {

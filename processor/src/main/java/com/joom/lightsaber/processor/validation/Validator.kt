@@ -106,10 +106,10 @@ class Validator(
   ) {
     val newDependencyTypeToModuleMap = HashMap(dependencyTypeToModuleMap)
     component.getModulesWithDescendants().forEach { module ->
-      module.providers.forEach { provider ->
-        val oldModules = newDependencyTypeToModuleMap[provider.dependency]
+      module.provisionPoints.forEach { provisionPoint ->
+        val oldModules = newDependencyTypeToModuleMap[provisionPoint.dependency]
         val newModules = if (oldModules == null) listOf(module.type) else oldModules + listOf(module.type)
-        newDependencyTypeToModuleMap[provider.dependency] = newModules
+        newDependencyTypeToModuleMap[provisionPoint.dependency] = newModules
       }
     }
 

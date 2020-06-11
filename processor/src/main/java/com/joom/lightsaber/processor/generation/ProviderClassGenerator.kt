@@ -27,10 +27,10 @@ import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
+import com.joom.lightsaber.processor.generation.model.Provider
+import com.joom.lightsaber.processor.generation.model.requiresModule
 import com.joom.lightsaber.processor.model.Injectee
-import com.joom.lightsaber.processor.model.Provider
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.model.requiresModule
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.Type

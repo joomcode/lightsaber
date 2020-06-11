@@ -24,10 +24,10 @@ import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.model.Key
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
+import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Injectee
-import com.joom.lightsaber.processor.model.Provider
 import com.joom.lightsaber.processor.model.Scope
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.signature.GenericType
@@ -103,8 +103,8 @@ fun GeneratorAdapter.getInstance(keyRegistry: KeyRegistry, dependency: Dependenc
 fun GeneratorAdapter.registerProvider(keyRegistry: KeyRegistry, provider: Provider, providerCreator: () -> Unit) {
   val key = pushTypeOrKey(keyRegistry, provider.dependency)
 
-  when (provider.scope) {
-    is Scope.Class -> newDelegator(provider.scope.scopeType, providerCreator)
+  when (val scope = provider.provisionPoint.scope) {
+    is Scope.Class -> newDelegator(scope.scopeType, providerCreator)
     is Scope.None -> providerCreator()
   }
 

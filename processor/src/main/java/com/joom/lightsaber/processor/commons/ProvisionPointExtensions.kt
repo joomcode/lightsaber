@@ -17,8 +17,11 @@
 package com.joom.lightsaber.processor.commons
 
 import com.joom.lightsaber.processor.model.Converter
+import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Injectee
+import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import io.michaelrocks.grip.mirrors.Type
 
 fun ProvisionPoint.getInjectees(): Collection<Injectee> {
   return when (this) {
@@ -27,4 +30,23 @@ fun ProvisionPoint.getInjectees(): Collection<Injectee> {
     is ProvisionPoint.Field -> emptyList()
     is ProvisionPoint.Binding -> listOf(Injectee(binding, Converter.Instance))
   }
+}
+
+fun ProvisionPoint.getDependencies(context: InjectionContext, onlyWithInstanceConverter: Boolean = false): Collection<Dependency> {
+  return getProvidableTargetDependencies(onlyWithInstanceConverter) + getInjectableTargetDependencies(context, onlyWithInstanceConverter)
+}
+
+private fun ProvisionPoint.getProvidableTargetDependencies(onlyWithInstanceConverter: Boolean): Collection<Dependency> {
+  return getInjectees().getDependencies(onlyWithInstanceConverter)
+}
+
+private fun ProvisionPoint.getInjectableTargetDependencies(context: InjectionContext, onlyWithInstanceConverter: Boolean): Collection<Dependency> {
+  val dependencyType = dependency.type.rawType
+  if (dependencyType is Type.Object) {
+    context.findInjectableTargetByType(dependencyType)?.also { injectableTarget ->
+      return injectableTarget.injectionPoints.flatMap { it.getInjectees().getDependencies(onlyWithInstanceConverter) }
+    }
+  }
+
+  return emptyList()
 }

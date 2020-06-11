@@ -18,19 +18,21 @@ package com.joom.lightsaber.processor.generation.model
 
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.packageName
-import java.util.HashMap
 
 data class GenerationContext(
+  val providers: Collection<Provider>,
   val packageInvaders: Collection<PackageInvader>,
   val keyRegistry: KeyRegistry
 ) {
 
-  private val packageInvadersByPackageName = HashMap<String, PackageInvader>()
+  private val providersByModuleType = providers.groupBy { it.moduleType }
+  private val packageInvadersByPackageName = packageInvaders.associateBy { it.packageName }
 
-  init {
-    packageInvaders.associateByTo(packageInvadersByPackageName) { it.packageName }
+  fun findProvidersByModuleType(moduleType: Type.Object): Collection<Provider> {
+    return providersByModuleType[moduleType] ?: emptyList()
   }
 
-  fun findPackageInvaderByTargetType(targetType: Type.Object): PackageInvader? =
-    packageInvadersByPackageName[targetType.packageName]
+  fun findPackageInvaderByTargetType(targetType: Type.Object): PackageInvader? {
+    return packageInvadersByPackageName[targetType.packageName]
+  }
 }

@@ -23,6 +23,7 @@ import com.joom.lightsaber.processor.commons.exhaustive
 import com.joom.lightsaber.processor.generation.GenerationContextFactory
 import com.joom.lightsaber.processor.generation.Generator
 import com.joom.lightsaber.processor.generation.model.GenerationContext
+import com.joom.lightsaber.processor.generation.model.ProviderFactoryImpl
 import com.joom.lightsaber.processor.injection.Patcher
 import com.joom.lightsaber.processor.io.DirectoryFileSink
 import com.joom.lightsaber.processor.io.FileSource
@@ -65,9 +66,9 @@ class ClassProcessor(
 
   fun processClasses() {
     val injectionContext = performAnalysisAndValidation()
-    val generationContext =
-      GenerationContextFactory(grip.fileRegistry, grip.classRegistry, projectName)
-        .createGenerationContext(injectionContext)
+    val providerFactory = ProviderFactoryImpl(projectName)
+    val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, projectName)
+    val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
     copyAndPatchClasses(injectionContext, generationContext)
     performGeneration(injectionContext, generationContext)
@@ -101,7 +102,7 @@ class ClassProcessor(
             val classWriter = StandaloneClassWriter(
               classReader, ClassWriter.COMPUTE_MAXS or ClassWriter.COMPUTE_FRAMES, grip.classRegistry
             )
-            val classVisitor = Patcher(classWriter, grip.classRegistry, generationContext.keyRegistry, injectionContext)
+            val classVisitor = Patcher(classWriter, grip.classRegistry, injectionContext, generationContext)
             classReader.accept(classVisitor, ClassReader.SKIP_FRAMES)
             fileSink.createFile(path, classWriter.toByteArray())
           }
@@ -151,9 +152,9 @@ class ClassProcessor(
   private fun Module.dump(indent: String = "") {
     val nextIntent = "$indent  "
     logger.debug("${indent}Module: {}", type)
-    for (provider in providers) {
+    for (provisionPoint in provisionPoints) {
       exhaustive(
-        when (val provisionPoint = provider.provisionPoint) {
+        when (provisionPoint) {
           is ProvisionPoint.Constructor ->
             logger.debug("${nextIntent}Constructor: {}", provisionPoint.method)
           is ProvisionPoint.Method ->

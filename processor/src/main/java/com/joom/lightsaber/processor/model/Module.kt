@@ -21,7 +21,8 @@ import io.michaelrocks.grip.mirrors.Type
 data class Module(
   val type: Type.Object,
   val imports: Collection<Import>,
-  val providers: Collection<Provider>,
+  val provisionPoints: Collection<ProvisionPoint>,
+  val bindings: Collection<Binding>,
   val factories: Collection<Factory>,
   val contracts: Collection<Contract>
 ) {
