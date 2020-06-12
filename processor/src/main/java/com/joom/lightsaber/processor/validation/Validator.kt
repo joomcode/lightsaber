@@ -16,10 +16,13 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
@@ -55,6 +58,7 @@ class Validator(
         validateNoDependencyDuplicates(component, emptyMap())
         validateDependenciesAreResolved(component, DependencyResolver(context))
         validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
+        validateImportedContracts(component)
       }
 
     validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
@@ -201,6 +205,21 @@ class Validator(
     return when (injectionPoint) {
       is InjectionPoint.Field -> injectionPoint.field
       is InjectionPoint.Method -> injectionPoint.method
+    }
+  }
+
+  private fun validateImportedContracts(component: Component) {
+    for (import in component.getImportsWithDescendants()) {
+      if (import is Import.Contract) {
+        val contract = import.contract
+        for (provisionPoint in contract.provisionPoints) {
+          if (provisionPoint.injectee.converter is Converter.Adapter) {
+            if (provisionPoint.injectee.converter.adapterType != LightsaberTypes.LAZY_ADAPTER_TYPE) {
+              errorReporter.reportError("Unsupported wrapper type in imported contract: ${contract.type.className}.${provisionPoint.method.name}")
+            }
+          }
+        }
+      }
     }
   }
 }
