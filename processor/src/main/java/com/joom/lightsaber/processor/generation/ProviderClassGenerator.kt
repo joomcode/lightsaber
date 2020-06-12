@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.Types
@@ -266,7 +267,7 @@ class ProviderClassGenerator(
         is Converter.Identity -> invokeInterface(Types.PROVIDER_TYPE, GET_METHOD)
         is Converter.Instance -> Unit
         is Converter.Adapter ->
-          if (converter.adapterType == Types.LAZY_TYPE) {
+          if (converter.adapterType == LightsaberTypes.LAZY_ADAPTER_TYPE) {
             invokeInterface(Types.LAZY_TYPE, GET_METHOD)
           } else {
             error("Cannot import contract's dependency with adapter ${converter.adapterType.className}")
