@@ -40,6 +40,7 @@ val Provider.requiresModule: Boolean
     is ProviderMedium.Binding,
     is ProviderMedium.Factory,
     is ProviderMedium.Contract -> false
+    is ProviderMedium.ContractProvisionPoint -> true
   }
 
 val Provider.scope: Scope
@@ -47,5 +48,6 @@ val Provider.scope: Scope
     is ProviderMedium.ProvisionPoint -> medium.provisionPoint.scope
     is ProviderMedium.Binding,
     is ProviderMedium.Factory,
-    is ProviderMedium.Contract -> Scope.None
+    is ProviderMedium.Contract,
+    is ProviderMedium.ContractProvisionPoint -> Scope.None
   }

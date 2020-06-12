@@ -32,6 +32,8 @@ import com.joom.lightsaber.processor.generation.model.ProviderMedium
 import com.joom.lightsaber.processor.generation.model.requiresModule
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractProvisionPoint
+import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.ProvisionPoint
@@ -140,6 +142,7 @@ class ProviderClassGenerator(
           is ProviderMedium.Binding -> provideFromBinding(medium.binding)
           is ProviderMedium.Factory -> provideFactory(medium.factory)
           is ProviderMedium.Contract -> provideContract(medium.contract)
+          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractProvisionPoint)
         }
       )
 
@@ -240,6 +243,36 @@ class ProviderClassGenerator(
     loadThis()
     getField(provider.type, INJECTOR_FIELD)
     invokeConstructor(type, CONSTRUCTOR_WITH_INJECTOR)
+  }
+
+  private fun GeneratorAdapter.provideFromContractProvisionPoint(contractProvisionPoint: ContractProvisionPoint) {
+    loadThis()
+    getField(provider.type, MODULE_FIELD_NAME, provider.moduleType)
+    invokeInterface(provider.moduleType, contractProvisionPoint.method.toMethodDescriptor())
+
+    if (provider.dependency.type.rawType.isPrimitive) {
+      return
+    }
+
+    val resultIsNullLabel = newLabel()
+    dup()
+    ifNonNull(resultIsNullLabel)
+    throwException(NULL_POINTER_EXCEPTION_TYPE, "Provider method returned null")
+
+    visitLabel(resultIsNullLabel)
+
+    exhaustive(
+      when (val converter = contractProvisionPoint.injectee.converter) {
+        is Converter.Identity -> invokeInterface(Types.PROVIDER_TYPE, GET_METHOD)
+        is Converter.Instance -> Unit
+        is Converter.Adapter ->
+          if (converter.adapterType == Types.LAZY_TYPE) {
+            invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+          } else {
+            error("Cannot import contract's dependency with adapter ${converter.adapterType.className}")
+          }
+      }
+    )
   }
 
   companion object {

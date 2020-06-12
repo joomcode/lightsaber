@@ -19,7 +19,9 @@ package com.joom.lightsaber.processor.generation.model
 import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Factory
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.mirrors.Type
@@ -34,11 +36,12 @@ class ProviderFactoryImpl(
 ) : ProviderFactory {
 
   override fun createProvidersForModule(module: Module): Collection<Provider> {
-    val providers = ArrayList<Provider>(module.provisionPoints.size + module.factories.size + module.contracts.size)
+    val providers = ArrayList<Provider>()
     module.provisionPoints.mapIndexedTo(providers) { index, provisionPoint -> newProviderForProvisionPoint(module, provisionPoint, index) }
     module.bindings.mapTo(providers) { newBindingProvider(module, it) }
     module.factories.mapTo(providers) { newFactoryProvider(module, it) }
     module.contracts.mapTo(providers) { newContractProvider(module, it) }
+    module.imports.flatMapTo(providers) { createProvidersForImport(it) }
     return providers
   }
 
@@ -81,5 +84,23 @@ class ProviderFactoryImpl(
   private fun newContractProvider(module: Module, contract: Contract): Provider {
     val providerType = getObjectTypeByInternalName("${contract.type.internalName}\$ContractProvider\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.Contract(contract))
+  }
+
+  private fun createProvidersForImport(import: Import): Collection<Provider> {
+    return when (import) {
+      is Import.Module -> emptyList()
+      is Import.Contract -> createProvidersForContractImport(import)
+    }
+  }
+
+  private fun createProvidersForContractImport(import: Import.Contract): Collection<Provider> {
+    return import.contract.provisionPoints.mapIndexed { index, provisionPoint ->
+      newContractProvisionPointProvider(import.contract, provisionPoint, index)
+    }
+  }
+
+  private fun newContractProvisionPointProvider(contract: Contract, contractProvisionPoint: ContractProvisionPoint, index: Int): Provider {
+    val providerType = getObjectTypeByInternalName("${contract.type.internalName}\$MethodProvider\$$index\$$projectName")
+    return Provider(providerType, contract.type, ProviderMedium.ContractProvisionPoint(contractProvisionPoint))
   }
 }

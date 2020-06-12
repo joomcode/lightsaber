@@ -48,4 +48,11 @@ sealed class ProviderMedium {
 
     override val dependency: Dependency get() = contract.dependency
   }
+
+  data class ContractProvisionPoint(
+    val contractProvisionPoint: com.joom.lightsaber.processor.model.ContractProvisionPoint
+  ) : ProviderMedium() {
+
+    override val dependency: Dependency get() = contractProvisionPoint.injectee.dependency
+  }
 }
