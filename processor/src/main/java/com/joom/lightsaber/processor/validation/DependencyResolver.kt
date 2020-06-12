@@ -25,6 +25,7 @@ import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.FactoryInjectee
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
@@ -39,30 +40,6 @@ class DependencyResolver(
 
   init {
     providedDependencies += Dependency(GenericType.Raw(Types.INJECTOR_TYPE))
-  }
-
-  fun add(module: Module): DependencyResolver = apply {
-    for (provisionPoint in module.provisionPoints) {
-      add(provisionPoint)
-    }
-
-    for (binding in module.bindings) {
-      add(binding)
-    }
-
-    for (factory in module.factories) {
-      add(factory)
-    }
-
-    for (contract in module.contracts) {
-      add(contract)
-    }
-
-    add(module.modules)
-  }
-
-  fun add(modules: Iterable<Module>): DependencyResolver = apply {
-    modules.forEach { add(it) }
   }
 
   fun add(component: Component, includeAncestors: Boolean): DependencyResolver = apply {
@@ -98,6 +75,28 @@ class DependencyResolver(
     }
   }
 
+  private fun add(module: Module) {
+    for (provisionPoint in module.provisionPoints) {
+      add(provisionPoint)
+    }
+
+    for (binding in module.bindings) {
+      add(binding)
+    }
+
+    for (factory in module.factories) {
+      add(factory)
+    }
+
+    for (contract in module.contracts) {
+      add(contract, isImported = false)
+    }
+
+    for (import in module.imports) {
+      add(import)
+    }
+  }
+
   private fun add(provisionPoint: ProvisionPoint) {
     providedDependencies += provisionPoint.dependency.boxed()
     requiredDependencies += provisionPoint.getDependencies(context)
@@ -119,10 +118,18 @@ class DependencyResolver(
     }
   }
 
-  private fun add(contract: Contract) {
+  private fun add(contract: Contract, isImported: Boolean) {
     providedDependencies += contract.dependency
+    val dependencies = if (isImported) providedDependencies else requiredDependencies
     for (provisionPoint in contract.provisionPoints) {
-      requiredDependencies += provisionPoint.injectee.dependency.boxed()
+      dependencies += provisionPoint.injectee.dependency.boxed()
+    }
+  }
+
+  private fun add(import: Import) {
+    return when (import) {
+      is Import.Module -> add(import.module)
+      is Import.Contract -> add(import.contract, isImported = true)
     }
   }
 }
