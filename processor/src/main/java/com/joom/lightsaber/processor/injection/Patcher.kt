@@ -46,7 +46,7 @@ class Patcher(
     val type = getObjectTypeByInternalName(name)
 
     injectionContext.findModuleByType(type)?.also {
-      cv = ModulePatcher(cv, keyRegistry, it, generationContext.findProvidersByModuleType(it.type))
+      cv = ModulePatcher(cv, generationContext, it)
     }
 
     injectionContext.findInjectableTargetByType(type)?.also {
