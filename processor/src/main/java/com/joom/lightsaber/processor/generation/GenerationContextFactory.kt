@@ -28,6 +28,7 @@ import com.joom.lightsaber.processor.generation.model.PackageInvader
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderFactory
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 import io.michaelrocks.grip.ClassRegistry
@@ -64,9 +65,23 @@ class GenerationContextFactory(
 
   private fun findAllDependencies(modules: Collection<Module>): Collection<Dependency> {
     return modules.asSequence()
-      .flatMap { it.provisionPoints.asSequence() }
-      .map { it.dependency }
+      .flatMap { getModuleDependencies(it) }
       .toSet()
+  }
+
+  private fun getModuleDependencies(module: Module): Sequence<Dependency> {
+    return sequence {
+      module.provisionPoints.forEach { yield(it.dependency) }
+      module.bindings.forEach { yield(it.ancestor) }
+      module.factories.forEach { yield(it.dependency) }
+      module.contracts.forEach { yield(it.dependency) }
+      module.imports.forEach { import ->
+        if (import is Import.Contract) {
+          yield(import.contract.dependency)
+          import.contract.provisionPoints.forEach { yield(it.injectee.dependency) }
+        }
+      }
+    }
   }
 
   private fun composeProviders(modules: Collection<Module>): Collection<Provider> {
