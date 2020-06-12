@@ -126,13 +126,60 @@ class ContractInjectionTest {
     assertEquals(0, contract.valueLazy.get())
   }
 
+  @Test
+  fun testOverrideResolvesTypeAmbiguity() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = OverrideComponent1()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("String", injector.getInstance<OverrideContract1>().string)
+  }
+
+  @Test
+  fun testOverrideClearsQualifier() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = OverrideComponent2()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("String", injector.getInstance<OverrideContract2>().string)
+  }
+
+  @Test
+  fun testOverrideChangesType() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = OverrideComponent3()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("String", injector.getInstance<OverrideContract3>().string)
+  }
+
+  @Test
+  fun testInheritanceDoesNotChangeTypeAndQualifier() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = OverrideComponent4()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("String", injector.getInstance<OverrideContract4>().string)
+  }
+
+  @Test
+  fun testOverrideChangesQualifier() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = OverrideComponent5()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("String", injector.getInstance<OverrideContract5>().string)
+  }
+
   @Component
   class ContractComponent {
 
     @Provide
     fun provideBoolean(): Boolean = true
+
     @Provide
     fun provideByte(): Byte = 42
+
     @Provide
     fun provideChar(): Char = 'x'
     @Provide
@@ -319,5 +366,88 @@ class ContractInjectionTest {
     val value: Any
     val valueProvider: Provider<Any>
     val valueLazy: Lazy<Any>
+  }
+
+  @Component
+  class OverrideComponent1 {
+
+    @Provide
+    fun provideString(): String = "String"
+  }
+
+  @Component
+  class OverrideComponent2 {
+
+    @Provide
+    fun provideString(): String = "String"
+  }
+
+  @Component
+  class OverrideComponent3 {
+
+    @Provide
+    fun provideString(): String = "String"
+  }
+
+  @Component
+  class OverrideComponent4 {
+
+    @Provide
+    @Named("Base")
+    fun provideString(): String = "String"
+  }
+
+  @Component
+  class OverrideComponent5 {
+
+    @Provide
+    @Named("Annotated")
+    fun provideString(): String = "String"
+  }
+
+  interface BaseContract1 {
+    val string: CharSequence
+  }
+
+  interface BaseContract2 {
+    val string: String
+  }
+
+  interface BaseContract3 : BaseContract2 {
+    @get:Named("Base")
+    override val string: String
+  }
+
+  @Contract
+  @ProvidedBy(OverrideComponent1::class)
+  interface OverrideContract1 : BaseContract1, BaseContract2 {
+
+    override val string: String
+  }
+
+  @Contract
+  @ProvidedBy(OverrideComponent2::class)
+  interface OverrideContract2 : BaseContract1, BaseContract3 {
+
+    override val string: String
+  }
+
+  @Contract
+  @ProvidedBy(OverrideComponent3::class)
+  interface OverrideContract3 : BaseContract1 {
+
+    override val string: String
+  }
+
+  @Contract
+  @ProvidedBy(OverrideComponent4::class)
+  interface OverrideContract4 : BaseContract3
+
+  @Contract
+  @ProvidedBy(OverrideComponent5::class)
+  interface OverrideContract5 : BaseContract3 {
+
+    @get:Named("Annotated")
+    override val string: String
   }
 }

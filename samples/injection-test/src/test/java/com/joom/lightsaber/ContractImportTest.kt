@@ -175,6 +175,65 @@ class ContractImportTest {
     assertEquals("Annotated String", strings.annotatedString)
   }
 
+  @Test
+  fun testOverrideResolvesTypeAmbiguity() {
+    val lightsaber = Lightsaber.Builder().build()
+    val contract = OverrideContractImpl()
+    val component = OverrideComponent1(contract)
+    val injector = lightsaber.createInjector(component)
+
+    assertResolves(injector, String::class.java)
+    assertNotResolves(injector, CharSequence::class.java)
+  }
+
+  @Test
+  fun testOverrideClearsQualifier() {
+    val lightsaber = Lightsaber.Builder().build()
+    val contract = OverrideContractImpl()
+    val component = OverrideComponent2(contract)
+    val injector = lightsaber.createInjector(component)
+
+    assertResolves(injector, String::class.java)
+    assertNotResolves(injector, CharSequence::class.java)
+    assertNotResolves(injector, String::class.java, named("Base"))
+  }
+
+  @Test
+  fun testOverrideChangesType() {
+    val lightsaber = Lightsaber.Builder().build()
+    val contract = OverrideContractImpl()
+    val component = OverrideComponent3(contract)
+    val injector = lightsaber.createInjector(component)
+
+    assertResolves(injector, String::class.java)
+    assertNotResolves(injector, CharSequence::class.java)
+  }
+
+  @Test
+  fun testInheritanceDoesNotChangeTypeAndQualifier() {
+    val lightsaber = Lightsaber.Builder().build()
+    val contract = OverrideContractImpl()
+    val component = OverrideComponent4(contract)
+    val injector = lightsaber.createInjector(component)
+
+    assertNotResolves(injector, String::class.java)
+    assertNotResolves(injector, CharSequence::class.java)
+    assertResolves(injector, String::class.java, named("Base"))
+  }
+
+  @Test
+  fun testOverrideChangesQualifier() {
+    val lightsaber = Lightsaber.Builder().build()
+    val contract = OverrideContractImpl()
+    val component = OverrideComponent5(contract)
+    val injector = lightsaber.createInjector(component)
+
+    assertNotResolves(injector, String::class.java)
+    assertNotResolves(injector, CharSequence::class.java)
+    assertNotResolves(injector, String::class.java, named("Base"))
+    assertResolves(injector, String::class.java, named("Annotated"))
+  }
+
   @Component
   class ContractComponent(
     @Import
@@ -431,4 +490,55 @@ class ContractImportTest {
     val string: String,
     @Named("Annotated") val annotatedString: String
   )
+
+  @Component
+  class OverrideComponent1(@Import @Contract private val contract: OverrideContract1)
+
+  @Component
+  class OverrideComponent2(@Import @Contract private val contract: OverrideContract2)
+
+  @Component
+  class OverrideComponent3(@Import @Contract private val contract: OverrideContract3)
+
+  @Component
+  class OverrideComponent4(@Import @Contract private val contract: OverrideContract4)
+
+  @Component
+  class OverrideComponent5(@Import @Contract private val contract: OverrideContract5)
+
+  interface BaseContract1 {
+    val string: CharSequence
+  }
+
+  interface BaseContract2 {
+    val string: String
+  }
+
+  interface BaseContract3 : BaseContract2 {
+    @get:Named("Base")
+    override val string: String
+  }
+
+  interface OverrideContract1 : BaseContract1, BaseContract2 {
+    override val string: String
+  }
+
+  interface OverrideContract2 : BaseContract1, BaseContract3 {
+    override val string: String
+  }
+
+  interface OverrideContract3 : BaseContract1 {
+    override val string: String
+  }
+
+  interface OverrideContract4 : BaseContract3
+
+  interface OverrideContract5 : BaseContract3 {
+    @get:Named("Annotated")
+    override val string: String
+  }
+
+  class OverrideContractImpl : OverrideContract1, OverrideContract2, OverrideContract3, OverrideContract4, OverrideContract5 {
+    override val string: String get() = "String"
+  }
 }
