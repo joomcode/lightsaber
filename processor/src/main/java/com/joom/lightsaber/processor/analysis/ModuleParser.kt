@@ -102,13 +102,7 @@ class ModuleParserImpl(
       throw ModuleParserException("Module cannot have a type parameters: ${mirror.type.className}")
     }
 
-    val isComponentDefaultModule = when {
-      Types.COMPONENT_TYPE in mirror.annotations -> true
-      Types.MODULE_TYPE in mirror.annotations -> false
-      else -> throw ModuleParserException("Class ${mirror.type.className} is neither a component nor a module")
-    }
-
-    val imports = importParser.parseImports(mirror, moduleRegistry, importeeModuleTypes, isComponentDefaultModule)
+    val imports = importParser.parseImports(mirror, moduleRegistry, importeeModuleTypes)
 
     bridgeRegistry.clear()
     mirror.methods.forEach { bridgeRegistry.reserveMethod(it.toMethodDescriptor()) }

@@ -33,7 +33,7 @@ import java.io.File
 import java.util.HashMap
 
 interface ModuleRegistry {
-  fun getModule(moduleType: Type.Object): Module
+  fun getModule(moduleType: Type.Object, isImported: Boolean): Module
 }
 
 class ModuleRegistryImpl(
@@ -67,9 +67,9 @@ class ModuleRegistryImpl(
 
   private val moduleTypeStack = ArrayList<Type.Object>()
 
-  override fun getModule(moduleType: Type.Object): Module {
+  override fun getModule(moduleType: Type.Object, isImported: Boolean): Module {
     return withModuleTypeInStack(moduleType) {
-      maybeParseModule(moduleType)
+      maybeParseModule(moduleType, isImported)
     }
   }
 
@@ -140,7 +140,14 @@ class ModuleRegistryImpl(
     }
   }
 
-  private fun maybeParseModule(moduleType: Type.Object): Module {
+  private fun maybeParseModule(moduleType: Type.Object, isImported: Boolean): Module {
+    if (isImported) {
+      val mirror = grip.classRegistry.getClassMirror(moduleType)
+      if (Types.MODULE_TYPE !in mirror.annotations) {
+        errorReporter.reportError("Imported module ${moduleType.className} isn't annotated with @Module")
+      }
+    }
+
     return modulesByTypes.getOrPut(moduleType) {
       val externals = externals
       val importeeModuleTypes = externals.importeeModulesByImporterModules[moduleType].orEmpty()

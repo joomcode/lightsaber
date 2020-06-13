@@ -43,8 +43,7 @@ interface ImportParser {
   fun parseImports(
     mirror: ClassMirror,
     moduleRegistry: ModuleRegistry,
-    importeeModuleTypes: Collection<Type.Object>,
-    isComponentDefaultModule: Boolean
+    importeeModuleTypes: Collection<Type.Object>
   ): Collection<Import>
 }
 
@@ -59,15 +58,13 @@ class ImportParserImpl(
   override fun parseImports(
     mirror: ClassMirror,
     moduleRegistry: ModuleRegistry,
-    importeeModuleTypes: Collection<Type.Object>,
-    isComponentDefaultModule: Boolean
+    importeeModuleTypes: Collection<Type.Object>
   ): Collection<Import> {
     val isImportable = annotatedWith(Types.IMPORT_TYPE)
     val methodsQuery = grip select methods from mirror where (isImportable and methodType(not(returns(Type.Primitive.Void))))
     val fieldsQuery = grip select fields from mirror where isImportable
 
-    val kind = if (isComponentDefaultModule) "Component" else "Module"
-    logger.debug("{}: {}", kind, mirror.type.className)
+    logger.debug("{}", mirror.type.className)
     val methods = methodsQuery.execute()[mirror.type].orEmpty().mapNotNull { method ->
       logger.debug("  Method: {}", method)
       tryParseMethodImport(mirror, method, moduleRegistry)
@@ -80,7 +77,7 @@ class ImportParserImpl(
 
     val inverse = importeeModuleTypes.map { importeeType ->
       logger.debug("  Inverse import: {}", importeeType.className)
-      val module = moduleRegistry.getModule(importeeType)
+      val module = moduleRegistry.getModule(importeeType, isImported = true)
       Import.Module(module, ImportPoint.Inverse(mirror.type, importeeType))
     }
 
@@ -114,7 +111,7 @@ class ImportParserImpl(
 
   private fun tryParseModule(type: Type.Object, moduleRegistry: ModuleRegistry): Module? {
     return try {
-      moduleRegistry.getModule(type)
+      moduleRegistry.getModule(type, isImported = true)
     } catch (exception: ProcessingException) {
       errorReporter.reportError(exception)
       null
