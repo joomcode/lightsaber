@@ -17,12 +17,10 @@
 package com.joom.lightsaber.processor.analysis
 
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.ProcessingException
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.ImportPoint
-import com.joom.lightsaber.processor.model.Module
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.and
 import io.michaelrocks.grip.annotatedWith
@@ -99,22 +97,13 @@ class ImportParserImpl(
     return tryParseImport(field, type, ImportPoint.Field(field), moduleRegistry)
   }
 
-  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleRegistry: ModuleRegistry): Import? {
-    if (Types.CONTRACT_TYPE in element.annotations) {
+  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleRegistry: ModuleRegistry): Import {
+    return if (Types.CONTRACT_TYPE in element.annotations) {
       val contract = contractParser.parseContract(type)
-      return Import.Contract(contract, importPoint)
+      Import.Contract(contract, importPoint)
     } else {
-      val module = tryParseModule(type, moduleRegistry) ?: return null
-      return Import.Module(module, importPoint)
-    }
-  }
-
-  private fun tryParseModule(type: Type.Object, moduleRegistry: ModuleRegistry): Module? {
-    return try {
-      moduleRegistry.getModule(type, isImported = true)
-    } catch (exception: ProcessingException) {
-      errorReporter.reportError(exception)
-      null
+      val module = moduleRegistry.getModule(type, isImported = true)
+      Import.Module(module, importPoint)
     }
   }
 

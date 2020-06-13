@@ -166,14 +166,15 @@ class ModuleRegistryImpl(
     }
   }
 
-  private inline fun <T : Any> withModuleTypeInStack(moduleType: Type.Object, action: () -> T): T {
+  private inline fun withModuleTypeInStack(moduleType: Type.Object, action: () -> Module): Module {
     moduleTypeStack += moduleType
     return try {
       if (moduleTypeStack.indexOf(moduleType) == moduleTypeStack.lastIndex) {
         action()
       } else {
         val cycle = moduleTypeStack.joinToString(" -> ") { it.className }
-        throw ModuleParserException("Module cycle: $cycle")
+        errorReporter.reportError("Module cycle: $cycle")
+        Module(moduleType, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
       }
     } finally {
       val removedModuleType = moduleTypeStack.removeAt(moduleTypeStack.lastIndex)

@@ -16,7 +16,7 @@
 
 package com.joom.lightsaber.processor.analysis
 
-import com.joom.lightsaber.processor.ProcessingException
+import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.contains
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
@@ -65,7 +65,8 @@ class ModuleParserImpl(
   private val grip: Grip,
   private val importParser: ImportParser,
   private val bindingRegistry: BindingRegistry,
-  private val analyzerHelper: AnalyzerHelper
+  private val analyzerHelper: AnalyzerHelper,
+  private val errorReporter: ErrorReporter
 ) : ModuleParser {
 
   private val logger = getLogger()
@@ -99,7 +100,8 @@ class ModuleParserImpl(
     moduleRegistry: ModuleRegistry
   ): Module {
     if (mirror.signature.typeVariables.isNotEmpty()) {
-      throw ModuleParserException("Module cannot have a type parameters: ${mirror.type.className}")
+      errorReporter.reportError("Module cannot have a type parameters: ${mirror.type.className}")
+      return Module(mirror.type, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
     }
 
     val imports = importParser.parseImports(mirror, moduleRegistry, importeeModuleTypes)
@@ -202,5 +204,3 @@ class ModuleParserImpl(
       .build()
   }
 }
-
-class ModuleParserException(message: String) : ProcessingException(message)
