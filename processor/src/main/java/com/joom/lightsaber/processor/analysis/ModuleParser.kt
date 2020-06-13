@@ -65,8 +65,7 @@ class ModuleParserImpl(
   private val grip: Grip,
   private val importParser: ImportParser,
   private val bindingRegistry: BindingRegistry,
-  private val analyzerHelper: AnalyzerHelper,
-  private val projectName: String
+  private val analyzerHelper: AnalyzerHelper
 ) : ModuleParser {
 
   private val logger = getLogger()
