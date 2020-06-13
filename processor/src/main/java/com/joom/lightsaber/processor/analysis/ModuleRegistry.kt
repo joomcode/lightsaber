@@ -141,12 +141,13 @@ class ModuleRegistryImpl(
   }
 
   private fun maybeParseModule(moduleType: Type.Object): Module {
-    val externals = externals
-    val importeeModuleTypes = externals.importeeModulesByImporterModules[moduleType].orEmpty()
-    val providableTargetsForModuleType = externals.providableTargetsByModules[moduleType].orEmpty()
-    val factoriesForModuleType = externals.factoriesByModules[moduleType].orEmpty()
-    val importedContractsForModuleType = externals.contractsByModules[moduleType].orEmpty()
     return modulesByTypes.getOrPut(moduleType) {
+      val externals = externals
+      val importeeModuleTypes = externals.importeeModulesByImporterModules[moduleType].orEmpty()
+      val providableTargetsForModuleType = externals.providableTargetsByModules[moduleType].orEmpty()
+      val factoriesForModuleType = externals.factoriesByModules[moduleType].orEmpty()
+      val importedContractsForModuleType = externals.contractsByModules[moduleType].orEmpty()
+
       moduleParser.parseModule(
         moduleType,
         importeeModuleTypes,
