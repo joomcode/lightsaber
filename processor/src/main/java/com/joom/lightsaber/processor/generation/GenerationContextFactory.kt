@@ -25,8 +25,12 @@ import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Key
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.PackageInvader
+import com.joom.lightsaber.processor.generation.model.Provider
+import com.joom.lightsaber.processor.generation.model.ProviderFactory
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
+import com.joom.lightsaber.processor.model.Module
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.FileRegistry
 import io.michaelrocks.grip.mirrors.Type
@@ -39,23 +43,51 @@ import java.util.HashMap
 class GenerationContextFactory(
   private val fileRegistry: FileRegistry,
   private val classRegistry: ClassRegistry,
+  private val providerFactory: ProviderFactory,
   private val projectName: String
 ) {
 
   fun createGenerationContext(injectionContext: InjectionContext): GenerationContext {
-    val dependencies = findAllDependencies(injectionContext)
+    val modules = findAllModules(injectionContext)
+    val dependencies = findAllDependencies(modules)
     return GenerationContext(
+      composeProviders(modules),
       composePackageInvaders(dependencies),
       composeKeyRegistry(dependencies)
     )
   }
 
-  private fun findAllDependencies(context: InjectionContext): Collection<Dependency> {
+  private fun findAllModules(context: InjectionContext): Collection<Module> {
     return context.components.asSequence()
       .flatMap { it.getModulesWithDescendants() }
-      .flatMap { it.providers.asSequence() }
-      .map { it.dependency }
+      .toList()
+  }
+
+  private fun findAllDependencies(modules: Collection<Module>): Collection<Dependency> {
+    return modules.asSequence()
+      .flatMap { getModuleDependencies(it) }
       .toSet()
+  }
+
+  private fun getModuleDependencies(module: Module): Sequence<Dependency> {
+    return sequence {
+      module.provisionPoints.forEach { yield(it.dependency) }
+      module.bindings.forEach { yield(it.ancestor) }
+      module.factories.forEach { yield(it.dependency) }
+      module.contracts.forEach { yield(it.dependency) }
+      module.imports.forEach { import ->
+        if (import is Import.Contract) {
+          yield(import.contract.dependency)
+          import.contract.provisionPoints.forEach { yield(it.injectee.dependency) }
+        }
+      }
+    }
+  }
+
+  private fun composeProviders(modules: Collection<Module>): Collection<Provider> {
+    return modules
+      .distinctBy { it.type }
+      .flatMap { providerFactory.createProvidersForModule(it) }
   }
 
   private fun composePackageInvaders(dependencies: Collection<Dependency>): Collection<PackageInvader> {

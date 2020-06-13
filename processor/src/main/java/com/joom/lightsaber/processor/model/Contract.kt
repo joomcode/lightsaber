@@ -18,14 +18,9 @@ package com.joom.lightsaber.processor.model
 
 import io.michaelrocks.grip.mirrors.Type
 
-data class Module(
+data class Contract(
   val type: Type.Object,
-  val imports: Collection<Import>,
-  val provisionPoints: Collection<ProvisionPoint>,
-  val bindings: Collection<Binding>,
-  val factories: Collection<Factory>,
-  val contracts: Collection<Contract>
-) {
-
-  val modules: Collection<Module> = imports.mapNotNull { (it as? Import.Module)?.module }
-}
+  val implementationType: Type.Object,
+  val dependency: Dependency,
+  val provisionPoints: Collection<ContractProvisionPoint>
+)

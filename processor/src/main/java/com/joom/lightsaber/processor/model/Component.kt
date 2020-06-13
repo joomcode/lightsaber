@@ -29,21 +29,14 @@ data class Component(
     yieldModulesWithDescendants(listOf(defaultModule))
   }
 
-  fun getImportsWithDescendants(): Sequence<Import> = sequence {
-    yieldImportsWithDescendants(defaultModule.imports)
+  fun getImportsWithDescendants(): Sequence<Import> {
+    return getModulesWithDescendants().flatMap { it.imports.asSequence() }
   }
 
   private suspend fun SequenceScope<Module>.yieldModulesWithDescendants(modules: Iterable<Module>) {
     modules.forEach { module ->
       yield(module)
       yieldModulesWithDescendants(module.modules)
-    }
-  }
-
-  private suspend fun SequenceScope<Import>.yieldImportsWithDescendants(imports: Iterable<Import>) {
-    imports.forEach { import ->
-      yield(import)
-      yieldImportsWithDescendants(import.module.imports)
     }
   }
 }

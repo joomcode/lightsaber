@@ -16,13 +16,13 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.commons.boxed
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
-import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.FactoryInjectee
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
@@ -58,7 +58,7 @@ class Validator(
         validateNoDependencyDuplicates(component, emptyMap())
         validateDependenciesAreResolved(component, DependencyResolver(context))
         validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
-        validateFactories(component, DependencyResolver(context))
+        validateImportedContracts(component)
       }
 
     validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
@@ -106,10 +106,10 @@ class Validator(
   ) {
     val newDependencyTypeToModuleMap = HashMap(dependencyTypeToModuleMap)
     component.getModulesWithDescendants().forEach { module ->
-      module.providers.forEach { provider ->
-        val oldModules = newDependencyTypeToModuleMap[provider.dependency]
+      module.provisionPoints.forEach { provisionPoint ->
+        val oldModules = newDependencyTypeToModuleMap[provisionPoint.dependency]
         val newModules = if (oldModules == null) listOf(module.type) else oldModules + listOf(module.type)
-        newDependencyTypeToModuleMap[provider.dependency] = newModules
+        newDependencyTypeToModuleMap[provisionPoint.dependency] = newModules
       }
     }
 
@@ -161,44 +161,6 @@ class Validator(
     }
   }
 
-  private fun validateFactories(component: Component, dependencyResolver: DependencyResolver) {
-    dependencyResolver.add(component, includeAncestors = true)
-    component.getModulesWithDescendants()
-      .flatMap { module -> module.factories.asSequence() }
-      .distinctBy { factory -> factory.type }
-      .forEach { factory ->
-        for (provisionPoint in factory.provisionPoints) {
-          val injectees = provisionPoint.injectionPoint.injectees
-          for (injectee in injectees) {
-            val shouldBeResolved = shouldFactoryInjecteeBeResolved(injectee)
-            validateFactoryDependency(component, factory, injectee.dependency, dependencyResolver, shouldBeResolved)
-          }
-        }
-      }
-  }
-
-  private fun shouldFactoryInjecteeBeResolved(injectee: FactoryInjectee): Boolean {
-    return when (injectee) {
-      is FactoryInjectee.FromInjector -> true
-      is FactoryInjectee.FromMethod -> false
-    }
-  }
-
-  private fun validateFactoryDependency(
-    component: Component,
-    factory: Factory,
-    dependency: Dependency,
-    dependencyResolver: DependencyResolver,
-    shouldBeResolved: Boolean
-  ) {
-    val isResolved = dependencyResolver.isResolved(dependency)
-    if (!isResolved && shouldBeResolved) {
-      val factoryName = factory.type.className
-      val componentName = component.type.className
-      errorReporter.reportError("Unresolved dependency $dependency in factory $factoryName in component $componentName")
-    }
-  }
-
   private fun validateInjectionTargetsAreResolved(
     injectionTargets: Iterable<InjectionTarget>,
     components: Iterable<Component>
@@ -243,6 +205,21 @@ class Validator(
     return when (injectionPoint) {
       is InjectionPoint.Field -> injectionPoint.field
       is InjectionPoint.Method -> injectionPoint.method
+    }
+  }
+
+  private fun validateImportedContracts(component: Component) {
+    for (import in component.getImportsWithDescendants()) {
+      if (import is Import.Contract) {
+        val contract = import.contract
+        for (provisionPoint in contract.provisionPoints) {
+          if (provisionPoint.injectee.converter is Converter.Adapter) {
+            if (provisionPoint.injectee.converter.adapterType != LightsaberTypes.LAZY_ADAPTER_TYPE) {
+              errorReporter.reportError("Unsupported wrapper type in imported contract: ${contract.type.className}.${provisionPoint.method.name}")
+            }
+          }
+        }
+      }
     }
   }
 }

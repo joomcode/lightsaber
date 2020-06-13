@@ -16,7 +16,16 @@
 
 package com.joom.lightsaber.processor.model
 
-data class Import(
-  val module: Module,
-  val importPoint: ImportPoint
-)
+sealed class Import {
+  abstract val importPoint: ImportPoint
+
+  data class Module(
+    val module: com.joom.lightsaber.processor.model.Module,
+    override val importPoint: ImportPoint
+  ) : Import()
+
+  data class Contract(
+    val contract: com.joom.lightsaber.processor.model.Contract,
+    override val importPoint: ImportPoint
+  ) : Import()
+}

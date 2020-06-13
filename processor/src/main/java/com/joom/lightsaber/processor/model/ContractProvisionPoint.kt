@@ -16,26 +16,11 @@
 
 package com.joom.lightsaber.processor.model
 
+import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
 
-data class Provider(
-  val type: Type.Object,
-  val provisionPoint: ProvisionPoint,
-  val moduleType: Type.Object,
-  val scope: Scope
-) {
-
-  val dependency: Dependency
-    get() = provisionPoint.dependency
-}
-
-val Provider.requiresModule: Boolean
-  get() = when (provisionPoint) {
-    is ProvisionPoint.Method,
-    is ProvisionPoint.Field -> true
-    is ProvisionPoint.Constructor,
-    is ProvisionPoint.Binding -> false
-  }
-
-val Provider.isConstructorProvider: Boolean
-  get() = provisionPoint is ProvisionPoint.Constructor
+class ContractProvisionPoint(
+  val container: Type.Object,
+  val method: MethodMirror,
+  val injectee: Injectee
+)

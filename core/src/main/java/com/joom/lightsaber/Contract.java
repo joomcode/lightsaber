@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber;
 
-import io.michaelrocks.grip.mirrors.Type
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-data class Module(
-  val type: Type.Object,
-  val imports: Collection<Import>,
-  val provisionPoints: Collection<ProvisionPoint>,
-  val bindings: Collection<Binding>,
-  val factories: Collection<Factory>,
-  val contracts: Collection<Contract>
-) {
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-  val modules: Collection<Module> = imports.mapNotNull { (it as? Import.Module)?.module }
+@Target({ TYPE, FIELD, METHOD })
+@Retention(RUNTIME)
+@Documented
+public @interface Contract {
 }

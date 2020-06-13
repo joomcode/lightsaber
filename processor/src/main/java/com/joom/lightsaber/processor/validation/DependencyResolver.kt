@@ -19,10 +19,16 @@ package com.joom.lightsaber.processor.validation
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.boxed
 import com.joom.lightsaber.processor.commons.getDependencies
+import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.Factory
+import com.joom.lightsaber.processor.model.FactoryInjectee
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
+import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.mirrors.signature.GenericType
 
 class DependencyResolver(
@@ -34,19 +40,6 @@ class DependencyResolver(
 
   init {
     providedDependencies += Dependency(GenericType.Raw(Types.INJECTOR_TYPE))
-  }
-
-  fun add(module: Module): DependencyResolver = apply {
-    for (provider in module.providers) {
-      providedDependencies += provider.dependency.boxed()
-      requiredDependencies += provider.getDependencies(context)
-    }
-
-    add(module.modules)
-  }
-
-  fun add(modules: Iterable<Module>): DependencyResolver = apply {
-    modules.forEach { add(it) }
   }
 
   fun add(component: Component, includeAncestors: Boolean): DependencyResolver = apply {
@@ -79,6 +72,64 @@ class DependencyResolver(
   fun getUnresolvedDependenciesAndResolveAllDependencies(): Set<Dependency> {
     return getUnresolvedDependencies().also {
       resolveAllDependencies()
+    }
+  }
+
+  private fun add(module: Module) {
+    for (provisionPoint in module.provisionPoints) {
+      add(provisionPoint)
+    }
+
+    for (binding in module.bindings) {
+      add(binding)
+    }
+
+    for (factory in module.factories) {
+      add(factory)
+    }
+
+    for (contract in module.contracts) {
+      add(contract, isImported = false)
+    }
+
+    for (import in module.imports) {
+      add(import)
+    }
+  }
+
+  private fun add(provisionPoint: ProvisionPoint) {
+    providedDependencies += provisionPoint.dependency.boxed()
+    requiredDependencies += provisionPoint.getDependencies(context)
+  }
+
+  private fun add(binding: Binding) {
+    providedDependencies += binding.ancestor
+    requiredDependencies += binding.dependency
+  }
+
+  private fun add(factory: Factory) {
+    providedDependencies += factory.dependency
+    for (provisionPoint in factory.provisionPoints) {
+      for (injectee in provisionPoint.injectionPoint.injectees) {
+        if (injectee is FactoryInjectee.FromInjector) {
+          requiredDependencies += injectee.dependency.boxed()
+        }
+      }
+    }
+  }
+
+  private fun add(contract: Contract, isImported: Boolean) {
+    providedDependencies += contract.dependency
+    val dependencies = if (isImported) providedDependencies else requiredDependencies
+    for (provisionPoint in contract.provisionPoints) {
+      dependencies += provisionPoint.injectee.dependency.boxed()
+    }
+  }
+
+  private fun add(import: Import) {
+    return when (import) {
+      is Import.Module -> add(import.module)
+      is Import.Contract -> add(import.contract, isImported = true)
     }
   }
 }

@@ -23,6 +23,7 @@ import io.michaelrocks.grip.mirrors.Type
 sealed class ProvisionPoint {
   abstract val containerType: Type.Object
   abstract val dependency: Dependency
+  abstract val scope: Scope
   abstract val bridge: Method?
 
   interface AbstractMethod {
@@ -32,6 +33,7 @@ sealed class ProvisionPoint {
 
   data class Constructor(
     override val dependency: Dependency,
+    override val scope: Scope,
     override val injectionPoint: InjectionPoint.Method
   ) : ProvisionPoint(), AbstractMethod {
 
@@ -41,6 +43,7 @@ sealed class ProvisionPoint {
 
   data class Method(
     override val dependency: Dependency,
+    override val scope: Scope,
     override val injectionPoint: InjectionPoint.Method,
     override val bridge: Method?
   ) : ProvisionPoint(), AbstractMethod {
@@ -51,16 +54,8 @@ sealed class ProvisionPoint {
   data class Field(
     override val containerType: Type.Object,
     override val dependency: Dependency,
+    override val scope: Scope,
     override val bridge: Method?,
     val field: FieldMirror
   ) : ProvisionPoint()
-
-  data class Binding(
-    override val containerType: Type.Object,
-    override val dependency: Dependency,
-    val binding: Dependency
-  ) : ProvisionPoint() {
-
-    override val bridge: Method? get() = null
-  }
 }

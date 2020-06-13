@@ -17,7 +17,7 @@
 package com.joom.lightsaber.processor.injection
 
 import com.joom.lightsaber.processor.commons.Types
-import com.joom.lightsaber.processor.generation.model.KeyRegistry
+import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionTarget
 import io.michaelrocks.grip.ClassRegistry
@@ -29,9 +29,11 @@ import org.objectweb.asm.Opcodes
 class Patcher(
   classVisitor: ClassVisitor,
   private val classRegistry: ClassRegistry,
-  private val keyRegistry: KeyRegistry,
-  private val context: InjectionContext
+  private val injectionContext: InjectionContext,
+  private val generationContext: GenerationContext
 ) : ClassVisitor(Opcodes.ASM5, classVisitor) {
+
+  private val keyRegistry get() = generationContext.keyRegistry
 
   override fun visit(
     version: Int,
@@ -43,19 +45,19 @@ class Patcher(
   ) {
     val type = getObjectTypeByInternalName(name)
 
-    context.findModuleByType(type)?.also {
-      cv = ModulePatcher(cv, keyRegistry, it)
+    injectionContext.findModuleByType(type)?.also {
+      cv = ModulePatcher(cv, generationContext, it)
     }
 
-    context.findInjectableTargetByType(type)?.also {
+    injectionContext.findInjectableTargetByType(type)?.also {
       cv = InjectableTargetPatcher(cv, keyRegistry, it, it.hasSuperMembersInjector())
     }
 
-    context.findProvidableTargetByType(type)?.also {
+    injectionContext.findProvidableTargetByType(type)?.also {
       cv = ProvidableTargetPatcher(cv, it)
     }
 
-    context.findFactoryInjectionPointByType(type)?.also {
+    injectionContext.findFactoryInjectionPointByType(type)?.also {
       cv = FactoryInjectionPointPatcher(cv, it)
     }
 
@@ -72,6 +74,6 @@ class Patcher(
       return null
     }
 
-    return context.findInjectableTargetByType(superType) ?: findSuperInjectableTarget(superType)
+    return injectionContext.findInjectableTargetByType(superType) ?: findSuperInjectableTarget(superType)
   }
 }
