@@ -33,7 +33,8 @@ import io.michaelrocks.grip.mirrors.Type
 class Validator(
   private val classRegistry: ClassRegistry,
   private val errorReporter: ErrorReporter,
-  private val context: InjectionContext
+  private val context: InjectionContext,
+  private val dependencyResolverFactory: DependencyResolverFactory
 ) {
 
   fun validate() {
@@ -56,7 +57,7 @@ class Validator(
       .forEach { component ->
         validateNoModuleDuplicates(component, emptyMap())
         validateNoDependencyDuplicates(component, emptyMap())
-        validateDependenciesAreResolved(component, DependencyResolver(context))
+        validateDependenciesAreResolved(component)
         validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
         validateImportedContracts(component)
       }
@@ -137,9 +138,9 @@ class Validator(
     }
   }
 
-  private fun validateDependenciesAreResolved(component: Component, resolver: DependencyResolver) {
-    resolver.add(component, includeAncestors = true)
-    val unresolvedDependencies = resolver.getUnresolvedDependenciesAndResolveAllDependencies()
+  private fun validateDependenciesAreResolved(component: Component) {
+    val resolver = dependencyResolverFactory.getOrCreate(component)
+    val unresolvedDependencies = resolver.getUnresolvedDependencies()
     if (unresolvedDependencies.isNotEmpty()) {
       val componentName = component.type.className
       for (unresolvedDependency in unresolvedDependencies) {
@@ -165,8 +166,8 @@ class Validator(
     injectionTargets: Iterable<InjectionTarget>,
     components: Iterable<Component>
   ) {
-    val dependencyResolver = DependencyResolver(context)
-    components.forEach { dependencyResolver.add(it, includeAncestors = false) }
+    val dependencyResolver = dependencyResolverFactory.createEmpty()
+    components.forEach { dependencyResolver.add(dependencyResolverFactory.getOrCreate(it)) }
 
     injectionTargets.forEach { injectionTarget ->
       injectionTarget.injectionPoints.forEach { injectionPoint ->

@@ -35,6 +35,7 @@ import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.Validator
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.GripFactory
@@ -86,7 +87,8 @@ class ClassProcessor(
   private fun performAnalysisAndValidation(): InjectionContext {
     val analyzer = Analyzer(grip, errorReporter, projectName)
     val context = analyzer.analyze(inputs)
-    Validator(grip.classRegistry, errorReporter, context).validate()
+    val dependencyResolverFactory = DependencyResolverFactory(context)
+    Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory).validate()
     checkErrors()
     return context
   }

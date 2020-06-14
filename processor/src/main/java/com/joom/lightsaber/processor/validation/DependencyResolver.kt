@@ -31,48 +31,54 @@ import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.mirrors.signature.GenericType
 
-class DependencyResolver(
-  private val context: InjectionContext
-) {
+interface DependencyResolver {
+  fun getProvidedDependencies(): Set<Dependency>
+  fun getRequiredDependencies(): Set<Dependency>
 
-  private val providedDependencies = HashSet<Dependency>()
-  private val requiredDependencies = HashSet<Dependency>()
+  fun getResolvedDependencies(): Set<Dependency> {
+    return getProvidedDependencies()
+  }
+
+  fun getUnresolvedDependencies(): Set<Dependency> {
+    return getRequiredDependencies() - getProvidedDependencies()
+  }
+
+  fun isResolved(dependency: Dependency): Boolean {
+    return dependency.boxed() in getResolvedDependencies()
+  }
+}
+
+interface MutableDependencyResolver : DependencyResolver {
+  fun add(dependencyResolver: DependencyResolver)
+  fun add(component: Component)
+}
+
+class DependencyResolverImpl(
+  private val context: InjectionContext
+) : MutableDependencyResolver {
+
+  private val providedDependencies = hashSetOf<Dependency>()
+  private val requiredDependencies = hashSetOf<Dependency>()
 
   init {
     providedDependencies += Dependency(GenericType.Raw(Types.INJECTOR_TYPE))
   }
 
-  fun add(component: Component, includeAncestors: Boolean): DependencyResolver = apply {
-    if (includeAncestors && component.parent != null) {
-      val parentComponent = checkNotNull(context.findComponentByType(component.parent)) { "Component ${component.parent.className} not found" }
-      add(parentComponent, true)
-    }
+  override fun add(dependencyResolver: DependencyResolver) {
+    providedDependencies += dependencyResolver.getProvidedDependencies()
+    requiredDependencies += dependencyResolver.getRequiredDependencies()
+  }
 
+  override fun add(component: Component) {
     add(component.defaultModule)
   }
 
-  fun isResolved(dependency: Dependency): Boolean {
-    return dependency.boxed() in providedDependencies
+  override fun getProvidedDependencies(): Set<Dependency> {
+    return providedDependencies
   }
 
-  fun getResolvedDependencies(): Set<Dependency> {
-    return providedDependencies.toSet()
-  }
-
-  fun getUnresolvedDependencies(): Set<Dependency> {
-    return requiredDependencies.toHashSet().apply {
-      removeAll(providedDependencies)
-    }
-  }
-
-  fun resolveAllDependencies() {
-    requiredDependencies.clear()
-  }
-
-  fun getUnresolvedDependenciesAndResolveAllDependencies(): Set<Dependency> {
-    return getUnresolvedDependencies().also {
-      resolveAllDependencies()
-    }
+  override fun getRequiredDependencies(): Set<Dependency> {
+    return requiredDependencies
   }
 
   private fun add(module: Module) {
