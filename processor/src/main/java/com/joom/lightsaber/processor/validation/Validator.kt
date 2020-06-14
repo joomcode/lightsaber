@@ -58,7 +58,7 @@ class Validator(
         validateNoModuleDuplicates(component, emptyMap())
         validateNoDependencyDuplicates(component, emptyMap())
         validateDependenciesAreResolved(component)
-        validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
+        validateNoDependencyCycles(component)
         validateImportedContracts(component)
       }
 
@@ -149,9 +149,9 @@ class Validator(
     }
   }
 
-  private fun validateNoDependencyCycles(component: Component, builder: DependencyGraphBuilder) {
-    builder.add(component)
-    val dependencyGraph = builder.build()
+  private fun validateNoDependencyCycles(component: Component) {
+    val resolver = dependencyResolverFactory.getOrCreate(component)
+    val dependencyGraph = resolver.getDependencyGraph()
     val cycles = dependencyGraph.findCycles()
     if (cycles.isNotEmpty()) {
       val componentName = component.type.className

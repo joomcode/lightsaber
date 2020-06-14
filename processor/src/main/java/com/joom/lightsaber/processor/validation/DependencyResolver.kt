@@ -18,10 +18,15 @@ package com.joom.lightsaber.processor.validation
 
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.boxed
-import com.joom.lightsaber.processor.commons.getDependencies
+import com.joom.lightsaber.processor.commons.getInjectees
+import com.joom.lightsaber.processor.commons.rawType
+import com.joom.lightsaber.processor.graph.DirectedGraph
+import com.joom.lightsaber.processor.graph.HashDirectedGraph
+import com.joom.lightsaber.processor.graph.putAll
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.FactoryInjectee
@@ -29,6 +34,7 @@ import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.signature.GenericType
 
 interface DependencyResolver {
@@ -46,6 +52,8 @@ interface DependencyResolver {
   fun isResolved(dependency: Dependency): Boolean {
     return dependency.boxed() in getResolvedDependencies()
   }
+
+  fun getDependencyGraph(): DirectedGraph<Dependency>
 }
 
 interface MutableDependencyResolver : DependencyResolver {
@@ -60,13 +68,18 @@ class DependencyResolverImpl(
   private val providedDependencies = hashSetOf<Dependency>()
   private val requiredDependencies = hashSetOf<Dependency>()
 
+  private val dependencyGraph = HashDirectedGraph<Dependency>()
+
   init {
-    providedDependencies += Dependency(GenericType.Raw(Types.INJECTOR_TYPE))
+    val injectorDependency = Dependency(GenericType.Raw(Types.INJECTOR_TYPE))
+    providedDependencies += injectorDependency
+    dependencyGraph.put(injectorDependency)
   }
 
   override fun add(dependencyResolver: DependencyResolver) {
     providedDependencies += dependencyResolver.getProvidedDependencies()
     requiredDependencies += dependencyResolver.getRequiredDependencies()
+    dependencyGraph.putAll(dependencyResolver.getDependencyGraph())
   }
 
   override fun add(component: Component) {
@@ -79,6 +92,10 @@ class DependencyResolverImpl(
 
   override fun getRequiredDependencies(): Set<Dependency> {
     return requiredDependencies
+  }
+
+  override fun getDependencyGraph(): DirectedGraph<Dependency> {
+    return dependencyGraph
   }
 
   private fun add(module: Module) {
@@ -95,7 +112,7 @@ class DependencyResolverImpl(
     }
 
     for (contract in module.contracts) {
-      add(contract, isImported = false)
+      add(contract, isProvided = false)
     }
 
     for (import in module.imports) {
@@ -104,38 +121,68 @@ class DependencyResolverImpl(
   }
 
   private fun add(provisionPoint: ProvisionPoint) {
-    providedDependencies += provisionPoint.dependency.boxed()
-    requiredDependencies += provisionPoint.getDependencies(context)
+    addProvidedDependency(provisionPoint.dependency, includeInjectableTargetDependencies = true)
+    for (injectee in provisionPoint.getInjectees()) {
+      addRequiredDependency(injectee.dependency)
+      if (injectee.converter == Converter.Instance) {
+        dependencyGraph.put(provisionPoint.dependency, injectee.dependency)
+      }
+    }
   }
 
   private fun add(binding: Binding) {
-    providedDependencies += binding.ancestor
-    requiredDependencies += binding.dependency
+    addProvidedDependency(binding.ancestor)
+    addRequiredDependency(binding.dependency)
+    dependencyGraph.put(binding.ancestor, binding.dependency)
   }
 
   private fun add(factory: Factory) {
-    providedDependencies += factory.dependency
+    addProvidedDependency(factory.dependency)
     for (provisionPoint in factory.provisionPoints) {
       for (injectee in provisionPoint.injectionPoint.injectees) {
         if (injectee is FactoryInjectee.FromInjector) {
-          requiredDependencies += injectee.dependency.boxed()
+          addRequiredDependency(injectee.dependency)
         }
       }
     }
   }
 
-  private fun add(contract: Contract, isImported: Boolean) {
-    providedDependencies += contract.dependency
-    val dependencies = if (isImported) providedDependencies else requiredDependencies
-    for (provisionPoint in contract.provisionPoints) {
-      dependencies += provisionPoint.injectee.dependency.boxed()
+  private fun add(contract: Contract, isProvided: Boolean) {
+    addProvidedDependency(contract.dependency)
+    for (contractProvisionPoint in contract.provisionPoints) {
+      val dependency = contractProvisionPoint.injectee.dependency
+      if (isProvided) {
+        addProvidedDependency(dependency)
+      } else {
+        addRequiredDependency(dependency)
+      }
     }
   }
 
   private fun add(import: Import) {
     return when (import) {
       is Import.Module -> add(import.module)
-      is Import.Contract -> add(import.contract, isImported = true)
+      is Import.Contract -> add(import.contract, isProvided = true)
     }
+  }
+
+  private fun addProvidedDependency(dependency: Dependency, includeInjectableTargetDependencies: Boolean = false) {
+    providedDependencies += dependency.boxed()
+    if (includeInjectableTargetDependencies) {
+      val dependencyType = dependency.type.rawType
+      if (dependencyType is Type.Object) {
+        context.findInjectableTargetByType(dependencyType)?.also { injectableTarget ->
+          for (injectionPoint in injectableTarget.injectionPoints) {
+            for (injectee in injectionPoint.getInjectees()) {
+              addRequiredDependency(injectee.dependency)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private fun addRequiredDependency(dependency: Dependency) {
+    requiredDependencies += dependency.boxed()
   }
 }
