@@ -37,3 +37,7 @@ class ErrorReporter {
     errors.add(error)
   }
 }
+
+inline fun ErrorReporter.reportError(builder: StringBuilder.() -> Unit) {
+  reportError(buildString(builder))
+}
