@@ -19,18 +19,16 @@ package com.joom.lightsaber.processor.validation
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.getDescription
+import com.joom.lightsaber.processor.commons.getInjectees
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
-import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.reportError
 import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.Element
-import io.michaelrocks.grip.mirrors.Type
 
 class Validator(
   private val classRegistry: ClassRegistry,
@@ -39,9 +37,21 @@ class Validator(
   private val dependencyResolverFactory: DependencyResolverFactory
 ) {
 
+  private val leafComponents: Collection<Component> by lazy {
+    val leafComponentTypes = context.components.mapTo(LinkedHashSet()) { it.type }
+    for (component in context.components) {
+      if (component.parent != null) {
+        leafComponentTypes -= component.parent
+      }
+    }
+
+    context.components.filter { it.type in leafComponentTypes }
+  }
+
   fun validate() {
     performSanityChecks()
     validateComponents()
+    validateInjectionTargets()
   }
 
   private fun performSanityChecks() {
@@ -58,8 +68,6 @@ class Validator(
       validateNoDependencyCycles(component)
       validateImportedContracts(component)
     }
-
-    validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
   }
 
   private fun validateNoComponentCycles() {
@@ -149,53 +157,6 @@ class Validator(
     }
   }
 
-  private fun validateInjectionTargetsAreResolved(
-    injectionTargets: Iterable<InjectionTarget>,
-    components: Iterable<Component>
-  ) {
-    val dependencyResolver = dependencyResolverFactory.createEmpty()
-    components.forEach { dependencyResolver.add(dependencyResolverFactory.getOrCreate(it)) }
-
-    injectionTargets.forEach { injectionTarget ->
-      injectionTarget.injectionPoints.forEach { injectionPoint ->
-        validateInjectionPointIsResolved(injectionTarget.type, injectionPoint, dependencyResolver)
-      }
-    }
-  }
-
-  private fun validateInjectionPointIsResolved(
-    injectionTargetType: Type.Object,
-    injectionPoint: InjectionPoint,
-    dependencyResolver: DependencyResolver
-  ) {
-    val dependencies = getDependenciesForInjectionPoint(injectionPoint)
-    val element = getElementForInjectionPoint(injectionPoint)
-
-    val unresolvedDependencies = dependencies.filterNot { dependencyResolver.isResolved(it) }
-    if (unresolvedDependencies.isNotEmpty()) {
-      val injectionTargetName = injectionTargetType.className
-      unresolvedDependencies.forEach { dependency ->
-        errorReporter.reportError(
-          "Unresolved dependency $dependency in $element at $injectionTargetName"
-        )
-      }
-    }
-  }
-
-  private fun getDependenciesForInjectionPoint(injectionPoint: InjectionPoint): Collection<Dependency> {
-    return when (injectionPoint) {
-      is InjectionPoint.Field -> listOf(injectionPoint.injectee.dependency)
-      is InjectionPoint.Method -> injectionPoint.injectees.map { it.dependency }
-    }
-  }
-
-  private fun getElementForInjectionPoint(injectionPoint: InjectionPoint): Element<out Type> {
-    return when (injectionPoint) {
-      is InjectionPoint.Field -> injectionPoint.field
-      is InjectionPoint.Method -> injectionPoint.method
-    }
-  }
-
   private fun validateImportedContracts(component: Component) {
     for (import in component.getImportsWithDescendants()) {
       if (import is Import.Contract) {
@@ -225,5 +186,32 @@ class Validator(
     }
 
     return parentComponent
+  }
+
+  private fun validateInjectionTargets() {
+    for (injectableTarget in context.injectableTargets) {
+      if (context.findProvidableTargetByType(injectableTarget.type) == null) {
+        validateInjectionTargetDependenciesAreProvidedBySingleComponent(injectableTarget)
+      }
+    }
+  }
+
+  private fun validateInjectionTargetDependenciesAreProvidedBySingleComponent(injectionTarget: InjectionTarget) {
+    fun getDependencies(): Sequence<Dependency> = sequence {
+      for (injectionPoint in injectionTarget.injectionPoints) {
+        for (injectee in injectionPoint.getInjectees()) {
+          yield(injectee.dependency)
+        }
+      }
+    }
+
+    for (component in leafComponents) {
+      val resolver = dependencyResolverFactory.getOrCreate(component)
+      if (getDependencies().all { resolver.isResolved(it) }) {
+        return
+      }
+    }
+
+    errorReporter.reportError("Dependencies of ${injectionTarget.type.className} cannot be fully resolved by any component")
   }
 }
