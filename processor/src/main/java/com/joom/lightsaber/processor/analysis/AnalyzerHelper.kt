@@ -29,6 +29,7 @@ import com.joom.lightsaber.processor.model.Scope
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.Annotated
 import io.michaelrocks.grip.mirrors.AnnotationMirror
+import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
@@ -40,6 +41,7 @@ interface AnalyzerHelper {
   fun convertMethodParameterToInjectee(method: MethodMirror, parameterIndex: Int): Injectee
   fun convertMethodResultToInjectee(method: MethodMirror): Injectee
   fun convertFieldToInjectee(field: FieldMirror): Injectee
+  fun findConfigurationContractType(mirror: ClassMirror): Type.Object?
   fun findQualifier(annotated: Annotated): AnnotationMirror?
   fun findScope(annotated: Annotated): Scope
 }
@@ -69,6 +71,35 @@ class AnalyzerHelperImpl(
 
   override fun convertFieldToInjectee(field: FieldMirror): Injectee {
     return newInjectee(field.signature.type, field)
+  }
+
+  override fun findConfigurationContractType(mirror: ClassMirror): Type.Object? {
+    val superType = mirror.superType
+    if (superType != Types.CONTRACT_CONFIGURATION_TYPE) {
+      return null
+    }
+
+    val genericSuperType = mirror.signature.superType
+    if (genericSuperType !is GenericType.Parameterized) {
+      errorReporter.reportError("Invalid base class of ${mirror.type.className}: $genericSuperType")
+      return null
+    }
+
+    check(genericSuperType.type == Types.CONTRACT_CONFIGURATION_TYPE)
+    check(genericSuperType.typeArguments.size == 1)
+    val genericContractType = genericSuperType.typeArguments[0]
+    if (genericContractType !is GenericType.Raw) {
+      errorReporter.reportError("ContractConfiguration ${mirror.type.className} contains a generic type: $genericContractType")
+      return null
+    }
+
+    val contractType = genericContractType.type
+    if (contractType !is Type.Object) {
+      errorReporter.reportError("ContractConfiguration ${mirror.type.className} contains a non-class type: $contractType")
+      return null
+    }
+
+    return contractType
   }
 
   override fun findQualifier(annotated: Annotated): AnnotationMirror? {

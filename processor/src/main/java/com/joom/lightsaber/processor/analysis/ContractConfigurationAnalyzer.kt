@@ -16,15 +16,12 @@
 
 package com.joom.lightsaber.processor.analysis
 
-import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractConfiguration
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.classes
 import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 import io.michaelrocks.grip.superType
 import java.io.File
 
@@ -34,9 +31,9 @@ interface ContractConfigurationAnalyzer {
 
 class ContractConfigurationAnalyzerImpl(
   private val grip: Grip,
+  private val analyzerHelper: AnalyzerHelper,
   private val moduleRegistry: ModuleRegistry,
-  private val contractParser: ContractParser,
-  private val errorReporter: ErrorReporter
+  private val contractParser: ContractParser
 ) : ContractConfigurationAnalyzer {
 
   override fun analyze(files: Collection<File>): Collection<ContractConfiguration> {
@@ -49,29 +46,7 @@ class ContractConfigurationAnalyzerImpl(
   }
 
   private fun extractConfigurationContract(mirror: ClassMirror): Contract? {
-    val superType = mirror.superType
-    check(superType == Types.CONTRACT_CONFIGURATION_TYPE)
-
-    val genericSuperType = mirror.signature.superType
-    if (genericSuperType !is GenericType.Parameterized) {
-      errorReporter.reportError("Invalid base class of ${mirror.type.className}: $genericSuperType")
-      return null
-    }
-
-    check(genericSuperType.type == Types.CONTRACT_CONFIGURATION_TYPE)
-    check(genericSuperType.typeArguments.size == 1)
-    val genericContractType = genericSuperType.typeArguments[0]
-    if (genericContractType !is GenericType.Raw) {
-      errorReporter.reportError("ContractConfiguration ${mirror.type.className} contains a generic type: $genericContractType")
-      return null
-    }
-
-    val contractType = genericContractType.type
-    if (contractType !is Type.Object) {
-      errorReporter.reportError("ContractConfiguration ${mirror.type.className} contains a non-class type: $contractType")
-      return null
-    }
-
+    val contractType = analyzerHelper.findConfigurationContractType(mirror) ?: return null
     return contractParser.parseContract(contractType)
   }
 }

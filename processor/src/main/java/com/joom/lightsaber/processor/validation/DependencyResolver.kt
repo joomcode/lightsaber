@@ -100,7 +100,6 @@ class DependencyResolverImpl(
   override fun add(contractConfiguration: ContractConfiguration) {
     val path = DependencyResolverPath.from(contractConfiguration)
     addInjectorDependency(path)
-    add(contractConfiguration.contract, path, isImported = false)
     add(contractConfiguration.defaultModule, path)
   }
 
