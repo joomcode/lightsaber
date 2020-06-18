@@ -18,6 +18,7 @@ package com.joom.lightsaber.processor.validation
 
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
+import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Converter
@@ -26,6 +27,7 @@ import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
+import com.joom.lightsaber.processor.reportError
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.Element
 import io.michaelrocks.grip.mirrors.Type
@@ -47,92 +49,72 @@ class Validator(
   }
 
   private fun validateComponents() {
-    val componentGraph = buildComponentGraph(context.components)
-    val cycles = componentGraph.findCycles()
-    for (cycle in cycles) {
-      errorReporter.reportError("Component cycle ${cycle.joinToString(" -> ")}")
-    }
+    validateNoComponentCycles()
 
-    context.components
-      .forEach { component ->
-        validateNoModuleDuplicates(component, emptyMap())
-        validateNoDependencyDuplicates(component, emptyMap())
-        validateDependenciesAreResolved(component)
-        validateNoDependencyCycles(component)
-        validateImportedContracts(component)
-      }
+    for (component in context.components) {
+      validateNoModuleDuplicates(component)
+      validateNoDependencyDuplicates(component)
+      validateDependenciesAreResolved(component)
+      validateNoDependencyCycles(component)
+      validateImportedContracts(component)
+    }
 
     validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
   }
 
-  private fun validateNoModuleDuplicates(
-    component: Component,
-    moduleToComponentsMap: Map<Type.Object, List<Type.Object>>
-  ) {
-    val newModuleTypeToComponentMap = HashMap(moduleToComponentsMap)
-    component.getModulesWithDescendants().forEach { module ->
-      val oldComponents = newModuleTypeToComponentMap[module.type]
-      val newComponents = if (oldComponents == null) listOf(component.type) else oldComponents + component.type
-      newModuleTypeToComponentMap[module.type] = newComponents
-    }
-
-    if (component.subcomponents.isEmpty()) {
-      // FIXME: This code will report duplicate errors in some cases.
-      newModuleTypeToComponentMap.forEach { (moduleType, componentTypes) ->
-        if (componentTypes.size > 1) {
-          val moduleName = moduleType.className
-          val componentNames = componentTypes.joinToString { it.className }
-          errorReporter.reportError(
-            "Module $moduleName provided multiple times in a single component hierarchy: $componentNames"
-          )
-        }
-      }
-    } else {
-      component.subcomponents.forEach { subcomponentType ->
-        val subcomponent = context.findComponentByType(subcomponentType)
-        if (subcomponent != null) {
-          validateNoModuleDuplicates(subcomponent, newModuleTypeToComponentMap)
-        } else {
-          val subcomponentName = subcomponentType.className
-          val componentName = component.type.className
-          errorReporter.reportError("Subcomponent $subcomponentName of component $componentName not found")
+  private fun validateNoComponentCycles() {
+    val componentGraph = buildComponentGraph(context.components)
+    val cycles = componentGraph.findCycles()
+    for (cycle in cycles) {
+      errorReporter.reportError {
+        append("Component cycle:")
+        cycle.forEach { type ->
+          append("\n  ")
+          append(type.getDescription())
         }
       }
     }
   }
 
-  private fun validateNoDependencyDuplicates(
-    component: Component,
-    dependencyTypeToModuleMap: Map<Dependency, List<Type.Object>>
-  ) {
-    val newDependencyTypeToModuleMap = HashMap(dependencyTypeToModuleMap)
-    component.getModulesWithDescendants().forEach { module ->
-      module.provisionPoints.forEach { provisionPoint ->
-        val oldModules = newDependencyTypeToModuleMap[provisionPoint.dependency]
-        val newModules = if (oldModules == null) listOf(module.type) else oldModules + listOf(module.type)
-        newDependencyTypeToModuleMap[provisionPoint.dependency] = newModules
-      }
+  private fun validateNoModuleDuplicates(component: Component) {
+    validateNoDuplicates(component, DependencyResolver::getImportsWithPaths) { importType ->
+      append("Class ")
+      append(importType.getDescription())
+      append(" imported multiple times in a single component hierarchy:")
     }
+  }
 
-    if (component.subcomponents.isEmpty()) {
-      // FIXME: This code will report duplicate errors in some cases.
-      newDependencyTypeToModuleMap.forEach { (dependency, moduleTypes) ->
-        if (moduleTypes.size > 1) {
-          val moduleNames = moduleTypes.joinToString { it.className }
-          errorReporter.reportError(
-            "Dependency $dependency provided multiple times in a single component hierarchy by modules: $moduleNames"
-          )
-        }
-      }
-    } else {
-      component.subcomponents.forEach { subcomponentType ->
-        val subcomponent = context.findComponentByType(subcomponentType)
-        if (subcomponent != null) {
-          validateNoDependencyDuplicates(subcomponent, newDependencyTypeToModuleMap)
-        } else {
-          val subcomponentName = subcomponentType.className
-          val componentName = component.type.className
-          errorReporter.reportError("Subcomponent $subcomponentName of component $componentName not found")
+  private fun validateNoDependencyDuplicates(component: Component) {
+    validateNoDuplicates(component, DependencyResolver::getProvidedDependencies) { dependency ->
+      append("Dependency ")
+      append(dependency.getDescription())
+      append(" provided multiple times in a single component hierarchy:")
+    }
+  }
+
+  private inline fun <T : Any> validateNoDuplicates(
+    component: Component,
+    fetch: DependencyResolver.() -> Map<T, Collection<DependencyResolverPath>>,
+    message: StringBuilder.(T) -> Unit
+  ) {
+    val resolver = dependencyResolverFactory.getOrCreate(component)
+    val parentResolver = component.getParentComponent()?.let { dependencyResolverFactory.getOrCreate(it) }
+    val parentValues = parentResolver?.fetch()
+
+    for ((key, paths) in resolver.fetch()) {
+      if (paths.size > 1) {
+        val parentPathCount = parentValues?.get(key)?.size ?: 0
+        check(parentPathCount <= paths.size)
+        if (parentPathCount != paths.size) {
+          errorReporter.reportError {
+            message(key)
+            paths.forEachIndexed { index, path ->
+              append("\n")
+              append(index + 1)
+              append(".\n")
+              append(path.getDescription(indent = "  "))
+            }
+          }
         }
       }
     }
@@ -142,9 +124,10 @@ class Validator(
     val resolver = dependencyResolverFactory.getOrCreate(component)
     val unresolvedDependencies = resolver.getUnresolvedDependencies()
     if (unresolvedDependencies.isNotEmpty()) {
-      val componentName = component.type.className
-      for (unresolvedDependency in unresolvedDependencies) {
-        errorReporter.reportError("Unresolved dependency $unresolvedDependency in component $componentName")
+      for ((unresolvedDependency, paths) in unresolvedDependencies) {
+        for (path in paths) {
+          errorReporter.reportError("Unresolved dependency ${unresolvedDependency.getDescription()}:\n${path.getDescription("  ")}")
+        }
       }
     }
   }
@@ -154,10 +137,14 @@ class Validator(
     val dependencyGraph = resolver.getDependencyGraph()
     val cycles = dependencyGraph.findCycles()
     if (cycles.isNotEmpty()) {
-      val componentName = component.type.className
       for (cycle in cycles) {
-        val cycleString = cycle.joinToString(" -> ")
-        errorReporter.reportError("Dependency cycle $cycleString in component $componentName")
+        errorReporter.reportError {
+          append("Dependency cycle in component ${component.type.getDescription()}:")
+          cycle.forEach { type ->
+            append("\n  ")
+            append(type.getDescription())
+          }
+        }
       }
     }
   }
@@ -216,11 +203,27 @@ class Validator(
         for (provisionPoint in contract.provisionPoints) {
           if (provisionPoint.injectee.converter is Converter.Adapter) {
             if (provisionPoint.injectee.converter.adapterType != LightsaberTypes.LAZY_ADAPTER_TYPE) {
-              errorReporter.reportError("Unsupported wrapper type in imported contract: ${contract.type.className}.${provisionPoint.method.name}")
+              errorReporter.reportError {
+                append("Unsupported wrapper type in imported contract ")
+                append(contract.type.getDescription())
+                append(":\n  ")
+                append(provisionPoint.method.getDescription())
+              }
             }
           }
         }
       }
     }
+  }
+
+  private fun Component.getParentComponent(): Component? {
+    val parentType = parent ?: return null
+    val parentComponent = context.findComponentByType(parentType)
+    if (parentComponent == null) {
+      errorReporter.reportError("Parent component ${parentType.getDescription()} of component ${type.getDescription()} not found")
+      return null
+    }
+
+    return parentComponent
   }
 }
