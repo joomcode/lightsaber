@@ -20,6 +20,7 @@ import io.michaelrocks.grip.mirrors.Type
 
 data class InjectionContext(
   val components: Collection<Component>,
+  val contractConfigurations: Collection<ContractConfiguration>,
   val injectableTargets: Collection<InjectionTarget>,
   val providableTargets: Collection<InjectionTarget>,
   val factories: Collection<Factory>,
@@ -28,13 +29,27 @@ data class InjectionContext(
 ) {
 
   private val componentsByType = components.associateBy { it.type }
-  private val modulesByType = components.asSequence().flatMap { it.getModulesWithDescendants() }.associateBy { it.type }
+  private val contractConfigurationsByType = contractConfigurations.associateBy { it.type }
+  private val modulesByType = getModulesWithDescendants().associateBy { it.type }
   private val injectableTargetsByType = injectableTargets.associateBy { it.type }
   private val providableTargetsByType = providableTargets.associateBy { it.type }
   private val factoryInjectionPointsByType = factories.flatMap { it.provisionPoints }.map { it.injectionPoint }.associateBy { it.containerType }
 
+  fun getModulesWithDescendants(): Sequence<Module> {
+    return components.asSequence().flatMap { it.getModulesWithDescendants() } +
+        contractConfigurations.asSequence().flatMap { it.getModulesWithDescendants() }
+  }
+
+  fun getImportsWithDescendants(): Sequence<Import> {
+    return components.asSequence().flatMap { it.getImportsWithDescendants() } +
+        contractConfigurations.asSequence().flatMap { it.getImportsWithDescendants() }
+  }
+
   fun findComponentByType(componentType: Type.Object): Component? =
     componentsByType[componentType]
+
+  fun findContractConfigurationByType(contractConfigurationType: Type.Object): ContractConfiguration? =
+    contractConfigurationsByType[contractConfigurationType]
 
   fun findModuleByType(moduleType: Type.Object): Module? =
     modulesByType[moduleType]
