@@ -20,6 +20,7 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.AccessFlagStringifier
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.getAncestors
+import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Factory
@@ -31,6 +32,7 @@ import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.Type
+import io.michaelrocks.grip.mirrors.isAbstract
 import io.michaelrocks.grip.mirrors.isDefaultConstructor
 import io.michaelrocks.grip.mirrors.isInterface
 import io.michaelrocks.grip.mirrors.isStatic
@@ -52,6 +54,7 @@ class SanityChecker(
     checkModulesWithImportedByAreDefaultConstructible(context)
     checkFactories(context)
     checkBindingsConnectValidClasses(context)
+    checkContractConfigurationsAreConcrete(context)
   }
 
   private fun checkStaticInjectionPoints(context: InjectionContext) {
@@ -254,6 +257,15 @@ class SanityChecker(
     if (ancestorType !in classRegistry.getAncestors(mirror.type)) {
       errorReporter.reportError("@ProvidedAs binding's argument ${ancestorType.className} isn't a super type of the host class ${mirror.type.className}")
       return
+    }
+  }
+
+  private fun checkContractConfigurationsAreConcrete(context: InjectionContext) {
+    for (contractConfiguration in context.contractConfigurations) {
+      val mirror = classRegistry.getClassMirror(contractConfiguration.type)
+      if (mirror.isInterface || mirror.isAbstract) {
+        errorReporter.reportError("Contract configuration ${mirror.getDescription()} should be a concrete class")
+      }
     }
   }
 }
