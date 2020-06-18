@@ -20,6 +20,7 @@ import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractConfiguration
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
@@ -110,8 +111,16 @@ data class DependencyResolverPath(
       return DependencyResolverPath(null, newSegment(component))
     }
 
+    fun from(contractConfiguration: ContractConfiguration): DependencyResolverPath {
+      return DependencyResolverPath(null, newSegment(contractConfiguration))
+    }
+
     private fun newSegment(component: Component): String {
       return newSegment(component.type, "Component")
+    }
+
+    private fun newSegment(contractConfiguration: ContractConfiguration): String {
+      return newSegment(contractConfiguration.type, "ContractConfiguration")
     }
 
     private fun newSegment(module: Module): String {

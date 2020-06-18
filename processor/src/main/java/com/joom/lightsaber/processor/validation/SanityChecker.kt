@@ -47,7 +47,8 @@ class SanityChecker(
     checkProvidableTargetsAreConstructable(context)
     checkProviderMethodsReturnValues(context)
     checkSubcomponentsAreComponents(context)
-    checkComponentsAndModulesExtendObject(context)
+    checkComponentsExtendObject(context)
+    checkModulesExtendObject(context)
     checkModulesWithImportedByAreDefaultConstructible(context)
     checkFactories(context)
     checkBindingsConnectValidClasses(context)
@@ -77,8 +78,7 @@ class SanityChecker(
   }
 
   private fun checkProviderMethodsReturnValues(context: InjectionContext) {
-    context.components.asSequence()
-      .flatMap { component -> component.getModulesWithDescendants() }
+    context.getModulesWithDescendants()
       .distinctBy { module -> module.type }
       .flatMap { module -> module.provisionPoints.asSequence() }
       .forEach { provisionPoint ->
@@ -122,18 +122,20 @@ class SanityChecker(
     }
   }
 
-  private fun checkComponentsAndModulesExtendObject(context: InjectionContext) {
+  private fun checkComponentsExtendObject(context: InjectionContext) {
     for (component in context.components) {
       checkClassExtendsObject(component.type)
-      component.getModulesWithDescendants().forEach { module ->
-        checkClassExtendsObject(module.type)
-      }
+    }
+  }
+
+  private fun checkModulesExtendObject(context: InjectionContext) {
+    for (module in context.getModulesWithDescendants()) {
+      checkClassExtendsObject(module.type)
     }
   }
 
   private fun checkModulesWithImportedByAreDefaultConstructible(context: InjectionContext) {
-    context.components.asSequence()
-      .flatMap { component -> component.getImportsWithDescendants() }
+    context.getImportsWithDescendants()
       .map { import -> import.importPoint }
       .filterIsInstance<ImportPoint.Inverse>()
       .distinctBy { importPoint -> importPoint.importeeType }

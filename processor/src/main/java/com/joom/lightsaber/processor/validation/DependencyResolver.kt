@@ -26,6 +26,7 @@ import com.joom.lightsaber.processor.graph.putAll
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractConfiguration
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
@@ -66,6 +67,7 @@ interface DependencyResolver {
 interface MutableDependencyResolver : DependencyResolver {
   fun add(dependencyResolver: DependencyResolver)
   fun add(component: Component)
+  fun add(contractConfiguration: ContractConfiguration)
 }
 
 class DependencyResolverImpl(
@@ -91,11 +93,15 @@ class DependencyResolverImpl(
 
   override fun add(component: Component) {
     val path = DependencyResolverPath.from(component)
-
-    providedDependencies[INJECTOR_DEPENDENCY] = mutableListOf(path)
-    dependencyGraph.put(INJECTOR_DEPENDENCY)
-
+    addInjectorDependency(path)
     add(component.defaultModule, path)
+  }
+
+  override fun add(contractConfiguration: ContractConfiguration) {
+    val path = DependencyResolverPath.from(contractConfiguration)
+    addInjectorDependency(path)
+    add(contractConfiguration.contract, path, isImported = false)
+    add(contractConfiguration.defaultModule, path)
   }
 
   override fun getImportsWithPaths(): Map<Type.Object, Collection<DependencyResolverPath>> {
@@ -228,6 +234,11 @@ class DependencyResolverImpl(
 
   private fun addImport(type: Type.Object, path: DependencyResolverPath) {
     imports.getOrPut(type, ::ArrayList).add(path)
+  }
+
+  private fun addInjectorDependency(path: DependencyResolverPath) {
+    providedDependencies[INJECTOR_DEPENDENCY] = mutableListOf(path)
+    dependencyGraph.put(INJECTOR_DEPENDENCY)
   }
 
   private fun addProvidedDependency(dependency: Dependency, path: DependencyResolverPath, includeInjectableTargetDependencies: Boolean = false) {
