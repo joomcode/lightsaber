@@ -24,9 +24,13 @@ data class InjectionContext(
   val injectableTargets: Collection<InjectionTarget>,
   val providableTargets: Collection<InjectionTarget>,
   val factories: Collection<Factory>,
-  val bindings: Collection<Binding>,
-  val contracts: Collection<Contract>
+  val bindings: Collection<Binding>
 ) {
+
+  val contracts: Collection<Contract> = getModulesWithDescendants().asSequence()
+    .flatMap { it.contracts.asSequence() }
+    .distinctBy { it.type }
+    .toList()
 
   private val componentsByType = components.associateBy { it.type }
   private val contractConfigurationsByType = contractConfigurations.associateBy { it.type }
