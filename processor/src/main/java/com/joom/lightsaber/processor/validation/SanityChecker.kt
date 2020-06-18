@@ -49,7 +49,6 @@ class SanityChecker(
     checkProvidableTargetsAreConstructable(context)
     checkProviderMethodsReturnValues(context)
     checkSubcomponentsAreComponents(context)
-    checkComponentsExtendObject(context)
     checkModulesExtendObject(context)
     checkModulesWithImportedByAreDefaultConstructible(context)
     checkFactories(context)
@@ -125,15 +124,20 @@ class SanityChecker(
     }
   }
 
-  private fun checkComponentsExtendObject(context: InjectionContext) {
-    for (component in context.components) {
-      checkClassExtendsObject(component.type)
+  private fun checkModulesExtendObject(context: InjectionContext) {
+    // Components are also validated here because every component is a module.
+    for (module in context.getModulesWithDescendants()) {
+      checkModuleSuperClass(module.type)
     }
   }
 
-  private fun checkModulesExtendObject(context: InjectionContext) {
-    for (module in context.getModulesWithDescendants()) {
-      checkClassExtendsObject(module.type)
+  private fun checkModuleSuperClass(type: Type.Object) {
+    val mirror = classRegistry.getClassMirror(type)
+    if (mirror.superType != Types.OBJECT_TYPE && mirror.superType != Types.CONTRACT_CONFIGURATION_TYPE) {
+      errorReporter.reportError(
+        "${type.className} has a super type of ${mirror.type.className} instead of " +
+            "${Types.OBJECT_TYPE.className} or ${Types.CONTRACT_CONFIGURATION_TYPE.className}"
+      )
     }
   }
 
@@ -149,13 +153,6 @@ class SanityChecker(
           errorReporter.reportError("Module ${type.className} with @ImportedBy annotation must have a default constructor")
         }
       }
-  }
-
-  private fun checkClassExtendsObject(type: Type.Object) {
-    val mirror = classRegistry.getClassMirror(type)
-    if (mirror.superType != Types.OBJECT_TYPE) {
-      errorReporter.reportError("${type.className} has a super type of ${mirror.type.className} instead of Object")
-    }
   }
 
   private fun checkFactories(context: InjectionContext) {
