@@ -171,6 +171,18 @@ class ContractInjectionTest {
     assertEquals("String", injector.getInstance<OverrideContract5>().string)
   }
 
+  @Test
+  fun testContractsWithIdenticalDependencies() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = SameComponent()
+    val injector = lightsaber.createInjector(component)
+    val contract1 = injector.getInstance<SameContract1>()
+    val contract2 = injector.getInstance<SameContract2>()
+
+    assertEquals("String", contract1.string)
+    assertEquals("String", contract2.string)
+  }
+
   @Component
   class ContractComponent {
 
@@ -449,5 +461,26 @@ class ContractInjectionTest {
 
     @get:Named("Annotated")
     override val string: String
+  }
+
+  @Component
+  class SameComponent {
+
+    @Provide
+    fun provideString(): String = "String"
+  }
+
+  @Contract
+  @ProvidedBy(SameComponent::class)
+  interface SameContract1 {
+
+    val string: String
+  }
+
+  @Contract
+  @ProvidedBy(SameComponent::class)
+  interface SameContract2 {
+
+    val string: String
   }
 }
