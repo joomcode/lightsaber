@@ -28,4 +28,19 @@ data class Module(
 ) {
 
   val modules: Collection<Module> = imports.mapNotNull { (it as? Import.Module)?.module }
+
+  fun getModulesWithDescendants(): Sequence<Module> = sequence {
+    yieldModulesWithDescendants(listOf(this@Module))
+  }
+
+  fun getImportsWithDescendants(): Sequence<Import> {
+    return getModulesWithDescendants().flatMap { it.imports.asSequence() }
+  }
+
+  private suspend fun SequenceScope<Module>.yieldModulesWithDescendants(modules: Iterable<Module>) {
+    modules.forEach { module ->
+      yield(module)
+      yieldModulesWithDescendants(module.modules)
+    }
+  }
 }

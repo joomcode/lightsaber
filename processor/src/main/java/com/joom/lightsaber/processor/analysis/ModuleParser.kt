@@ -64,6 +64,7 @@ interface ModuleParser {
 class ModuleParserImpl(
   private val grip: Grip,
   private val importParser: ImportParser,
+  private val contractParser: ContractParser,
   private val bindingRegistry: BindingRegistry,
   private val analyzerHelper: AnalyzerHelper,
   private val errorReporter: ErrorReporter
@@ -112,7 +113,8 @@ class ModuleParserImpl(
     val provisionPoints = createProvisionPoints(mirror, providableTargets)
     val dependencies = provisionPoints.map { it.dependency } + factories.map { it.dependency } + contracts.map { it.dependency }
     val bindings = dependencies.flatMap { bindingRegistry.findBindingsByDependency(it) }
-    return Module(mirror.type, imports, provisionPoints, bindings, factories, contracts)
+    val configurationContract = analyzerHelper.findConfigurationContractType(mirror)?.let { contractParser.parseContract(it) }
+    return Module(mirror.type, imports, provisionPoints, bindings, factories, contracts + listOfNotNull(configurationContract))
   }
 
   private fun createProvisionPoints(mirror: ClassMirror, providableTargets: Collection<InjectionTarget>): Collection<ProvisionPoint> {

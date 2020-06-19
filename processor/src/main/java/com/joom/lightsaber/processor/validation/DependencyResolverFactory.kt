@@ -17,6 +17,7 @@
 package com.joom.lightsaber.processor.validation
 
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.ContractConfiguration
 import com.joom.lightsaber.processor.model.InjectionContext
 import io.michaelrocks.grip.mirrors.Type
 
@@ -25,6 +26,7 @@ class DependencyResolverFactory(
 ) {
 
   private val dependencyResolversByComponentType = mutableMapOf<Type.Object, DependencyResolver>()
+  private val dependencyResolversByContractConfigurationType = mutableMapOf<Type.Object, DependencyResolver>()
 
   fun createEmpty(): MutableDependencyResolver {
     return DependencyResolverImpl(injectionContext)
@@ -37,6 +39,14 @@ class DependencyResolverFactory(
           resolver.addComponentByType(component.parent)
         }
         resolver.add(component)
+      }
+    }
+  }
+
+  fun getOrCreate(contractConfiguration: ContractConfiguration): DependencyResolver {
+    return dependencyResolversByContractConfigurationType.getOrPut(contractConfiguration.type) {
+      createEmpty().also { resolver ->
+        resolver.add(contractConfiguration)
       }
     }
   }

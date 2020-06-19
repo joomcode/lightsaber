@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber.internal;
 
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.lightsaber.Injector;
 
-data class Component(
-  val type: Type.Object,
-  val parent: Type.Object?,
-  val defaultModule: Module,
-  val subcomponents: Collection<Type.Object>
-) {
-
-  fun getModulesWithDescendants(): Sequence<Module> = defaultModule.getModulesWithDescendants()
-  fun getImportsWithDescendants(): Sequence<Import> = defaultModule.getImportsWithDescendants()
+public interface ContractCreator<T> {
+  T createContract(Injector injector);
 }

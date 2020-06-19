@@ -30,6 +30,9 @@ import com.joom.lightsaber.processor.io.FileSource
 import com.joom.lightsaber.processor.io.IoFactory
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractConfiguration
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
@@ -137,7 +140,12 @@ class ClassProcessor(
   }
 
   private fun InjectionContext.dump() {
+    if (!logger.isDebugEnabled) {
+      return
+    }
+
     components.forEach { it.dump() }
+    contractConfigurations.forEach { it.dump() }
     injectableTargets.forEach { it.dump("Injectable") }
     providableTargets.forEach { it.dump("Providable") }
   }
@@ -149,6 +157,12 @@ class ClassProcessor(
     for (subcomponent in subcomponents) {
       logger.debug("  Subcomponent: {}", subcomponent)
     }
+  }
+
+  private fun ContractConfiguration.dump() {
+    logger.debug("Contract Configuration: {}", type)
+    contract.dump("  ")
+    defaultModule.dump("  ")
   }
 
   private fun Module.dump(indent: String = "") {
@@ -167,8 +181,35 @@ class ClassProcessor(
       )
     }
 
-    for (module in modules) {
-      module.dump(nextIntent)
+    for (binding in bindings) {
+      logger.debug("${nextIntent}Binding: {} -> {}", binding.ancestor, binding.dependency)
+    }
+
+    for (factory in factories) {
+      logger.debug("${nextIntent}Factory: {}", factory.type)
+    }
+
+    for (contract in contracts) {
+      contract.dump(nextIntent)
+    }
+
+    logger.debug("${nextIntent}Imports:")
+    val importIndent = "  $nextIntent"
+    for (import in imports) {
+      exhaustive(
+        when (import) {
+          is Import.Module -> import.module.dump(importIndent)
+          is Import.Contract -> import.contract.dump(importIndent)
+        }
+      )
+    }
+  }
+
+  private fun Contract.dump(indent: String = "") {
+    val nextIntent = "$indent  "
+    logger.debug("${indent}Contract: {}", type)
+    for (provisionPoint in provisionPoints) {
+      logger.debug("${nextIntent}Method: {}", provisionPoint.method)
     }
   }
 

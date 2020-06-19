@@ -16,11 +16,12 @@
 
 package com.joom.lightsaber
 
-import io.michaelrocks.grip.mirrors.getObjectType
+import com.joom.lightsaber.internal.ContractCreator
 import com.joom.lightsaber.internal.InjectorConfigurator
 import com.joom.lightsaber.internal.LightsaberInjector
 import com.joom.lightsaber.internal.MembersInjector
 import com.joom.lightsaber.internal.SingletonProvider
+import io.michaelrocks.grip.mirrors.getObjectType
 
 object LightsaberTypes {
   val INJECTOR_CONFIGURATOR_TYPE = getObjectType<InjectorConfigurator>()
@@ -28,4 +29,5 @@ object LightsaberTypes {
   val LIGHTSABER_INJECTOR_TYPE = getObjectType<LightsaberInjector>()
   val SINGLETON_PROVIDER_TYPE = getObjectType<SingletonProvider<*>>()
   val LAZY_ADAPTER_TYPE = getObjectType<LazyAdapter<*>>()
+  val CONTRACT_CREATOR_TYPE = getObjectType<ContractCreator<*>>()
 }

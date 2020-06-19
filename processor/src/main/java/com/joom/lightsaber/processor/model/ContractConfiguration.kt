@@ -18,11 +18,10 @@ package com.joom.lightsaber.processor.model
 
 import io.michaelrocks.grip.mirrors.Type
 
-data class Component(
+data class ContractConfiguration(
   val type: Type.Object,
-  val parent: Type.Object?,
-  val defaultModule: Module,
-  val subcomponents: Collection<Type.Object>
+  val contract: Contract,
+  val defaultModule: Module
 ) {
 
   fun getModulesWithDescendants(): Sequence<Module> = defaultModule.getModulesWithDescendants()

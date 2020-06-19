@@ -48,7 +48,7 @@ class GenerationContextFactory(
 ) {
 
   fun createGenerationContext(injectionContext: InjectionContext): GenerationContext {
-    val modules = findAllModules(injectionContext)
+    val modules = injectionContext.getModulesWithDescendants().toList()
     val dependencies = findAllDependencies(modules)
     return GenerationContext(
       composeProviders(modules),
@@ -57,16 +57,8 @@ class GenerationContextFactory(
     )
   }
 
-  private fun findAllModules(context: InjectionContext): Collection<Module> {
-    return context.components.asSequence()
-      .flatMap { it.getModulesWithDescendants() }
-      .toList()
-  }
-
   private fun findAllDependencies(modules: Collection<Module>): Collection<Dependency> {
-    return modules.asSequence()
-      .flatMap { getModuleDependencies(it) }
-      .toSet()
+    return modules.asSequence().flatMapTo(LinkedHashSet()) { getModuleDependencies(it) }
   }
 
   private fun getModuleDependencies(module: Module): Sequence<Dependency> {

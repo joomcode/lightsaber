@@ -45,6 +45,10 @@ class Patcher(
   ) {
     val type = getObjectTypeByInternalName(name)
 
+    injectionContext.findContractConfigurationByType(type)?.also {
+      cv = ContractConfigurationPatcher(cv, keyRegistry, it)
+    }
+
     injectionContext.findModuleByType(type)?.also {
       cv = ModulePatcher(cv, generationContext, it)
     }

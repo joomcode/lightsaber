@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber;
 
+import com.joom.lightsaber.internal.ContractCreator;
 import com.joom.lightsaber.internal.LightsaberInjector;
 
 import java.lang.annotation.Annotation;
@@ -41,6 +42,13 @@ public class Lightsaber {
   @Nonnull
   public Injector createInjector(@Nonnull final Object component) {
     return new LightsaberInjector(component, null, interceptors);
+  }
+
+  @Nonnull
+  public <T> T createContract(@Nonnull final ContractConfiguration<T> contractConfiguration) {
+    @SuppressWarnings("unchecked")
+    final ContractCreator<T> creator = (ContractCreator<T>) contractConfiguration;
+    return creator.createContract(createInjector(contractConfiguration));
   }
 
   @Nonnull
