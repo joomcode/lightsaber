@@ -98,8 +98,7 @@ class ModuleRegistryImpl(
           return@mapNotNull null
         }
 
-        val importer = grip.classRegistry.getClassMirror(importerType)
-        if (Types.MODULE_TYPE !in importer.annotations && Types.COMPONENT_TYPE !in importer.annotations) {
+        if (!checkTypeCanBeModule(importerType)) {
           errorReporter.reportError("Module ${importee.type.className} is imported by ${importerType.className}, which isn't a module")
           return@mapNotNull null
         }
@@ -107,6 +106,20 @@ class ModuleRegistryImpl(
         importerType
       }
     }
+  }
+
+  private fun checkTypeCanBeModule(type: Type.Object): Boolean {
+    val mirror = grip.classRegistry.getClassMirror(type)
+    val annotations = mirror.annotations
+    if (Types.MODULE_TYPE in annotations || Types.COMPONENT_TYPE in annotations) {
+      return true
+    }
+
+    if (mirror.superType == Types.CONTRACT_CONFIGURATION_TYPE) {
+      return true
+    }
+
+    return false
   }
 
   private fun <T : Any> groupEntitiesByModules(
