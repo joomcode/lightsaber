@@ -68,7 +68,7 @@ class ComponentsAnalyzerImpl(
         continue
       }
 
-      val parent = annotation.values["parent"] as Type?
+      val parent = annotation.values[com.joom.lightsaber.Component::parent.name] as Type?
       if (parent != null && parent != Types.COMPONENT_NONE_TYPE) {
         if (parent is Type.Object) {
           graph.put(parent, type)
