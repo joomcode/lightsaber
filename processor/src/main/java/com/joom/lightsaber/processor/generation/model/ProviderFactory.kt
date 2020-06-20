@@ -24,6 +24,7 @@ import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import io.michaelrocks.grip.FileRegistry
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 
@@ -32,12 +33,15 @@ interface ProviderFactory {
 }
 
 class ProviderFactoryImpl(
+  private val fileRegistry: FileRegistry,
   private val projectName: String
 ) : ProviderFactory {
 
+  private val typeRegistry = mutableSetOf<Type.Object>()
+
   override fun createProvidersForModule(module: Module): Collection<Provider> {
     val providers = ArrayList<Provider>()
-    module.provisionPoints.mapIndexedTo(providers) { index, provisionPoint -> newProviderForProvisionPoint(module, provisionPoint, index) }
+    module.provisionPoints.mapTo(providers) { provisionPoint -> newProviderForProvisionPoint(module, provisionPoint) }
     module.bindings.mapTo(providers) { newBindingProvider(module, it) }
     module.factories.mapTo(providers) { newFactoryProvider(module, it) }
     module.contracts.mapTo(providers) { newContractProvider(module, it) }
@@ -45,44 +49,43 @@ class ProviderFactoryImpl(
     return providers
   }
 
-  private fun newProviderForProvisionPoint(module: Module, provisionPoint: ProvisionPoint, index: Int): Provider {
+  private fun newProviderForProvisionPoint(module: Module, provisionPoint: ProvisionPoint): Provider {
     return when (provisionPoint) {
       is ProvisionPoint.Constructor -> newConstructorProvider(module, provisionPoint)
-      is ProvisionPoint.Method -> newMethodProvider(module, provisionPoint, index)
-      is ProvisionPoint.Field -> newFieldProvider(module, provisionPoint, index)
+      is ProvisionPoint.Method -> newMethodProvider(module, provisionPoint)
+      is ProvisionPoint.Field -> newFieldProvider(module, provisionPoint)
     }
   }
 
   private fun newConstructorProvider(module: Module, provisionPoint: ProvisionPoint.Constructor): Provider {
     val moduleType = provisionPoint.containerType
-    val providerType = getObjectTypeByInternalName("${moduleType.internalName}\$ConstructorProvider\$$projectName")
+    val providerType = getObjectTypeByUniqueInternalName("${moduleType.internalName}\$ConstructorProvider%d\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.ProvisionPoint(provisionPoint))
   }
 
-  private fun newMethodProvider(module: Module, provisionPoint: ProvisionPoint.Method, index: Int): Provider {
-    val providerType = getObjectTypeByInternalName("${module.type.internalName}\$MethodProvider\$$index\$$projectName")
+  private fun newMethodProvider(module: Module, provisionPoint: ProvisionPoint.Method): Provider {
+    val providerType = getObjectTypeByUniqueInternalName("${module.type.internalName}\$MethodProvider%d\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.ProvisionPoint(provisionPoint))
   }
 
-  private fun newFieldProvider(module: Module, provisionPoint: ProvisionPoint.Field, index: Int): Provider {
-    val providerType = getObjectTypeByInternalName("${module.type.internalName}\$FieldProvider\$$index\$$projectName")
+  private fun newFieldProvider(module: Module, provisionPoint: ProvisionPoint.Field): Provider {
+    val providerType = getObjectTypeByUniqueInternalName("${module.type.internalName}\$FieldProvider%d\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.ProvisionPoint(provisionPoint))
   }
 
   private fun newBindingProvider(module: Module, binding: Binding): Provider {
     val dependencyType = binding.dependency.type.rawType as Type.Object
-    val ancestorType = binding.ancestor.type.rawType as Type.Object
-    val providerType = getObjectTypeByInternalName("${dependencyType.internalName}\$${ancestorType.internalName}\$BindingProvider\$$projectName")
+    val providerType = getObjectTypeByUniqueInternalName("${dependencyType.internalName}\$BindingProvider%d\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.Binding(binding))
   }
 
   private fun newFactoryProvider(module: Module, factory: Factory): Provider {
-    val providerType = getObjectTypeByInternalName("${factory.type.internalName}\$FactoryProvider\$$projectName")
+    val providerType = getObjectTypeByUniqueInternalName("${factory.type.internalName}\$FactoryProvider%d\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.Factory(factory))
   }
 
   private fun newContractProvider(module: Module, contract: Contract): Provider {
-    val providerType = getObjectTypeByInternalName("${contract.type.internalName}\$ContractProvider\$$projectName")
+    val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$ContractProvider%d\$$projectName")
     return Provider(providerType, module.type, ProviderMedium.Contract(contract))
   }
 
@@ -94,13 +97,42 @@ class ProviderFactoryImpl(
   }
 
   private fun createProvidersForContractImport(import: Import.Contract): Collection<Provider> {
-    return import.contract.provisionPoints.mapIndexed { index, provisionPoint ->
-      newContractProvisionPointProvider(import.contract, provisionPoint, index)
+    return import.contract.provisionPoints.map { provisionPoint ->
+      newContractProvisionPointProvider(import.contract, provisionPoint)
     }
   }
 
-  private fun newContractProvisionPointProvider(contract: Contract, contractProvisionPoint: ContractProvisionPoint, index: Int): Provider {
-    val providerType = getObjectTypeByInternalName("${contract.type.internalName}\$MethodProvider\$$index\$$projectName")
+  private fun newContractProvisionPointProvider(contract: Contract, contractProvisionPoint: ContractProvisionPoint): Provider {
+    val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$MethodProvider%d\$$projectName")
     return Provider(providerType, contract.type, ProviderMedium.ContractProvisionPoint(contractProvisionPoint))
+  }
+
+  private fun getObjectTypeByUniqueInternalName(pattern: String): Type.Object {
+    for (index in 0..Int.MAX_VALUE) {
+      val internalName = pattern.format(index)
+      if (index == 0 && internalName == pattern) {
+        error("Pattern doesn't contain a format placeholder")
+      }
+
+      val type = getObjectTypeByInternalName(internalName)
+      if (isUniqueType(type)) {
+        typeRegistry += type
+        return type
+      }
+    }
+
+    error("Cannot generate a unique name with pattern: $pattern")
+  }
+
+  private fun isUniqueType(type: Type.Object): Boolean {
+    if (type in typeRegistry) {
+      return false
+    }
+
+    if (type in fileRegistry) {
+      return false
+    }
+
+    return true
   }
 }

@@ -70,7 +70,7 @@ class ClassProcessor(
 
   fun processClasses() {
     val injectionContext = performAnalysisAndValidation()
-    val providerFactory = ProviderFactoryImpl(projectName)
+    val providerFactory = ProviderFactoryImpl(grip.fileRegistry, projectName)
     val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, projectName)
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
