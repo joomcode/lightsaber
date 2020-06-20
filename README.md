@@ -163,7 +163,7 @@ public class DroidComponent {
 One of the reasons why you need a component is that its instance should be passed as an arguments to a method that
 creates an `Injector`. Finally, when a component is defined you can create an injector with this component.
 
-```
+```java
 Lightsaber lightsaber = new Lightsaber.Builder().build(); 
 Injector injector = lightsaber.createInjector(DroidComponent());
 ```
@@ -209,6 +209,96 @@ public class DroidComponent {
 @ImportedBy(DroidComponent.class)
 public class DroidModule {
   /* ... */
+}
+```
+
+##### Contracts
+
+While components allow to create an `Injector` that provides an instance by its type, there's also a way to create a
+statically typed dependency provider, which is a contract. A contract is an interface that may contain any number of
+methods and can extend other interfaces. Contract's methods must have no arguments and must return a non-`void` type.
+
+```java
+public interface DroidContract {
+  Droid getDroid();
+}
+```
+
+When the contract is provided by a container this container must also provide dependencies returned by every method
+of the contract. If at least one dependency isn't provided the compilation will fail. Contract instances created by
+Lightsaber don't actually hold any dependencies. Instead every contract's method just delegates to the container,
+which means that contract's dependencies aren't instantiated when the contract instance is created. 
+
+There're two ways to create a contract. The first way is to annotate the contract interface with `@Contract` and
+`@ProvidedBy` annotations. In this case the contract will be provided from a module or a component just like any other
+dependency.
+
+```java
+@Component
+public class DroidComponent {
+  @Provide
+  public Droid provideDroid() {
+    return new Droid();
+  }
+}
+
+@Contract
+@ProvidedBy(DroidComponent.class)
+public interface DroidContract {
+  Droid getDroid();
+}
+```
+
+But this approach requires annotating the contract interface so it cannot be used with the interface you don't control.
+Moreover, you'll need to retrieve the contract somehow.
+ 
+Luckily there's the second, more type safe way to create the contract. You can define a `ContractConfiguration` for this
+contract and then get an instance of the contract from `Lightsaber`. 
+
+```java
+public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
+  @Provide
+  public Droid provideDroid() {
+    return new Droid();
+  }
+}
+
+Lightsaber lightsaber = new Lightsaber.Builder().build(); 
+DroidContract contract = lightsaber.createContract(new DroidContractConfiguration());
+```
+
+The only thing `ContractConfiguration` is different from modules and components is that is should extend from
+`ContractConfiguration` instead of being annotated with some annotation. Meaning to say it can provide dependencies,
+import modules, and do other stuff.
+
+Contracts can be used not just for accessing dependencies in a statically typed way but also for providing dependencies
+to components, modules, and other contracts' configurations. In order to do that you just have to add a method that 
+returns a contract instance and to annotate this method with `@Import` and `@Contract` annotations. In this case all 
+the dependencies provided by the contract will be imported to the container.
+
+```java
+public interface DroidComponents {
+  Battery getBattery();
+  MemoryCore getMemoryCore(); 
+}
+
+public interface DroidContract {
+  Droid droid; 
+}
+
+public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
+  @Import
+  @Contract
+  private final DroidComponents droidComponents;
+
+  public DroidContractConfiguration(final DroidComponents droidComponents) {
+    this.droidComponents = droidComponents;
+  }
+
+  @Provide
+  public Droid provideDroid(final Battery battery, final MemoryCore memoryCore) {
+    return new Droid(battery, memoryCore);
+  } 
 }
 ``` 
 
