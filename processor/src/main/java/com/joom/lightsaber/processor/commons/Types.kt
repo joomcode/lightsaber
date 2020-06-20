@@ -19,6 +19,7 @@ package com.joom.lightsaber.processor.commons
 import com.joom.lightsaber.Component
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Eager
 import com.joom.lightsaber.Factory
 import com.joom.lightsaber.Import
 import com.joom.lightsaber.ImportedBy
@@ -53,6 +54,7 @@ object Types {
   val MODULE_TYPE = getObjectType<Module>()
   val QUALIFIER_TYPE = getObjectType<Qualifier>()
   val SINGLETON_TYPE = getObjectType<Singleton>()
+  val EAGER_TYPE = getObjectType<Eager>()
   val FACTORY_TYPE = getObjectType<Factory>()
   val FACTORY_INJECT_TYPE = getObjectType<Factory.Inject>()
   val FACTORY_PARAMETER_TYPE = getObjectType<Factory.Parameter>()
