@@ -16,7 +16,14 @@
 
 package com.joom.lightsaber.processor.model
 
-data class ModuleProvider(
-  val module: Module,
-  val provisionPoint: ModuleProvisionPoint
-)
+import io.michaelrocks.grip.mirrors.Type
+
+data class ContractConfiguration(
+  val type: Type.Object,
+  val contract: Contract,
+  val defaultModule: Module
+) {
+
+  fun getModulesWithDescendants(): Sequence<Module> = defaultModule.getModulesWithDescendants()
+  fun getImportsWithDescendants(): Sequence<Import> = defaultModule.getImportsWithDescendants()
+}

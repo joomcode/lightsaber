@@ -25,6 +25,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
   testImplementation "com.joom.lightsaber:lightsaber-core-kotlin:$version"
+  testImplementation "com.joom.lightsaber:lightsaber-test:$version"
   testImplementation "junit:junit:$junitVersion"
 }
 

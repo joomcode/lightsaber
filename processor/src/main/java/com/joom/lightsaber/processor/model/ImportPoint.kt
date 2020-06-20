@@ -14,30 +14,18 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package com.joom.lightsaber.processor.model
 
-import java.util.ArrayList
+import io.michaelrocks.grip.mirrors.FieldMirror
+import io.michaelrocks.grip.mirrors.MethodMirror
+import io.michaelrocks.grip.mirrors.Type
 
-class ErrorReporter {
-  private val errors = ArrayList<Exception>()
+sealed class ImportPoint {
+  data class Method(val method: MethodMirror) : ImportPoint()
+  data class Field(val field: FieldMirror) : ImportPoint()
 
-  fun hasErrors(): Boolean {
-    return errors.isNotEmpty()
-  }
-
-  fun getErrors(): List<Exception> {
-    return errors
-  }
-
-  fun reportError(errorMessage: String) {
-    reportError(ProcessingException(errorMessage))
-  }
-
-  fun reportError(error: Exception) {
-    errors.add(error)
-  }
-}
-
-inline fun ErrorReporter.reportError(builder: StringBuilder.() -> Unit) {
-  reportError(buildString(builder))
+  data class Inverse(
+    val importerType: Type.Object,
+    val importeeType: Type.Object
+  ) : ImportPoint()
 }

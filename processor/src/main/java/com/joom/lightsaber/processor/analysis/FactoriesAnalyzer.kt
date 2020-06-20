@@ -90,7 +90,7 @@ class FactoriesAnalyzerImpl(
       return null
     }
 
-    val methodInjectionPoint = analyzerHelper.convertToInjectionPoint(method, mirror.type)
+    val methodInjectionPoint = analyzerHelper.convertMethodToInjectionPoint(method, mirror.type)
     validateNoDuplicateInjectees(methodInjectionPoint)
     val argumentIndexToInjecteeMap = methodInjectionPoint.injectees.associateByIndexedTo(
       HashMap(),
@@ -99,7 +99,7 @@ class FactoriesAnalyzerImpl(
     )
 
     val constructor = dependencyConstructors.single()
-    val constructorInjectionPoint = analyzerHelper.convertToInjectionPoint(constructor, mirror.type)
+    val constructorInjectionPoint = analyzerHelper.convertMethodToInjectionPoint(constructor, mirror.type)
 
     val factoryInjectees = constructorInjectionPoint.injectees.mapNotNull { injectee ->
       if (Types.FACTORY_PARAMETER_TYPE in injectee.annotations) {

@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber.processor.commons
 
+import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import io.michaelrocks.grip.mirrors.Type
 
-data class Provider(
-  val type: Type.Object,
-  val provisionPoint: ProvisionPoint,
-  val moduleType: Type.Object,
-  val scope: Scope
-) {
-
-  val dependency: Dependency
-    get() = provisionPoint.dependency
+object Methods {
+  val HASH_CODE_METHOD = MethodDescriptor.forMethod("hashCode", Type.Primitive.Int)
+  val EQUALS_METHOD = MethodDescriptor.forMethod("equals", Type.Primitive.Boolean, Types.OBJECT_TYPE)
+  val TO_STRING_METHOD = MethodDescriptor.forMethod("toString", Types.STRING_TYPE)
 }
-
-val Provider.isConstructorProvider: Boolean
-  get() = provisionPoint is ProvisionPoint.Constructor

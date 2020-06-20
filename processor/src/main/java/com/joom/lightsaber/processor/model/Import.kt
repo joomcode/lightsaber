@@ -14,30 +14,18 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package com.joom.lightsaber.processor.model
 
-import java.util.ArrayList
+sealed class Import {
+  abstract val importPoint: ImportPoint
 
-class ErrorReporter {
-  private val errors = ArrayList<Exception>()
+  data class Module(
+    val module: com.joom.lightsaber.processor.model.Module,
+    override val importPoint: ImportPoint
+  ) : Import()
 
-  fun hasErrors(): Boolean {
-    return errors.isNotEmpty()
-  }
-
-  fun getErrors(): List<Exception> {
-    return errors
-  }
-
-  fun reportError(errorMessage: String) {
-    reportError(ProcessingException(errorMessage))
-  }
-
-  fun reportError(error: Exception) {
-    errors.add(error)
-  }
-}
-
-inline fun ErrorReporter.reportError(builder: StringBuilder.() -> Unit) {
-  reportError(buildString(builder))
+  data class Contract(
+    val contract: com.joom.lightsaber.processor.model.Contract,
+    override val importPoint: ImportPoint
+  ) : Import()
 }

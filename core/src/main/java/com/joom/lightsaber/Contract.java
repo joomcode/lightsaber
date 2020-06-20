@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package com.joom.lightsaber;
 
-import java.util.ArrayList
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-class ErrorReporter {
-  private val errors = ArrayList<Exception>()
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-  fun hasErrors(): Boolean {
-    return errors.isNotEmpty()
-  }
-
-  fun getErrors(): List<Exception> {
-    return errors
-  }
-
-  fun reportError(errorMessage: String) {
-    reportError(ProcessingException(errorMessage))
-  }
-
-  fun reportError(error: Exception) {
-    errors.add(error)
-  }
-}
-
-inline fun ErrorReporter.reportError(builder: StringBuilder.() -> Unit) {
-  reportError(buildString(builder))
+@Target({ TYPE, FIELD, METHOD })
+@Retention(RUNTIME)
+@Documented
+public @interface Contract {
 }

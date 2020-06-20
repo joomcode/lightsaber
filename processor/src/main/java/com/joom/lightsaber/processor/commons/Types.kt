@@ -17,6 +17,8 @@
 package com.joom.lightsaber.processor.commons
 
 import com.joom.lightsaber.Component
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
 import com.joom.lightsaber.Factory
 import com.joom.lightsaber.Import
 import com.joom.lightsaber.ImportedBy
@@ -55,6 +57,8 @@ object Types {
   val FACTORY_INJECT_TYPE = getObjectType<Factory.Inject>()
   val FACTORY_PARAMETER_TYPE = getObjectType<Factory.Parameter>()
   val FACTORY_RETURN_TYPE = getObjectType<Factory.Return>()
+  val CONTRACT_TYPE = getObjectType<Contract>()
+  val CONTRACT_CONFIGURATION_TYPE = getObjectType<ContractConfiguration<*>>()
   val INJECTOR_TYPE = getObjectType<Injector>()
   val PROVIDER_TYPE = getObjectType<Provider<*>>()
   val LAZY_TYPE = getObjectType<Lazy<*>>()

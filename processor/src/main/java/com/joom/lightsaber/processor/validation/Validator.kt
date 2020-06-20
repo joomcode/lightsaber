@@ -16,29 +16,45 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.commons.boxed
+import com.joom.lightsaber.processor.commons.getDescription
+import com.joom.lightsaber.processor.commons.getInjectees
 import com.joom.lightsaber.processor.graph.findCycles
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.ContractConfiguration
+import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
-import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.FactoryInjectee
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
-import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
+import com.joom.lightsaber.processor.reportError
 import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.Element
-import io.michaelrocks.grip.mirrors.Type
 
 class Validator(
   private val classRegistry: ClassRegistry,
   private val errorReporter: ErrorReporter,
-  private val context: InjectionContext
+  private val context: InjectionContext,
+  private val dependencyResolverFactory: DependencyResolverFactory
 ) {
+
+  private val leafComponents: Collection<Component> by lazy {
+    val leafComponentTypes = context.components.mapTo(LinkedHashSet()) { it.type }
+    for (component in context.components) {
+      if (component.parent != null) {
+        leafComponentTypes -= component.parent
+      }
+    }
+
+    context.components.filter { it.type in leafComponentTypes }
+  }
 
   fun validate() {
     performSanityChecks()
     validateComponents()
+    validateContractConfigurations()
+    validateImportedContracts()
+    validateInjectionTargets()
   }
 
   private fun performSanityChecks() {
@@ -46,205 +62,220 @@ class Validator(
   }
 
   private fun validateComponents() {
+    validateNoComponentCycles()
+
+    for (component in context.components) {
+      validateNoModuleDuplicates(component)
+      validateNoDependencyDuplicates(component)
+      validateDependenciesAreResolved(component)
+      validateNoDependencyCycles(component)
+    }
+  }
+
+  private fun validateNoComponentCycles() {
     val componentGraph = buildComponentGraph(context.components)
     val cycles = componentGraph.findCycles()
     for (cycle in cycles) {
-      errorReporter.reportError("Component cycle ${cycle.joinToString(" -> ")}")
-    }
-
-    context.components
-      .forEach { component ->
-        validateNoModuleDuplicates(component, emptyMap())
-        validateNoDependencyDuplicates(component, emptyMap())
-        validateDependenciesAreResolved(component, DependencyResolver(context))
-        validateNoDependencyCycles(component, DependencyGraphBuilder(context, true))
-        validateFactories(component, DependencyResolver(context))
-      }
-
-    validateInjectionTargetsAreResolved(context.injectableTargets, context.components)
-  }
-
-  private fun validateNoModuleDuplicates(
-    component: Component,
-    moduleToComponentsMap: Map<Type.Object, List<Type.Object>>
-  ) {
-    val newModuleTypeToComponentMap = HashMap(moduleToComponentsMap)
-    component.getModulesWithDescendants().forEach { module ->
-      val oldComponents = newModuleTypeToComponentMap[module.type]
-      val newComponents = if (oldComponents == null) listOf(component.type) else oldComponents + component.type
-      newModuleTypeToComponentMap[module.type] = newComponents
-    }
-
-    if (component.subcomponents.isEmpty()) {
-      // FIXME: This code will report duplicate errors in some cases.
-      newModuleTypeToComponentMap.forEach { (moduleType, componentTypes) ->
-        if (componentTypes.size > 1) {
-          val moduleName = moduleType.className
-          val componentNames = componentTypes.joinToString { it.className }
-          errorReporter.reportError(
-            "Module $moduleName provided multiple times in a single component hierarchy: $componentNames"
-          )
-        }
-      }
-    } else {
-      component.subcomponents.forEach { subcomponentType ->
-        val subcomponent = context.findComponentByType(subcomponentType)
-        if (subcomponent != null) {
-          validateNoModuleDuplicates(subcomponent, newModuleTypeToComponentMap)
-        } else {
-          val subcomponentName = subcomponentType.className
-          val componentName = component.type.className
-          errorReporter.reportError("Subcomponent $subcomponentName of component $componentName not found")
+      errorReporter.reportError {
+        append("Component cycle:")
+        cycle.forEach { type ->
+          append("\n  ")
+          append(type.getDescription())
         }
       }
     }
   }
 
-  private fun validateNoDependencyDuplicates(
-    component: Component,
-    dependencyTypeToModuleMap: Map<Dependency, List<Type.Object>>
-  ) {
-    val newDependencyTypeToModuleMap = HashMap(dependencyTypeToModuleMap)
-    component.getModulesWithDescendants().forEach { module ->
-      module.providers.forEach { provider ->
-        val oldModules = newDependencyTypeToModuleMap[provider.dependency]
-        val newModules = if (oldModules == null) listOf(module.type) else oldModules + listOf(module.type)
-        newDependencyTypeToModuleMap[provider.dependency] = newModules
-      }
-    }
-
-    if (component.subcomponents.isEmpty()) {
-      // FIXME: This code will report duplicate errors in some cases.
-      newDependencyTypeToModuleMap.forEach { (dependency, moduleTypes) ->
-        if (moduleTypes.size > 1) {
-          val moduleNames = moduleTypes.joinToString { it.className }
-          errorReporter.reportError(
-            "Dependency $dependency provided multiple times in a single component hierarchy by modules: $moduleNames"
-          )
-        }
-      }
-    } else {
-      component.subcomponents.forEach { subcomponentType ->
-        val subcomponent = context.findComponentByType(subcomponentType)
-        if (subcomponent != null) {
-          validateNoDependencyDuplicates(subcomponent, newDependencyTypeToModuleMap)
-        } else {
-          val subcomponentName = subcomponentType.className
-          val componentName = component.type.className
-          errorReporter.reportError("Subcomponent $subcomponentName of component $componentName not found")
-        }
-      }
+  private fun validateNoModuleDuplicates(component: Component) {
+    validateNoDuplicateValues(component, DependencyResolver::getImportsWithPaths) { importType ->
+      append("Class ")
+      append(importType.getDescription())
+      append(" imported multiple times in a single component hierarchy:")
     }
   }
 
-  private fun validateDependenciesAreResolved(component: Component, resolver: DependencyResolver) {
-    resolver.add(component, includeAncestors = true)
-    val unresolvedDependencies = resolver.getUnresolvedDependenciesAndResolveAllDependencies()
-    if (unresolvedDependencies.isNotEmpty()) {
-      val componentName = component.type.className
-      for (unresolvedDependency in unresolvedDependencies) {
-        errorReporter.reportError("Unresolved dependency $unresolvedDependency in component $componentName")
-      }
+  private fun validateNoDependencyDuplicates(component: Component) {
+    validateNoDuplicateValues(component, DependencyResolver::getProvidedDependencies) { dependency ->
+      append("Dependency ")
+      append(dependency.getDescription())
+      append(" provided multiple times in a single component hierarchy:")
     }
   }
 
-  private fun validateNoDependencyCycles(component: Component, builder: DependencyGraphBuilder) {
-    builder.add(component)
-    val dependencyGraph = builder.build()
-    val cycles = dependencyGraph.findCycles()
-    if (cycles.isNotEmpty()) {
-      val componentName = component.type.className
-      for (cycle in cycles) {
-        val cycleString = cycle.joinToString(" -> ")
-        errorReporter.reportError("Dependency cycle $cycleString in component $componentName")
-      }
+  private fun validateDependenciesAreResolved(component: Component) {
+    validateDependenciesAreResolved(dependencyResolverFactory.getOrCreate(component))
+  }
+
+  private fun validateNoDependencyCycles(component: Component) {
+    validateNoDependencyCycles(dependencyResolverFactory.getOrCreate(component)) {
+      append("Dependency cycle in component ")
+      append(component.type.getDescription())
+      append(":")
     }
   }
 
-  private fun validateFactories(component: Component, resolver: DependencyResolver) {
-    resolver.add(component, includeAncestors = true)
-    component.getModulesWithDescendants()
-      .flatMap { module -> module.factories.asSequence() }
-      .distinctBy { factory -> factory.type }
-      .forEach { factory ->
-        for (provisionPoint in factory.provisionPoints) {
-          val injectees = provisionPoint.injectionPoint.injectees
-          val resolvedDependencies = resolver.getResolvedDependencies()
-          for (injectee in injectees) {
-            val shouldBeResolved = shouldFactoryInjecteeBeResolved(injectee)
-            validateFactoryDependency(component, factory, injectee.dependency, resolvedDependencies, shouldBeResolved)
+  private fun validateContractConfigurations() {
+    for (contractConfiguration in context.contractConfigurations) {
+      validateNoModuleDuplicates(contractConfiguration)
+      validateNoDependencyDuplicates(contractConfiguration)
+      validateDependenciesAreResolved(contractConfiguration)
+      validateNoDependencyCycles(contractConfiguration)
+    }
+  }
+
+  private fun validateNoModuleDuplicates(contractConfiguration: ContractConfiguration) {
+    validateNoDuplicateValues(contractConfiguration, DependencyResolver::getImportsWithPaths) { importType ->
+      append("Class ")
+      append(importType.getDescription())
+      append(" imported multiple times in a contract:")
+    }
+  }
+
+  private fun validateNoDependencyDuplicates(contractConfiguration: ContractConfiguration) {
+    validateNoDuplicateValues(contractConfiguration, DependencyResolver::getProvidedDependencies) { dependency ->
+      append("Dependency ")
+      append(dependency.getDescription())
+      append(" provided multiple times in a contract:")
+    }
+  }
+
+  private fun validateDependenciesAreResolved(contractConfiguration: ContractConfiguration) {
+    validateDependenciesAreResolved(dependencyResolverFactory.getOrCreate(contractConfiguration))
+  }
+
+  private fun validateNoDependencyCycles(contractConfiguration: ContractConfiguration) {
+    validateNoDependencyCycles(dependencyResolverFactory.getOrCreate(contractConfiguration)) {
+      append("Dependency cycle in contract ")
+      append(contractConfiguration.type.getDescription())
+      append(":")
+    }
+  }
+
+  private fun validateImportedContracts() {
+    for (import in context.getImportsWithDescendants()) {
+      if (import is Import.Contract) {
+        val contract = import.contract
+        for (provisionPoint in contract.provisionPoints) {
+          if (provisionPoint.injectee.converter is Converter.Adapter) {
+            if (provisionPoint.injectee.converter.adapterType != LightsaberTypes.LAZY_ADAPTER_TYPE) {
+              errorReporter.reportError {
+                append("Unsupported wrapper type in imported contract ")
+                append(contract.type.getDescription())
+                append(":\n  ")
+                append(provisionPoint.method.getDescription())
+              }
+            }
           }
         }
       }
-  }
-
-  private fun shouldFactoryInjecteeBeResolved(injectee: FactoryInjectee): Boolean {
-    return when (injectee) {
-      is FactoryInjectee.FromInjector -> true
-      is FactoryInjectee.FromMethod -> false
     }
   }
 
-  private fun validateFactoryDependency(
+  private fun validateInjectionTargets() {
+    for (injectableTarget in context.injectableTargets) {
+      if (context.findProvidableTargetByType(injectableTarget.type) == null) {
+        validateInjectionTargetDependenciesAreProvidedBySingleComponent(injectableTarget)
+      }
+    }
+  }
+
+  private fun validateInjectionTargetDependenciesAreProvidedBySingleComponent(injectionTarget: InjectionTarget) {
+    fun getDependencies(): Sequence<Dependency> = sequence {
+      for (injectionPoint in injectionTarget.injectionPoints) {
+        for (injectee in injectionPoint.getInjectees()) {
+          yield(injectee.dependency)
+        }
+      }
+    }
+
+    for (component in leafComponents) {
+      val resolver = dependencyResolverFactory.getOrCreate(component)
+      if (getDependencies().all { resolver.isResolved(it) }) {
+        return
+      }
+    }
+
+    errorReporter.reportError("Dependencies of ${injectionTarget.type.className} cannot be fully resolved by any component")
+  }
+
+  private inline fun <T : Any> validateNoDuplicateValues(
     component: Component,
-    factory: Factory,
-    dependency: Dependency,
-    resolvedDependencies: Set<Dependency>,
-    shouldBeResolved: Boolean
+    fetch: DependencyResolver.() -> Map<T, Collection<DependencyResolverPath>>,
+    message: StringBuilder.(T) -> Unit
   ) {
-    val isResolved = dependency.boxed() in resolvedDependencies
-    if (!isResolved && shouldBeResolved) {
-      val factoryName = factory.type.className
-      val componentName = component.type.className
-      errorReporter.reportError("Unresolved dependency $dependency in factory $factoryName in component $componentName")
-    }
+    val resolver = dependencyResolverFactory.getOrCreate(component)
+    val parentResolver = component.getParentComponent()?.let { dependencyResolverFactory.getOrCreate(it) }
+    validateNoDuplicateValues(resolver.fetch(), parentResolver?.fetch(), message)
   }
 
-  private fun validateInjectionTargetsAreResolved(
-    injectionTargets: Iterable<InjectionTarget>,
-    components: Iterable<Component>
+  private inline fun <T : Any> validateNoDuplicateValues(
+    contractConfiguration: ContractConfiguration,
+    fetch: DependencyResolver.() -> Map<T, Collection<DependencyResolverPath>>,
+    message: StringBuilder.(T) -> Unit
   ) {
-    val dependencyResolver = DependencyResolver(context)
-    components.forEach { dependencyResolver.add(it, includeAncestors = false) }
-    val resolvedDependencies = dependencyResolver.getResolvedDependencies()
+    val resolver = dependencyResolverFactory.getOrCreate(contractConfiguration)
+    validateNoDuplicateValues(resolver.fetch(), null, message)
+  }
 
-    injectionTargets.forEach { injectionTarget ->
-      injectionTarget.injectionPoints.forEach { injectionPoint ->
-        validateInjectionPointIsResolved(injectionTarget.type, injectionPoint, resolvedDependencies)
+  private inline fun <T : Any> validateNoDuplicateValues(
+    values: Map<T, Collection<DependencyResolverPath>>,
+    parentValues: Map<T, Collection<DependencyResolverPath>>?,
+    message: StringBuilder.(T) -> Unit
+  ) {
+    for ((key, paths) in values) {
+      if (paths.size > 1) {
+        val parentPathCount = parentValues?.get(key)?.size ?: 0
+        check(parentPathCount <= paths.size)
+        if (parentPathCount != paths.size) {
+          errorReporter.reportError {
+            message(key)
+            paths.forEachIndexed { index, path ->
+              append("\n")
+              append(index + 1)
+              append(".\n")
+              append(path.getDescription(indent = "  "))
+            }
+          }
+        }
       }
     }
   }
 
-  private fun validateInjectionPointIsResolved(
-    injectionTargetType: Type.Object,
-    injectionPoint: InjectionPoint,
-    resolvedDependencies: Set<Dependency>
-  ) {
-    val dependencies = getDependenciesForInjectionPoint(injectionPoint)
-    val element = getElementForInjectionPoint(injectionPoint)
-
-    val unresolvedDependencies = dependencies.filter { it !in resolvedDependencies }
+  private fun validateDependenciesAreResolved(dependencyResolver: DependencyResolver) {
+    val unresolvedDependencies = dependencyResolver.getUnresolvedDependencies()
     if (unresolvedDependencies.isNotEmpty()) {
-      val injectionTargetName = injectionTargetType.className
-      unresolvedDependencies.forEach { dependency ->
-        errorReporter.reportError(
-          "Unresolved dependency $dependency in $element at $injectionTargetName"
-        )
+      for ((unresolvedDependency, paths) in unresolvedDependencies) {
+        for (path in paths) {
+          errorReporter.reportError("Unresolved dependency ${unresolvedDependency.getDescription()}:\n${path.getDescription("  ")}")
+        }
       }
     }
   }
 
-  private fun getDependenciesForInjectionPoint(injectionPoint: InjectionPoint): Collection<Dependency> {
-    return when (injectionPoint) {
-      is InjectionPoint.Field -> listOf(injectionPoint.injectee.dependency.boxed())
-      is InjectionPoint.Method -> injectionPoint.injectees.map { it.dependency.boxed() }
+  private inline fun validateNoDependencyCycles(dependencyResolver: DependencyResolver, message: StringBuilder.() -> Unit) {
+    val dependencyGraph = dependencyResolver.getDependencyGraph()
+    val cycles = dependencyGraph.findCycles()
+    if (cycles.isNotEmpty()) {
+      for (cycle in cycles) {
+        errorReporter.reportError {
+          message()
+          cycle.forEach { type ->
+            append("\n  ")
+            append(type.getDescription())
+          }
+        }
+      }
     }
   }
 
-  private fun getElementForInjectionPoint(injectionPoint: InjectionPoint): Element<out Type> {
-    return when (injectionPoint) {
-      is InjectionPoint.Field -> injectionPoint.field
-      is InjectionPoint.Method -> injectionPoint.method
+  private fun Component.getParentComponent(): Component? {
+    val parentType = parent ?: return null
+    val parentComponent = context.findComponentByType(parentType)
+    if (parentComponent == null) {
+      errorReporter.reportError("Parent component ${parentType.getDescription()} of component ${type.getDescription()} not found")
+      return null
     }
+
+    return parentComponent
   }
 }

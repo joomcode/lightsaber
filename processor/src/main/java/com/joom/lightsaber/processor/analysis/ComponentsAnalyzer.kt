@@ -46,7 +46,7 @@ class ComponentsAnalyzerImpl(
       .filterNot { it == Types.COMPONENT_NONE_TYPE }
       .map { type ->
         val parent = reversedGraph.getAdjacentVertices(type)?.first()?.takeIf { it != Types.COMPONENT_NONE_TYPE }
-        val defaultModule = moduleRegistry.getModule(type)
+        val defaultModule = moduleRegistry.getModule(type, isImported = false)
         val subcomponents = graph.getAdjacentVertices(type).orEmpty().toList()
         Component(type, parent, defaultModule, subcomponents)
       }
@@ -68,7 +68,7 @@ class ComponentsAnalyzerImpl(
         continue
       }
 
-      val parent = annotation.values["parent"] as Type?
+      val parent = annotation.values[com.joom.lightsaber.Component::parent.name] as Type?
       if (parent != null && parent != Types.COMPONENT_NONE_TYPE) {
         if (parent is Type.Object) {
           graph.put(parent, type)

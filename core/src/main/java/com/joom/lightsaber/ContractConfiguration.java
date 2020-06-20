@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber;
 
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-
-sealed class ModuleProvisionPoint {
-  data class Method(val method: MethodMirror) : ModuleProvisionPoint()
-  data class Field(val field: FieldMirror) : ModuleProvisionPoint()
-
-  data class InverseImport(
-    val importerType: Type.Object,
-    val importeeType: Type.Object
-  ) : ModuleProvisionPoint()
+public abstract class ContractConfiguration<T> {
 }

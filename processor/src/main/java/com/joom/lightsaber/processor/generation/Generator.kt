@@ -33,21 +33,27 @@ class Generator(
   private val annotationCreator = AnnotationCreator(classProducer, classRegistry)
 
   fun generate(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    generateProviders(injectionContext, generationContext)
+    generateProviders(generationContext)
     generateFactories(injectionContext, generationContext)
+    generateContracts(injectionContext, generationContext)
     generatePackageInvaders(generationContext)
     generateKeyRegistry(generationContext)
 
     fileSink.flush()
   }
 
-  private fun generateProviders(injectionContext: InjectionContext, generationContext: GenerationContext) {
+  private fun generateProviders(generationContext: GenerationContext) {
     val generator = ProvidersGenerator(classProducer, classRegistry)
-    generator.generate(injectionContext, generationContext)
+    generator.generate(generationContext)
   }
 
   private fun generateFactories(injectionContext: InjectionContext, generationContext: GenerationContext) {
     val generator = FactoriesGenerator(classProducer, classRegistry)
+    generator.generate(injectionContext, generationContext)
+  }
+
+  private fun generateContracts(injectionContext: InjectionContext, generationContext: GenerationContext) {
+    val generator = ContractsGenerator(classProducer, classRegistry)
     generator.generate(injectionContext, generationContext)
   }
 

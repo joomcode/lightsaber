@@ -32,10 +32,13 @@ class Analyzer(
     val (injectableTargets, providableTargets) = InjectionTargetsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(files)
     val bindingRegistry = BindingsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(files)
     val factories = FactoriesAnalyzerImpl(grip, analyzerHelper, errorReporter, projectName).analyze(files)
-    val moduleProviderParser = ModuleProviderParserImpl(grip, errorReporter)
-    val moduleParser = ModuleParserImpl(grip, moduleProviderParser, bindingRegistry, analyzerHelper, projectName)
-    val moduleRegistry = ModuleRegistryImpl(grip, moduleParser, errorReporter, providableTargets, factories, files)
+    val contractParser = ContractParserImpl(grip, analyzerHelper, errorReporter, projectName)
+    val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(files)
+    val importParser = ImportParserImpl(grip, contractParser, errorReporter)
+    val moduleParser = ModuleParserImpl(grip, importParser, contractParser, bindingRegistry, analyzerHelper, errorReporter)
+    val moduleRegistry = ModuleRegistryImpl(grip, moduleParser, errorReporter, providableTargets, factories, contracts, files)
     val components = ComponentsAnalyzerImpl(grip, moduleRegistry, errorReporter).analyze(files)
-    return InjectionContext(components, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
+    val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleRegistry, contractParser).analyze(files)
+    return InjectionContext(components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
   }
 }

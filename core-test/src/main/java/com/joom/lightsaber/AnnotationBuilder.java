@@ -141,7 +141,7 @@ public class AnnotationBuilder<T extends Annotation> {
           @SuppressWarnings("unchecked")
           public T run() {
             final Map<String, ?> explicitValues = values == null ? Collections.<String, Object>emptyMap() : values;
-            final InvocationHandler handler = new com.joom.lightsaber.AnnotationInvocationHandler(annotationClass, explicitValues);
+            final InvocationHandler handler = new AnnotationInvocationHandler(annotationClass, explicitValues);
             return (T) Proxy.newProxyInstance(annotationClass.getClassLoader(), new Class<?>[] { annotationClass }, handler);
           }
         }

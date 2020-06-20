@@ -25,7 +25,7 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 
-public class LightweightHashMap<K, V> implements com.joom.lightsaber.internal.IterableMap<K, V> {
+public class LightweightHashMap<K, V> implements IterableMap<K, V> {
   private static final int DEFAULT_CAPACITY = 16;
   private static final float DEFAULT_LOAD_FACTOR = 0.7f;
   private static final int MAXIMUM_CAPACITY = 1 << 29;
@@ -120,7 +120,7 @@ public class LightweightHashMap<K, V> implements com.joom.lightsaber.internal.It
     }
 
     ensureCapacity(calculateNewCapacity(size + map.size()));
-    if (map instanceof com.joom.lightsaber.internal.IterableMap<?, ?>) {
+    if (map instanceof IterableMap<?, ?>) {
       // noinspection unchecked
       final MapIterator<? extends K, ? extends V> iterator = ((IterableMap<? extends K, ? extends V>) map).iterator();
       while (iterator.hasNext()) {

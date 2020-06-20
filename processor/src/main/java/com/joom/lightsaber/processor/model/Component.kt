@@ -25,25 +25,6 @@ data class Component(
   val subcomponents: Collection<Type.Object>
 ) {
 
-  fun getModulesWithDescendants(): Sequence<Module> = sequence {
-    yieldModulesWithDescendants(listOf(defaultModule))
-  }
-
-  fun getModuleProvidersWithDescendants(): Sequence<ModuleProvider> = sequence {
-    yieldModuleProvidersWithDescendants(defaultModule.moduleProviders)
-  }
-
-  private suspend fun SequenceScope<Module>.yieldModulesWithDescendants(modules: Iterable<Module>) {
-    modules.forEach { module ->
-      yield(module)
-      yieldModulesWithDescendants(module.modules)
-    }
-  }
-
-  private suspend fun SequenceScope<ModuleProvider>.yieldModuleProvidersWithDescendants(providers: Iterable<ModuleProvider>) {
-    providers.forEach { provider ->
-      yield(provider)
-      yieldModuleProvidersWithDescendants(provider.module.moduleProviders)
-    }
-  }
+  fun getModulesWithDescendants(): Sequence<Module> = defaultModule.getModulesWithDescendants()
+  fun getImportsWithDescendants(): Sequence<Import> = defaultModule.getImportsWithDescendants()
 }

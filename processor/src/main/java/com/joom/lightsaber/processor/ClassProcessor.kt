@@ -23,17 +23,22 @@ import com.joom.lightsaber.processor.commons.exhaustive
 import com.joom.lightsaber.processor.generation.GenerationContextFactory
 import com.joom.lightsaber.processor.generation.Generator
 import com.joom.lightsaber.processor.generation.model.GenerationContext
+import com.joom.lightsaber.processor.generation.model.ProviderFactoryImpl
 import com.joom.lightsaber.processor.injection.Patcher
 import com.joom.lightsaber.processor.io.DirectoryFileSink
 import com.joom.lightsaber.processor.io.FileSource
 import com.joom.lightsaber.processor.io.IoFactory
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractConfiguration
+import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.Validator
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.GripFactory
@@ -65,9 +70,9 @@ class ClassProcessor(
 
   fun processClasses() {
     val injectionContext = performAnalysisAndValidation()
-    val generationContext =
-      GenerationContextFactory(grip.fileRegistry, grip.classRegistry, projectName)
-        .createGenerationContext(injectionContext)
+    val providerFactory = ProviderFactoryImpl(grip.fileRegistry, projectName)
+    val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, projectName)
+    val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
     copyAndPatchClasses(injectionContext, generationContext)
     performGeneration(injectionContext, generationContext)
@@ -85,7 +90,8 @@ class ClassProcessor(
   private fun performAnalysisAndValidation(): InjectionContext {
     val analyzer = Analyzer(grip, errorReporter, projectName)
     val context = analyzer.analyze(inputs)
-    Validator(grip.classRegistry, errorReporter, context).validate()
+    val dependencyResolverFactory = DependencyResolverFactory(context)
+    Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory).validate()
     checkErrors()
     return context
   }
@@ -101,7 +107,7 @@ class ClassProcessor(
             val classWriter = StandaloneClassWriter(
               classReader, ClassWriter.COMPUTE_MAXS or ClassWriter.COMPUTE_FRAMES, grip.classRegistry
             )
-            val classVisitor = Patcher(classWriter, grip.classRegistry, generationContext.keyRegistry, injectionContext)
+            val classVisitor = Patcher(classWriter, grip.classRegistry, injectionContext, generationContext)
             classReader.accept(classVisitor, ClassReader.SKIP_FRAMES)
             fileSink.createFile(path, classWriter.toByteArray())
           }
@@ -134,7 +140,12 @@ class ClassProcessor(
   }
 
   private fun InjectionContext.dump() {
+    if (!logger.isDebugEnabled) {
+      return
+    }
+
     components.forEach { it.dump() }
+    contractConfigurations.forEach { it.dump() }
     injectableTargets.forEach { it.dump("Injectable") }
     providableTargets.forEach { it.dump("Providable") }
   }
@@ -148,26 +159,57 @@ class ClassProcessor(
     }
   }
 
+  private fun ContractConfiguration.dump() {
+    logger.debug("Contract Configuration: {}", type)
+    contract.dump("  ")
+    defaultModule.dump("  ")
+  }
+
   private fun Module.dump(indent: String = "") {
     val nextIntent = "$indent  "
     logger.debug("${indent}Module: {}", type)
-    for (provider in providers) {
+    for (provisionPoint in provisionPoints) {
       exhaustive(
-        when (val provisionPoint = provider.provisionPoint) {
+        when (provisionPoint) {
           is ProvisionPoint.Constructor ->
             logger.debug("${nextIntent}Constructor: {}", provisionPoint.method)
           is ProvisionPoint.Method ->
             logger.debug("${nextIntent}Method: {}", provisionPoint.method)
           is ProvisionPoint.Field ->
             logger.debug("${nextIntent}Field: {}", provisionPoint.field)
-          is ProvisionPoint.Binding ->
-            logger.debug("${nextIntent}Binding: {} -> {}", provisionPoint.dependency, provisionPoint.binding)
         }
       )
     }
 
-    for (module in modules) {
-      module.dump(nextIntent)
+    for (binding in bindings) {
+      logger.debug("${nextIntent}Binding: {} -> {}", binding.ancestor, binding.dependency)
+    }
+
+    for (factory in factories) {
+      logger.debug("${nextIntent}Factory: {}", factory.type)
+    }
+
+    for (contract in contracts) {
+      contract.dump(nextIntent)
+    }
+
+    logger.debug("${nextIntent}Imports:")
+    val importIndent = "  $nextIntent"
+    for (import in imports) {
+      exhaustive(
+        when (import) {
+          is Import.Module -> import.module.dump(importIndent)
+          is Import.Contract -> import.contract.dump(importIndent)
+        }
+      )
+    }
+  }
+
+  private fun Contract.dump(indent: String = "") {
+    val nextIntent = "$indent  "
+    logger.debug("${indent}Contract: {}", type)
+    for (provisionPoint in provisionPoints) {
+      logger.debug("${nextIntent}Method: {}", provisionPoint.method)
     }
   }
 

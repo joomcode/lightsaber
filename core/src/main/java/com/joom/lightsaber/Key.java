@@ -74,8 +74,7 @@ public class Key<T> {
     }
 
     final Key<?> key = (Key<?>) object;
-    return com.joom.lightsaber.internal.TypeUtils.equals(type, key.type)
-        && (qualifier != null ? qualifier.equals(key.qualifier) : key.qualifier == null);
+    return TypeUtils.equals(type, key.type) && (qualifier != null ? qualifier.equals(key.qualifier) : key.qualifier == null);
   }
 
   @Override

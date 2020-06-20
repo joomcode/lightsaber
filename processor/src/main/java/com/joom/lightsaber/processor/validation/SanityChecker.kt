@@ -20,17 +20,19 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.AccessFlagStringifier
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.getAncestors
+import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.FactoryProvisionPoint
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
-import com.joom.lightsaber.processor.model.ModuleProvisionPoint
-import com.joom.lightsaber.processor.model.isConstructorProvider
+import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.ClassRegistry
 import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.Type
+import io.michaelrocks.grip.mirrors.isAbstract
 import io.michaelrocks.grip.mirrors.isDefaultConstructor
 import io.michaelrocks.grip.mirrors.isInterface
 import io.michaelrocks.grip.mirrors.isStatic
@@ -47,10 +49,11 @@ class SanityChecker(
     checkProvidableTargetsAreConstructable(context)
     checkProviderMethodsReturnValues(context)
     checkSubcomponentsAreComponents(context)
-    checkComponentsAndModulesExtendObject(context)
+    checkModulesExtendObject(context)
     checkModulesWithImportedByAreDefaultConstructible(context)
     checkFactories(context)
     checkBindingsConnectValidClasses(context)
+    checkContractConfigurationsAreConcrete(context)
   }
 
   private fun checkStaticInjectionPoints(context: InjectionContext) {
@@ -77,15 +80,22 @@ class SanityChecker(
   }
 
   private fun checkProviderMethodsReturnValues(context: InjectionContext) {
-    context.components.asSequence()
-      .flatMap { component -> component.getModulesWithDescendants() }
+    context.getModulesWithDescendants()
       .distinctBy { module -> module.type }
-      .flatMap { module -> module.providers.asSequence() }
-      .forEach { provider ->
-        if (!provider.isConstructorProvider && provider.dependency.type.rawType == Type.Primitive.Void) {
-          errorReporter.reportError("Provider returns void: " + provider.provisionPoint)
+      .flatMap { module -> module.provisionPoints.asSequence() }
+      .forEach { provisionPoint ->
+        if (provisionPoint !is ProvisionPoint.Constructor && provisionPoint.dependency.type.rawType == Type.Primitive.Void) {
+          errorReporter.reportError("Provider returns void: ${composeProvisionPointDescription(provisionPoint)}")
         }
       }
+  }
+
+  private fun composeProvisionPointDescription(provisionPoint: ProvisionPoint): String {
+    return when (provisionPoint) {
+      is ProvisionPoint.Constructor -> "${provisionPoint.containerType.className}()"
+      is ProvisionPoint.Method -> "${provisionPoint.containerType.className}.${provisionPoint.injectionPoint.method.name}"
+      is ProvisionPoint.Field -> "${provisionPoint.containerType.className}.${provisionPoint.field.name}"
+    }
   }
 
   private fun checkProvidableTargetIsConstructable(providableTarget: Type.Object) {
@@ -114,35 +124,35 @@ class SanityChecker(
     }
   }
 
-  private fun checkComponentsAndModulesExtendObject(context: InjectionContext) {
-    for (component in context.components) {
-      checkClassExtendsObject(component.type)
-      component.getModulesWithDescendants().forEach { module ->
-        checkClassExtendsObject(module.type)
-      }
+  private fun checkModulesExtendObject(context: InjectionContext) {
+    // Components are also validated here because every component is a module.
+    for (module in context.getModulesWithDescendants()) {
+      checkModuleSuperClass(module.type)
+    }
+  }
+
+  private fun checkModuleSuperClass(type: Type.Object) {
+    val mirror = classRegistry.getClassMirror(type)
+    if (mirror.superType != Types.OBJECT_TYPE && mirror.superType != Types.CONTRACT_CONFIGURATION_TYPE) {
+      errorReporter.reportError(
+        "${type.className} has a super type of ${mirror.type.className} instead of " +
+            "${Types.OBJECT_TYPE.className} or ${Types.CONTRACT_CONFIGURATION_TYPE.className}"
+      )
     }
   }
 
   private fun checkModulesWithImportedByAreDefaultConstructible(context: InjectionContext) {
-    context.components.asSequence()
-      .flatMap { component -> component.getModuleProvidersWithDescendants() }
-      .map { provider -> provider.provisionPoint }
-      .filterIsInstance<ModuleProvisionPoint.InverseImport>()
-      .distinctBy { provisionPoint -> provisionPoint.importeeType }
-      .forEach { provisionPoint ->
-        val type = provisionPoint.importeeType
+    context.getImportsWithDescendants()
+      .map { import -> import.importPoint }
+      .filterIsInstance<ImportPoint.Inverse>()
+      .distinctBy { importPoint -> importPoint.importeeType }
+      .forEach { importPoint ->
+        val type = importPoint.importeeType
         val mirror = classRegistry.getClassMirror(type)
         if (mirror.constructors.none { it.isDefaultConstructor }) {
           errorReporter.reportError("Module ${type.className} with @ImportedBy annotation must have a default constructor")
         }
       }
-  }
-
-  private fun checkClassExtendsObject(type: Type.Object) {
-    val mirror = classRegistry.getClassMirror(type)
-    if (mirror.superType != Types.OBJECT_TYPE) {
-      errorReporter.reportError("${type.className} has a super type of ${mirror.type.className} instead of Object")
-    }
   }
 
   private fun checkFactories(context: InjectionContext) {
@@ -244,6 +254,15 @@ class SanityChecker(
     if (ancestorType !in classRegistry.getAncestors(mirror.type)) {
       errorReporter.reportError("@ProvidedAs binding's argument ${ancestorType.className} isn't a super type of the host class ${mirror.type.className}")
       return
+    }
+  }
+
+  private fun checkContractConfigurationsAreConcrete(context: InjectionContext) {
+    for (contractConfiguration in context.contractConfigurations) {
+      val mirror = classRegistry.getClassMirror(contractConfiguration.type)
+      if (mirror.isInterface || mirror.isAbstract) {
+        errorReporter.reportError("Contract configuration ${mirror.getDescription()} should be a concrete class")
+      }
     }
   }
 }

@@ -14,30 +14,10 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package com.joom.lightsaber.internal;
 
-import java.util.ArrayList
+import com.joom.lightsaber.Injector;
 
-class ErrorReporter {
-  private val errors = ArrayList<Exception>()
-
-  fun hasErrors(): Boolean {
-    return errors.isNotEmpty()
-  }
-
-  fun getErrors(): List<Exception> {
-    return errors
-  }
-
-  fun reportError(errorMessage: String) {
-    reportError(ProcessingException(errorMessage))
-  }
-
-  fun reportError(error: Exception) {
-    errors.add(error)
-  }
-}
-
-inline fun ErrorReporter.reportError(builder: StringBuilder.() -> Unit) {
-  reportError(buildString(builder))
+public interface ContractCreator<T> {
+  T createContract(Injector injector);
 }

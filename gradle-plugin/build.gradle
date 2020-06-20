@@ -43,7 +43,6 @@ task generateBuildClass {
 
 sourceSets {
   main {
-    output.dir(builtBy: tasks.generateBuildClass, generatedJavaSourcesDir)
     java.srcDirs += generatedJavaSourcesDir
   }
 }
@@ -64,8 +63,4 @@ idea {
 
 shadowJar {
   relocate 'com.joom.lightsaber', 'com.joom.lightsaber'
-}
-
-pablo {
-  repackage true
 }

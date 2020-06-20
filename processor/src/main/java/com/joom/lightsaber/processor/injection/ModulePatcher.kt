@@ -26,14 +26,17 @@ import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import com.joom.lightsaber.processor.generation.model.KeyRegistry
+import com.joom.lightsaber.processor.generation.model.GenerationContext
+import com.joom.lightsaber.processor.generation.model.Provider
+import com.joom.lightsaber.processor.generation.model.requiresModule
 import com.joom.lightsaber.processor.generation.registerProvider
+import com.joom.lightsaber.processor.model.Import
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.Module
-import com.joom.lightsaber.processor.model.Provider
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.model.isConstructorProvider
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
+import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.isStatic
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
@@ -41,26 +44,24 @@ import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 
 class ModulePatcher(
   classVisitor: ClassVisitor,
-  private val keyRegistry: KeyRegistry,
+  private val generationContext: GenerationContext,
   private val module: Module
 ) : BaseInjectionClassVisitor(classVisitor) {
 
-  private val providableFields: MutableSet<FieldDescriptor>
-  private val providableMethods: MutableSet<MethodDescriptor>
+  private val keyRegistry = generationContext.keyRegistry
+
+  private val providableFields = mutableSetOf<FieldDescriptor>()
+  private val providableMethods = mutableSetOf<MethodDescriptor>()
 
   private var isInjectorConfigurator = false
 
   init {
-    providableFields = HashSet(module.providers.size)
-    providableMethods = HashSet(module.providers.size)
-    for (provider in module.providers) {
-      val provisionPoint = provider.provisionPoint
+    for (provisionPoint in module.provisionPoints) {
       exhaustive(
         when (provisionPoint) {
           is ProvisionPoint.Field -> providableFields.add(provisionPoint.field.toFieldDescriptor())
           is ProvisionPoint.Constructor -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
           is ProvisionPoint.Method -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
-          is ProvisionPoint.Binding -> Unit
         }
       )
     }
@@ -82,16 +83,13 @@ class ModulePatcher(
   override fun visitEnd() {
     if (!isInjectorConfigurator) {
       generateBridges()
-      InjectorConfiguratorImplementor(this, module.type).implementInjectorConfigurator(module.moduleProviders) {
-        registerProviders()
-      }
+      implementInjectorConfigurator()
     }
     super.visitEnd()
   }
 
   private fun generateBridges() {
-    module.providers.forEach { provider ->
-      val provisionPoint = provider.provisionPoint
+    module.provisionPoints.forEach { provisionPoint ->
       val bridge = provisionPoint.bridge
       if (bridge != null) {
         newMethod(ACC_PUBLIC or ACC_SYNTHETIC, bridge.method.toMethodDescriptor()) {
@@ -126,11 +124,18 @@ class ModulePatcher(
     invokeMethod(module.type, method)
   }
 
+  private fun implementInjectorConfigurator() {
+    newMethod(ACC_PUBLIC, CONFIGURE_INJECTOR_METHOD) {
+      registerProviders()
+      configureInjector()
+    }
+  }
+
   private fun GeneratorAdapter.registerProviders() {
-    module.providers.forEach { provider ->
+    generationContext.findProvidersByModuleType(module.type).forEach { provider ->
       loadArg(0)
       registerProvider(keyRegistry, provider) {
-        if (provider.isConstructorProvider) {
+        if (!provider.requiresModule) {
           newConstructorProvider(provider)
         } else {
           newModuleProvider(provider)
@@ -154,5 +159,79 @@ class ModulePatcher(
     loadArg(0)
     val constructor = MethodDescriptor.forConstructor(Types.INJECTOR_TYPE)
     invokeConstructor(provider.type, constructor)
+  }
+
+  private fun GeneratorAdapter.newContractImportProvider(provider: Provider, import: Import.Contract) {
+    newInstance(provider.type)
+    dup()
+    loadModule(import.importPoint)
+    loadArg(0)
+    val constructor = MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+    invokeConstructor(provider.type, constructor)
+  }
+
+  private fun GeneratorAdapter.configureInjector() {
+    module.imports.forEach { configureInjectorWithImport(it) }
+  }
+
+  private fun GeneratorAdapter.configureInjectorWithImport(import: Import) {
+    return when (import) {
+      is Import.Module -> configureInjectorWithModule(import)
+      is Import.Contract -> configureInjectorWithContract(import)
+    }
+  }
+
+  private fun GeneratorAdapter.configureInjectorWithModule(import: Import.Module) {
+    loadModule(import.importPoint)
+    // TODO: It would be better to throw ConfigurationException here.
+    checkCast(LightsaberTypes.INJECTOR_CONFIGURATOR_TYPE)
+    loadArg(0)
+    invokeInterface(LightsaberTypes.INJECTOR_CONFIGURATOR_TYPE, CONFIGURE_INJECTOR_METHOD)
+  }
+
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint) {
+    return when (importPoint) {
+      is ImportPoint.Method -> loadModule(importPoint)
+      is ImportPoint.Field -> loadModule(importPoint)
+      is ImportPoint.Inverse -> loadModule(importPoint)
+    }
+  }
+
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Method) {
+    if (!importPoint.method.isStatic) {
+      loadThis()
+      invokeMethod(module.type, importPoint.method)
+    } else {
+      invokeStatic(module.type, importPoint.method.toMethodDescriptor())
+    }
+  }
+
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Field) {
+    if (!importPoint.field.isStatic) {
+      loadThis()
+      getField(module.type, importPoint.field.toFieldDescriptor())
+    } else {
+      getStatic(module.type, importPoint.field.toFieldDescriptor())
+    }
+  }
+
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Inverse) {
+    newInstance(importPoint.importeeType)
+    dup()
+    invokeConstructor(importPoint.importeeType, MethodDescriptor.forDefaultConstructor())
+  }
+
+  private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
+    generationContext.findProvidersByModuleType(import.contract.type).forEach { provider ->
+      loadArg(0)
+      registerProvider(keyRegistry, provider) {
+        newContractImportProvider(provider, import)
+      }
+    }
+  }
+
+  companion object {
+    private val CONFIGURE_INJECTOR_METHOD =
+      MethodDescriptor.forMethod("configureInjector", Type.Primitive.Void, LightsaberTypes.LIGHTSABER_INJECTOR_TYPE)
   }
 }

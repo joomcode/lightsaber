@@ -16,7 +16,6 @@
 
 package com.joom.lightsaber.processor.commons
 
-import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.ProvisionPoint
 
@@ -25,6 +24,5 @@ fun ProvisionPoint.getInjectees(): Collection<Injectee> {
     is ProvisionPoint.Constructor -> injectionPoint.injectees
     is ProvisionPoint.Method -> injectionPoint.injectees
     is ProvisionPoint.Field -> emptyList()
-    is ProvisionPoint.Binding -> listOf(Injectee(binding, Converter.Instance))
   }
 }

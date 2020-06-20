@@ -18,23 +18,22 @@ package com.joom.lightsaber.processor.generation
 
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.logging.getLogger
+import com.joom.lightsaber.processor.model.InjectionContext
 import io.michaelrocks.grip.ClassRegistry
 
-class ProvidersGenerator(
+class ContractsGenerator(
   private val classProducer: ClassProducer,
   private val classRegistry: ClassRegistry
 ) {
 
   private val logger = getLogger()
 
-  fun generate(generationContext: GenerationContext) {
-    generationContext.providers
-      .distinctBy { it.type }
-      .forEach { provider ->
-        logger.debug("Generating provider {}", provider.type.internalName)
-        val generator = ProviderClassGenerator(classRegistry, generationContext.keyRegistry, provider)
-        val providerClassData = generator.generate()
-        classProducer.produceClass(provider.type.internalName, providerClassData)
-      }
+  fun generate(injectionContext: InjectionContext, generationContext: GenerationContext) {
+    injectionContext.contracts.forEach { contract ->
+      logger.debug("Generating contract {}", contract.implementationType.className)
+      val generator = ContractClassGenerator(classRegistry, generationContext.keyRegistry, contract)
+      val contractClassData = generator.generate()
+      classProducer.produceClass(contract.implementationType.internalName, contractClassData)
+    }
   }
 }
