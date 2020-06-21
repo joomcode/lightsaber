@@ -20,5 +20,9 @@ import io.michaelrocks.grip.mirrors.Type
 
 sealed class Scope {
   object None : Scope()
-  class Class(val scopeType: Type.Object) : Scope()
+
+  class Class(
+    val scopeType: Type.Object,
+    val isEager: Boolean
+  ) : Scope()
 }
