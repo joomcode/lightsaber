@@ -65,7 +65,7 @@ fun Type.getDescription(): String {
 }
 
 private fun StringBuilder.appendAnnotationMirror(mirror: AnnotationMirror): StringBuilder = apply {
-  append(mirror.getDescription())
+  append(mirror.type.getDescription())
   append("(")
   mirror.values.entries.forEachIndexed { index, (name, value) ->
     if (index > 0) {
