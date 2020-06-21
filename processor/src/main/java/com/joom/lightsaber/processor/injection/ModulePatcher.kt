@@ -26,6 +26,7 @@ import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
+import com.joom.lightsaber.processor.generation.getInstance
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.requiresModule
@@ -128,6 +129,7 @@ class ModulePatcher(
     newMethod(ACC_PUBLIC, CONFIGURE_INJECTOR_METHOD) {
       registerProviders()
       configureInjector()
+      instantiateEagerDependencies()
     }
   }
 
@@ -226,6 +228,15 @@ class ModulePatcher(
       loadArg(0)
       registerProvider(keyRegistry, provider) {
         newContractImportProvider(provider, import)
+      }
+    }
+  }
+
+  private fun GeneratorAdapter.instantiateEagerDependencies() {
+    for (provisionPoint in module.provisionPoints) {
+      if (provisionPoint.scope.isEager) {
+        loadArg(0)
+        getInstance(keyRegistry, provisionPoint.dependency)
       }
     }
   }

@@ -19,10 +19,14 @@ package com.joom.lightsaber.processor.model
 import io.michaelrocks.grip.mirrors.Type
 
 sealed class Scope {
-  object None : Scope()
+  abstract val isEager: Boolean
+
+  object None : Scope() {
+    override val isEager: Boolean get() = false
+  }
 
   class Class(
     val scopeType: Type.Object,
-    val isEager: Boolean
+    override val isEager: Boolean
   ) : Scope()
 }
