@@ -33,6 +33,7 @@ import com.joom.lightsaber.processor.generation.model.requiresModule
 import com.joom.lightsaber.processor.generation.registerProvider
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.ImportPoint
+import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.mirrors.FieldMirror
@@ -45,6 +46,7 @@ import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 
 class ModulePatcher(
   classVisitor: ClassVisitor,
+  private val injectionContext: InjectionContext,
   private val generationContext: GenerationContext,
   private val module: Module
 ) : BaseInjectionClassVisitor(classVisitor) {
@@ -129,7 +131,10 @@ class ModulePatcher(
     newMethod(ACC_PUBLIC, CONFIGURE_INJECTOR_METHOD) {
       registerProviders()
       configureInjector()
-      instantiateEagerDependencies()
+
+      if (injectionContext.findComponentByType(module.type) != null || injectionContext.findContractConfigurationByType(module.type) != null) {
+        instantiateEagerDependencies()
+      }
     }
   }
 
@@ -233,10 +238,12 @@ class ModulePatcher(
   }
 
   private fun GeneratorAdapter.instantiateEagerDependencies() {
-    for (provisionPoint in module.provisionPoints) {
-      if (provisionPoint.scope.isEager) {
-        loadArg(0)
-        getInstance(keyRegistry, provisionPoint.dependency)
+    for (module in module.getModulesWithDescendants()) {
+      for (provisionPoint in module.provisionPoints) {
+        if (provisionPoint.scope.isEager) {
+          loadArg(0)
+          getInstance(keyRegistry, provisionPoint.dependency)
+        }
       }
     }
   }
