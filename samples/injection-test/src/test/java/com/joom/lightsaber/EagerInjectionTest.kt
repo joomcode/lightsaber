@@ -108,6 +108,43 @@ class EagerInjectionTest {
     assertNotNull(injector.getInstance<CyclicDependency2>())
   }
 
+  @Test
+  fun testEagerWithParentDependency() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = EagerWithParentDependencyComponent()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("Hello, Parent", injector.getInstance<String>())
+  }
+
+  @Test
+  fun testEagerWithChildDependency() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = EagerWithChildDependencyComponent()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("Hello, Child", injector.getInstance<String>())
+  }
+
+  @Test
+  fun testEagerWithSiblingDependencies() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = EagerWithSiblingDependenciesComponent()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("Eager1 to Sibling2", injector.getInstance<String>(named("Eager1")))
+    assertEquals("Eager2 to Sibling1", injector.getInstance<String>(named("Eager2")))
+  }
+
+  @Test
+  fun testEagerInTheMiddle() {
+    val lightsaber = Lightsaber.Builder().build()
+    val component = EagerInTheMiddleComponent()
+    val injector = lightsaber.createInjector(component)
+
+    assertEquals("Between Parent and Child", injector.getInstance<String>())
+  }
+
   @Component
   class NonEagerComponent {
 
@@ -236,6 +273,128 @@ class EagerInjectionTest {
 
     companion object {
       val isCreated = AtomicBoolean(false)
+    }
+  }
+
+  @Component
+  class EagerWithParentDependencyComponent {
+
+    @Provide
+    @Named("Parent")
+    fun provideParentString(): String {
+      return "Parent"
+    }
+  }
+
+  @Module
+  @ImportedBy(EagerWithParentDependencyComponent::class)
+  class EagerWithParentDependencyModule {
+
+    @Provide
+    @Eager
+    @Singleton
+    fun provideString(@Named("Parent") parentString: String): String {
+      return "Hello, $parentString"
+    }
+  }
+
+  @Component
+  class EagerWithChildDependencyComponent {
+
+    @Provide
+    @Eager
+    @Singleton
+    fun provideString(@Named("Child") childString: String): String {
+      return "Hello, $childString"
+    }
+  }
+
+  @Module
+  @ImportedBy(EagerWithChildDependencyComponent::class)
+  class EagerWithChildDependencyModule {
+
+    @Provide
+    @Named("Child")
+    fun provideChildString(): String {
+      return "Child"
+    }
+  }
+
+  @Component
+  class EagerWithSiblingDependenciesComponent
+
+  @Module
+  @ImportedBy(EagerWithSiblingDependenciesComponent::class)
+  class EagerWithSiblingDependenciesModule1 {
+
+    @Provide
+    @Eager
+    @Singleton
+    @Named("Eager1")
+    fun provideEager1String(@Named("Sibling2") sibling2: String): String {
+      return "Eager1 to $sibling2"
+    }
+
+    @Provide
+    @Named("Sibling1")
+    fun provideSibling1String(): String {
+      return "Sibling1"
+    }
+  }
+
+  @Module
+  @ImportedBy(EagerWithSiblingDependenciesComponent::class)
+  class EagerWithSiblingDependenciesModule2 {
+
+    @Provide
+    @Eager
+    @Singleton
+    @Named("Eager2")
+    fun provideEager1String(@Named("Sibling1") sibling1: String): String {
+      return "Eager2 to $sibling1"
+    }
+
+    @Provide
+    @Named("Sibling2")
+    fun provideSibling2String(): String {
+      return "Sibling2"
+    }
+  }
+
+  @Component
+  class EagerInTheMiddleComponent {
+
+    @Provide
+    @Eager
+    @Singleton
+    @Named("Parent")
+    fun provideParentString(): String {
+      return "Parent"
+    }
+  }
+
+  @Module
+  @ImportedBy(EagerInTheMiddleComponent::class)
+  class EagerInTheMiddleParentModule {
+
+    @Provide
+    @Eager
+    @Singleton
+    fun provideString(@Named("Parent") parentString: String, @Named("Child") childString: String): String {
+      return "Between $parentString and $childString"
+    }
+  }
+
+  @Module
+  @ImportedBy(EagerInTheMiddleParentModule::class)
+  class EagerInTheMiddleComponentChildModule {
+
+    @Provide
+    @Eager
+    @Singleton
+    @Named("Child")
+    fun provideChildString(): String {
+      return "Child"
     }
   }
 }
