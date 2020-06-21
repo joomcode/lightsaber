@@ -50,7 +50,7 @@ class Patcher(
     }
 
     injectionContext.findModuleByType(type)?.also {
-      cv = ModulePatcher(cv, generationContext, it)
+      cv = ModulePatcher(cv, injectionContext, generationContext, it)
     }
 
     injectionContext.findInjectableTargetByType(type)?.also {

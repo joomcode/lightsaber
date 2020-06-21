@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber;
 
-import io.michaelrocks.grip.mirrors.Type
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-sealed class Scope {
-  abstract val isEager: Boolean
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-  object None : Scope() {
-    override val isEager: Boolean get() = false
-  }
-
-  class Class(
-    val scopeType: Type.Object,
-    override val isEager: Boolean
-  ) : Scope()
+@Target({ TYPE, FIELD, METHOD })
+@Retention(RUNTIME)
+@Documented
+public @interface Eager {
 }

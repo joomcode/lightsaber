@@ -497,6 +497,20 @@ On the other hand, if the `ElectricalDroid` class isn't a singleton the `provide
 `@Singleton` will return a cached instance of `ElectricalDroid` so the instance will always be the same. But if
 `ElectricalDroid` is injected somewhere else a new instance of this class will be created.
 
+### Eager injection
+
+When using singleton injection a singleton instance is created lazily when it's accessed for the first time. If you need
+the instance to be created eagerly you can use the `@Eager` annotation with the `@Singleton` annotation. Eager
+dependencies are instantiated during creation of an `Injector` or a contract.
+
+```java
+@Eager
+@Singleton
+public class EagerDroid implements Droid {
+  /* ... */
+}
+```
+
 ### Lazy injection
 
 Instead of creating a dependency instance at injection time its instantiation can be deferred until the object is really
