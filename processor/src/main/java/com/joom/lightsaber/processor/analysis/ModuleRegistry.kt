@@ -22,6 +22,7 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Factory
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import io.michaelrocks.grip.Grip
@@ -56,7 +57,7 @@ class ModuleRegistryImpl(
     }
 
     Externals(
-      importeeModulesByImporterModules = groupImporteeModulesByImporterModules(modules),
+      annotationImportPointsByImporterModules = groupAnnotationImportPointsByImporterModules(modules),
       providableTargetsByModules = groupEntitiesByModules(providableTargets, defaultModuleTypes) { it.type },
       factoriesByModules = groupEntitiesByModules(factories, defaultModuleTypes) { it.type },
       contractsByModules = groupEntitiesByModules(contracts, defaultModuleTypes) { it.type }
@@ -73,37 +74,37 @@ class ModuleRegistryImpl(
     }
   }
 
-  private fun groupImporteeModulesByImporterModules(modules: Collection<ClassMirror>): Map<Type.Object, Collection<Type.Object>> {
-    return HashMap<Type.Object, MutableList<Type.Object>>().also { importeeModulesByImporterModules ->
-      modules.forEach { importee ->
-        extractImporterModulesFromModule(importee).forEach { importerType ->
-          importeeModulesByImporterModules.getOrPut(importerType, ::ArrayList).add(importee.type)
+  private fun groupAnnotationImportPointsByImporterModules(modules: Collection<ClassMirror>): Map<Type.Object, Collection<ImportPoint.Annotation>> {
+    return HashMap<Type.Object, MutableList<ImportPoint.Annotation>>().also { importeeModulesByImporterModules ->
+      modules.forEach { module ->
+        extractImportedByAnnotationImportPointsFromModule(module).forEach { importPoint ->
+          importeeModulesByImporterModules.getOrPut(importPoint.importerType, ::ArrayList).add(importPoint)
         }
       }
     }
   }
 
-  private fun extractImporterModulesFromModule(importee: ClassMirror): List<Type.Object> {
-    val annotation = importee.annotations[Types.IMPORTED_BY_TYPE] ?: return emptyList()
+  private fun extractImportedByAnnotationImportPointsFromModule(module: ClassMirror): List<ImportPoint.Annotation> {
+    val annotation = module.annotations[Types.IMPORTED_BY_TYPE] ?: return emptyList()
     val importerTypes = annotation.values[ImportedBy::value.name] as List<*>
 
     if (importerTypes.isEmpty()) {
-      errorReporter.reportError("Module ${importee.type.className} should be imported by at least one module")
+      errorReporter.reportError("Module ${module.type.className} should be imported by at least one module")
       return emptyList()
     } else {
       return importerTypes.mapNotNull {
         val importerType = it as? Type.Object
         if (importerType == null) {
-          errorReporter.reportError("A non-class type is specified in @ProvidedBy annotation for ${importee.type.className}")
+          errorReporter.reportError("A non-class type is specified in @ProvidedBy annotation for ${module.type.className}")
           return@mapNotNull null
         }
 
         if (!checkTypeCanBeModule(importerType)) {
-          errorReporter.reportError("Module ${importee.type.className} is imported by ${importerType.className}, which isn't a module")
+          errorReporter.reportError("Module ${module.type.className} is imported by ${importerType.className}, which isn't a module")
           return@mapNotNull null
         }
 
-        importerType
+        ImportPoint.Annotation(annotation, importerType, module.type)
       }
     }
   }
@@ -163,14 +164,14 @@ class ModuleRegistryImpl(
 
     return modulesByTypes.getOrPut(moduleType) {
       val externals = externals
-      val importeeModuleTypes = externals.importeeModulesByImporterModules[moduleType].orEmpty()
+      val annotationImportPoints = externals.annotationImportPointsByImporterModules[moduleType].orEmpty()
       val providableTargetsForModuleType = externals.providableTargetsByModules[moduleType].orEmpty()
       val factoriesForModuleType = externals.factoriesByModules[moduleType].orEmpty()
       val importedContractsForModuleType = externals.contractsByModules[moduleType].orEmpty()
 
       moduleParser.parseModule(
         moduleType,
-        importeeModuleTypes,
+        annotationImportPoints,
         providableTargetsForModuleType,
         factoriesForModuleType,
         importedContractsForModuleType,
@@ -196,7 +197,7 @@ class ModuleRegistryImpl(
   }
 
   private class Externals(
-    val importeeModulesByImporterModules: Map<Type.Object, Collection<Type.Object>>,
+    val annotationImportPointsByImporterModules: Map<Type.Object, Collection<ImportPoint.Annotation>>,
     val providableTargetsByModules: Map<Type.Object, Collection<InjectionTarget>>,
     val factoriesByModules: Map<Type.Object, Collection<Factory>>,
     val contractsByModules: Map<Type.Object, Collection<Contract>>

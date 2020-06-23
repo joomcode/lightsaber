@@ -31,6 +31,7 @@ import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import io.michaelrocks.grip.mirrors.AnnotationMirror
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
@@ -166,7 +167,7 @@ data class DependencyResolverPath(
       return when (importPoint) {
         is ImportPoint.Method -> newSegment(importPoint.method)
         is ImportPoint.Field -> newSegment(importPoint.field)
-        is ImportPoint.Inverse -> newSegment("@ImportedBy", "Annotation")
+        is ImportPoint.Annotation -> newSegment(importPoint.annotation)
       }
     }
 
@@ -176,6 +177,10 @@ data class DependencyResolverPath(
 
     private fun newSegment(type: Type, name: String): String {
       return newSegment(type.getDescription(), name)
+    }
+
+    private fun newSegment(annotation: AnnotationMirror, name: String = "Annotation"): String {
+      return newSegment(annotation.getDescription(), name)
     }
 
     private fun newSegment(method: MethodMirror, name: String = "Method"): String {

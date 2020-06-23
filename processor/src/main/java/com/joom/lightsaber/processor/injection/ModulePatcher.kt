@@ -200,7 +200,7 @@ class ModulePatcher(
     return when (importPoint) {
       is ImportPoint.Method -> loadModule(importPoint)
       is ImportPoint.Field -> loadModule(importPoint)
-      is ImportPoint.Inverse -> loadModule(importPoint)
+      is ImportPoint.Annotation -> loadModule(importPoint)
     }
   }
 
@@ -222,7 +222,7 @@ class ModulePatcher(
     }
   }
 
-  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Inverse) {
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Annotation) {
     newInstance(importPoint.importeeType)
     dup()
     invokeConstructor(importPoint.importeeType, MethodDescriptor.forDefaultConstructor())

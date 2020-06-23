@@ -26,6 +26,7 @@ import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
@@ -53,7 +54,7 @@ import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 interface ModuleParser {
   fun parseModule(
     type: Type.Object,
-    importeeModuleTypes: Collection<Type.Object>,
+    annotationImportPoints: Collection<ImportPoint.Annotation>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
     contracts: Collection<Contract>,
@@ -76,7 +77,7 @@ class ModuleParserImpl(
 
   override fun parseModule(
     type: Type.Object,
-    importeeModuleTypes: Collection<Type.Object>,
+    annotationImportPoints: Collection<ImportPoint.Annotation>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
     contracts: Collection<Contract>,
@@ -84,7 +85,7 @@ class ModuleParserImpl(
   ): Module {
     return parseModule(
       grip.classRegistry.getClassMirror(type),
-      importeeModuleTypes,
+      annotationImportPoints,
       providableTargets,
       factories,
       contracts,
@@ -94,7 +95,7 @@ class ModuleParserImpl(
 
   private fun parseModule(
     mirror: ClassMirror,
-    importeeModuleTypes: Collection<Type.Object>,
+    annotationImportPoints: Collection<ImportPoint.Annotation>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
     contracts: Collection<Contract>,
@@ -105,7 +106,7 @@ class ModuleParserImpl(
       return Module(mirror.type, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
     }
 
-    val imports = importParser.parseImports(mirror, moduleRegistry, importeeModuleTypes)
+    val imports = importParser.parseImports(mirror, moduleRegistry, annotationImportPoints)
 
     bridgeRegistry.clear()
     mirror.methods.forEach { bridgeRegistry.reserveMethod(it.toMethodDescriptor()) }

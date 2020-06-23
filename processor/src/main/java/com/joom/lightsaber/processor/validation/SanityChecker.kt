@@ -144,7 +144,7 @@ class SanityChecker(
   private fun checkModulesWithImportedByAreDefaultConstructible(context: InjectionContext) {
     context.getImportsWithDescendants()
       .map { import -> import.importPoint }
-      .filterIsInstance<ImportPoint.Inverse>()
+      .filterIsInstance<ImportPoint.Annotation>()
       .distinctBy { importPoint -> importPoint.importeeType }
       .forEach { importPoint ->
         val type = importPoint.importeeType
