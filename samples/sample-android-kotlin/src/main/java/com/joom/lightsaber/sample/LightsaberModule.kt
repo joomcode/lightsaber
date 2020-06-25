@@ -21,7 +21,7 @@ import com.joom.lightsaber.Module
 import com.joom.lightsaber.Provide
 import com.joom.lightsaber.sample.library.Droid
 
-@Module(isDefault = true)
+@Module
 @ImportedBy(LightsaberComponent::class)
 internal class LightsaberModule {
 

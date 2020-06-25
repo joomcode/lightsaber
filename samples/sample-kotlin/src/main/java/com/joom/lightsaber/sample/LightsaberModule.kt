@@ -22,7 +22,7 @@ import com.joom.lightsaber.Provide
 import javax.inject.Provider
 import javax.inject.Singleton
 
-@Module(isDefault = true)
+@Module
 @ImportedBy(LightsaberComponent::class)
 internal class LightsaberModule {
 

@@ -16,14 +16,14 @@
 
 package com.joom.lightsaber.sample;
 
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 import com.joom.lightsaber.ImportedBy;
 import com.joom.lightsaber.Module;
 import com.joom.lightsaber.Provide;
 
-@Module(isDefault = true)
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
+@Module
 @ImportedBy(LightsaberComponent.class)
 class LightsaberModule {
   @Provide

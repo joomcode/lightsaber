@@ -16,10 +16,12 @@
 
 package com.joom.lightsaber.sample
 
+import com.joom.lightsaber.ProvidedBy
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
+@ProvidedBy(LightsaberModule::class)
 internal class Kashyyyk @Inject private constructor() : Planet {
 
   override val name = "Kashyyyk"

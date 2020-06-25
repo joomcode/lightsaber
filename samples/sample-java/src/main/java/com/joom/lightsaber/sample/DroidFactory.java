@@ -17,8 +17,10 @@
 package com.joom.lightsaber.sample;
 
 import com.joom.lightsaber.Factory;
+import com.joom.lightsaber.ProvidedBy;
 
 @Factory
+@ProvidedBy(LightsaberModule.class)
 public interface DroidFactory {
   @Factory.Return(R2D2.class)
   Droid produceR2D2(final String color);

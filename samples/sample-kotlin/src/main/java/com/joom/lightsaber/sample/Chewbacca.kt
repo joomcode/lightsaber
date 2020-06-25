@@ -17,12 +17,14 @@
 package com.joom.lightsaber.sample
 
 import com.joom.lightsaber.ProvidedAs
+import com.joom.lightsaber.ProvidedBy
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
 
 @Singleton
 @ProvidedAs(Wookiee::class)
+@ProvidedBy(LightsaberModule::class)
 internal class Chewbacca @Inject private constructor(
   planetProvider: Provider<Planet>
 ) : Wookiee {
