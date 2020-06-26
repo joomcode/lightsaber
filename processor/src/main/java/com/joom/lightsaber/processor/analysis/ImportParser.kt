@@ -40,7 +40,7 @@ import io.michaelrocks.grip.returns
 interface ImportParser {
   fun parseImports(
     mirror: ClassMirror,
-    moduleRegistry: ModuleRegistry,
+    moduleParser: ModuleParser,
     annotationImportPoints: Collection<ImportPoint.Annotation>
   ): Collection<Import>
 }
@@ -55,7 +55,7 @@ class ImportParserImpl(
 
   override fun parseImports(
     mirror: ClassMirror,
-    moduleRegistry: ModuleRegistry,
+    moduleParser: ModuleParser,
     annotationImportPoints: Collection<ImportPoint.Annotation>
   ): Collection<Import> {
     val isImportable = annotatedWith(Types.IMPORT_TYPE)
@@ -65,44 +65,44 @@ class ImportParserImpl(
     logger.debug("{}", mirror.type.className)
     val methods = methodsQuery.execute()[mirror.type].orEmpty().mapNotNull { method ->
       logger.debug("  Method: {}", method)
-      tryParseMethodImport(mirror, method, moduleRegistry)
+      tryParseMethodImport(mirror, method, moduleParser)
     }
 
     val fields = fieldsQuery.execute()[mirror.type].orEmpty().mapNotNull { field ->
       logger.debug("  Field: {}", field)
-      tryParseFieldImport(mirror, field, moduleRegistry)
+      tryParseFieldImport(mirror, field, moduleParser)
     }
 
     val inverse = annotationImportPoints.map { importPoint ->
       logger.debug("  Annotation: {}", importPoint)
-      val module = moduleRegistry.getModule(importPoint.importeeType, isImported = true)
+      val module = moduleParser.parseModule(importPoint.importeeType, isImported = true)
       Import.Module(module, importPoint)
     }
 
     return methods + fields + inverse
   }
 
-  private fun tryParseMethodImport(mirror: ClassMirror, method: MethodMirror, moduleRegistry: ModuleRegistry): Import? {
+  private fun tryParseMethodImport(mirror: ClassMirror, method: MethodMirror, moduleParser: ModuleParser): Import? {
     if (method.parameters.isNotEmpty()) {
       errorReporter.reportError("Import method cannot have parameters: ${mirror.type.className}.${method.name}")
       return null
     }
 
     val type = getImportTypeOrNull(method.signature.returnType, "${mirror.type.className}.${method.name}") ?: return null
-    return tryParseImport(method, type, ImportPoint.Method(method), moduleRegistry)
+    return tryParseImport(method, type, ImportPoint.Method(method), moduleParser)
   }
 
-  private fun tryParseFieldImport(mirror: ClassMirror, field: FieldMirror, moduleRegistry: ModuleRegistry): Import? {
+  private fun tryParseFieldImport(mirror: ClassMirror, field: FieldMirror, moduleParser: ModuleParser): Import? {
     val type = getImportTypeOrNull(field.signature.type, "${mirror.type.className}.${field.name}") ?: return null
-    return tryParseImport(field, type, ImportPoint.Field(field), moduleRegistry)
+    return tryParseImport(field, type, ImportPoint.Field(field), moduleParser)
   }
 
-  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleRegistry: ModuleRegistry): Import {
+  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleParser: ModuleParser): Import {
     return if (Types.CONTRACT_TYPE in element.annotations) {
       val contract = contractParser.parseContract(type)
       Import.Contract(contract, importPoint)
     } else {
-      val module = moduleRegistry.getModule(type, isImported = true)
+      val module = moduleParser.parseModule(type, isImported = true)
       Import.Module(module, importPoint)
     }
   }

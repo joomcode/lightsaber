@@ -22,10 +22,10 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ExternalSetup
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
-import com.joom.lightsaber.processor.model.Module
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.annotatedWith
 import io.michaelrocks.grip.classes
@@ -34,44 +34,32 @@ import io.michaelrocks.grip.mirrors.Type
 import java.io.File
 import java.util.HashMap
 
-interface ModuleRegistry {
-  fun getModule(moduleType: Type.Object, isImported: Boolean): Module
+interface ExternalSetupAnalyzer {
+  fun analyze(files: Collection<File>): ExternalSetup
 }
 
-class ModuleRegistryImpl(
+class ExternalSetupAnalyzerImpl(
   private val grip: Grip,
-  private val moduleParser: ModuleParser,
   private val analyzerHelper: AnalyzerHelper,
-  private val errorReporter: ErrorReporter,
-  providableTargets: Collection<InjectionTarget>,
-  factories: Collection<Factory>,
-  contracts: Collection<Contract>,
-  files: Collection<File>
-) : ModuleRegistry {
+  private val providableTargets: Collection<InjectionTarget>,
+  private val factories: Collection<Factory>,
+  private val contracts: Collection<Contract>,
+  private val errorReporter: ErrorReporter
+) : ExternalSetupAnalyzer {
 
-  private val externals by lazy(LazyThreadSafetyMode.NONE) {
+  override fun analyze(files: Collection<File>): ExternalSetup {
     val modulesQuery = grip select classes from files where annotatedWith(Types.MODULE_TYPE)
     val modules = modulesQuery.execute().classes
 
-    Externals(
-      annotationImportPointsByImporterModules = groupAnnotationImportPointsByImporterModules(modules),
+    return ExternalSetup(
+      annotationModuleImportPointsByImporterModules = groupAnnotationImportPointsByModules(modules),
       providableTargetsByModules = groupEntitiesByModules(providableTargets) { it.type },
       factoriesByModules = groupEntitiesByModules(factories) { it.type },
       contractsByModules = groupEntitiesByModules(contracts) { it.type }
     )
   }
 
-  private val modulesByTypes = HashMap<Type.Object, Module>()
-
-  private val moduleTypeStack = ArrayList<Type.Object>()
-
-  override fun getModule(moduleType: Type.Object, isImported: Boolean): Module {
-    return withModuleTypeInStack(moduleType) {
-      maybeParseModule(moduleType, isImported)
-    }
-  }
-
-  private fun groupAnnotationImportPointsByImporterModules(modules: Collection<ClassMirror>): Map<Type.Object, Collection<ImportPoint.Annotation>> {
+  private fun groupAnnotationImportPointsByModules(modules: Collection<ClassMirror>): Map<Type.Object, Collection<ImportPoint.Annotation>> {
     return HashMap<Type.Object, MutableList<ImportPoint.Annotation>>().also { importeeModulesByImporterModules ->
       modules.forEach { module ->
         extractImportedByAnnotationImportPointsFromModule(module).forEach { importPoint ->
@@ -114,7 +102,7 @@ class ModuleRegistryImpl(
   private fun <T : Any> groupEntitiesByModules(
     entities: Collection<T>,
     typeSelector: (T) -> Type.Object
-  ): Map<Type.Object, List<T>> {
+  ): Map<Type.Object, Collection<T>> {
     return HashMap<Type.Object, MutableList<T>>().also { entitiesByModule ->
       entities.forEach { entity ->
         val type = typeSelector(entity)
@@ -136,53 +124,4 @@ class ModuleRegistryImpl(
       }
     }
   }
-
-  private fun maybeParseModule(moduleType: Type.Object, isImported: Boolean): Module {
-    if (isImported) {
-      val mirror = grip.classRegistry.getClassMirror(moduleType)
-      if (Types.MODULE_TYPE !in mirror.annotations) {
-        errorReporter.reportError("Imported module ${moduleType.className} isn't annotated with @Module")
-      }
-    }
-
-    return modulesByTypes.getOrPut(moduleType) {
-      val externals = externals
-      val annotationImportPoints = externals.annotationImportPointsByImporterModules[moduleType].orEmpty()
-      val providableTargetsForModuleType = externals.providableTargetsByModules[moduleType].orEmpty()
-      val factoriesForModuleType = externals.factoriesByModules[moduleType].orEmpty()
-      val importedContractsForModuleType = externals.contractsByModules[moduleType].orEmpty()
-
-      moduleParser.parseModule(
-        moduleType,
-        annotationImportPoints,
-        providableTargetsForModuleType,
-        factoriesForModuleType,
-        importedContractsForModuleType,
-        this
-      )
-    }
-  }
-
-  private inline fun withModuleTypeInStack(moduleType: Type.Object, action: () -> Module): Module {
-    moduleTypeStack += moduleType
-    return try {
-      if (moduleTypeStack.indexOf(moduleType) == moduleTypeStack.lastIndex) {
-        action()
-      } else {
-        val cycle = moduleTypeStack.joinToString(" -> ") { it.className }
-        errorReporter.reportError("Module cycle: $cycle")
-        Module(moduleType, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
-      }
-    } finally {
-      val removedModuleType = moduleTypeStack.removeAt(moduleTypeStack.lastIndex)
-      check(removedModuleType === moduleType)
-    }
-  }
-
-  private class Externals(
-    val annotationImportPointsByImporterModules: Map<Type.Object, Collection<ImportPoint.Annotation>>,
-    val providableTargetsByModules: Map<Type.Object, Collection<InjectionTarget>>,
-    val factoriesByModules: Map<Type.Object, Collection<Factory>>,
-    val contractsByModules: Map<Type.Object, Collection<Contract>>
-  )
 }

@@ -19,12 +19,14 @@ package com.joom.lightsaber.processor.analysis
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.contains
+import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.ExternalSetup
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionPoint
@@ -50,24 +52,19 @@ import io.michaelrocks.grip.returns
 import org.objectweb.asm.Opcodes.ACC_PRIVATE
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
+import java.util.HashMap
 
 interface ModuleParser {
-  fun parseModule(
-    type: Type.Object,
-    annotationImportPoints: Collection<ImportPoint.Annotation>,
-    providableTargets: Collection<InjectionTarget>,
-    factories: Collection<Factory>,
-    contracts: Collection<Contract>,
-    moduleRegistry: ModuleRegistry
-  ): Module
+  fun parseModule(type: Type.Object, isImported: Boolean): Module
 }
 
 class ModuleParserImpl(
   private val grip: Grip,
+  private val analyzerHelper: AnalyzerHelper,
   private val importParser: ImportParser,
   private val contractParser: ContractParser,
   private val bindingRegistry: BindingRegistry,
-  private val analyzerHelper: AnalyzerHelper,
+  private val externalSetup: ExternalSetup,
   private val errorReporter: ErrorReporter
 ) : ModuleParser {
 
@@ -75,22 +72,47 @@ class ModuleParserImpl(
 
   private val bridgeRegistry = BridgeRegistry()
 
-  override fun parseModule(
-    type: Type.Object,
-    annotationImportPoints: Collection<ImportPoint.Annotation>,
-    providableTargets: Collection<InjectionTarget>,
-    factories: Collection<Factory>,
-    contracts: Collection<Contract>,
-    moduleRegistry: ModuleRegistry
-  ): Module {
-    return parseModule(
-      grip.classRegistry.getClassMirror(type),
-      annotationImportPoints,
-      providableTargets,
-      factories,
-      contracts,
-      moduleRegistry
-    )
+  private val modulesByTypes = HashMap<Type.Object, Module>()
+  private val moduleTypeStack = ArrayList<Type.Object>()
+
+  override fun parseModule(type: Type.Object, isImported: Boolean): Module {
+    return withModuleTypeInStack(type) {
+      modulesByTypes.getOrPut(type) {
+        val mirror = grip.classRegistry.getClassMirror(type)
+        parseModule(mirror, isImported)
+      }
+    }
+  }
+
+  private inline fun withModuleTypeInStack(moduleType: Type.Object, action: () -> Module): Module {
+    moduleTypeStack += moduleType
+    return try {
+      if (moduleTypeStack.indexOf(moduleType) == moduleTypeStack.lastIndex) {
+        action()
+      } else {
+        val cycle = moduleTypeStack.joinToString(" -> ") { it.className }
+        errorReporter.reportError("Module cycle: $cycle")
+        Module(moduleType, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+      }
+    } finally {
+      val removedModuleType = moduleTypeStack.removeAt(moduleTypeStack.lastIndex)
+      check(removedModuleType === moduleType)
+    }
+  }
+
+  private fun parseModule(mirror: ClassMirror, isImported: Boolean): Module {
+    if (isImported) {
+      if (Types.MODULE_TYPE !in mirror.annotations) {
+        errorReporter.reportError("Imported module ${mirror.getDescription()} isn't annotated with @Module")
+      }
+    }
+
+    val annotationImportPoints = externalSetup.annotationModuleImportPointsByImporterModules[mirror.type].orEmpty()
+    val providableTargets = externalSetup.providableTargetsByModules[mirror.type].orEmpty()
+    val factories = externalSetup.factoriesByModules[mirror.type].orEmpty()
+    val contracts = externalSetup.contractsByModules[mirror.type].orEmpty()
+
+    return parseModule(mirror, annotationImportPoints, providableTargets, factories, contracts)
   }
 
   private fun parseModule(
@@ -98,15 +120,14 @@ class ModuleParserImpl(
     annotationImportPoints: Collection<ImportPoint.Annotation>,
     providableTargets: Collection<InjectionTarget>,
     factories: Collection<Factory>,
-    contracts: Collection<Contract>,
-    moduleRegistry: ModuleRegistry
+    contracts: Collection<Contract>
   ): Module {
     if (mirror.signature.typeVariables.isNotEmpty()) {
       errorReporter.reportError("Module cannot have a type parameters: ${mirror.type.className}")
       return Module(mirror.type, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
     }
 
-    val imports = importParser.parseImports(mirror, moduleRegistry, annotationImportPoints)
+    val imports = importParser.parseImports(mirror, this, annotationImportPoints)
 
     bridgeRegistry.clear()
     mirror.methods.forEach { bridgeRegistry.reserveMethod(it.toMethodDescriptor()) }

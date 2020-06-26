@@ -32,7 +32,7 @@ interface ContractConfigurationAnalyzer {
 class ContractConfigurationAnalyzerImpl(
   private val grip: Grip,
   private val analyzerHelper: AnalyzerHelper,
-  private val moduleRegistry: ModuleRegistry,
+  private val moduleParser: ModuleParser,
   private val contractParser: ContractParser
 ) : ContractConfigurationAnalyzer {
 
@@ -40,7 +40,7 @@ class ContractConfigurationAnalyzerImpl(
     val configurationsQuery = grip select classes from files where superType { _, type -> type == Types.CONTRACT_CONFIGURATION_TYPE }
     return configurationsQuery.execute().classes.mapNotNull { mirror ->
       val contract = extractConfigurationContract(mirror) ?: return@mapNotNull null
-      val module = moduleRegistry.getModule(mirror.type, isImported = false)
+      val module = moduleParser.parseModule(mirror.type, isImported = false)
       ContractConfiguration(mirror.type, contract, module)
     }
   }

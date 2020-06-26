@@ -36,10 +36,10 @@ class Analyzer(
     val contractParser = ContractParserImpl(grip, analyzerHelper, errorReporter, projectName)
     val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(files)
     val importParser = ImportParserImpl(grip, contractParser, errorReporter)
-    val moduleParser = ModuleParserImpl(grip, importParser, contractParser, bindingRegistry, analyzerHelper, errorReporter)
-    val moduleRegistry = ModuleRegistryImpl(grip, moduleParser, analyzerHelper, errorReporter, providableTargets, factories, contracts, files)
-    val components = ComponentsAnalyzerImpl(grip, moduleRegistry, errorReporter).analyze(files)
-    val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleRegistry, contractParser).analyze(files)
+    val externalSetup = ExternalSetupAnalyzerImpl(grip, analyzerHelper, providableTargets, factories, contracts, errorReporter).analyze(files)
+    val moduleParser = ModuleParserImpl(grip, analyzerHelper, importParser, contractParser, bindingRegistry, externalSetup, errorReporter)
+    val components = ComponentsAnalyzerImpl(grip, moduleParser, errorReporter).analyze(files)
+    val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleParser, contractParser).analyze(files)
     return InjectionContext(components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
   }
 }
