@@ -44,6 +44,7 @@ interface AnalyzerHelper {
   fun findConfigurationContractType(mirror: ClassMirror): Type.Object?
   fun findQualifier(annotated: Annotated): AnnotationMirror?
   fun findScope(annotated: Annotated): Scope
+  fun isModule(mirror: ClassMirror): Boolean
 }
 
 class AnalyzerHelperImpl(
@@ -137,6 +138,19 @@ class AnalyzerHelperImpl(
         Scope.None
       }
     }
+  }
+
+  override fun isModule(mirror: ClassMirror): Boolean {
+    val annotations = mirror.annotations
+    if (Types.MODULE_TYPE in annotations || Types.COMPONENT_TYPE in annotations) {
+      return true
+    }
+
+    if (mirror.superType == Types.CONTRACT_CONFIGURATION_TYPE) {
+      return true
+    }
+
+    return false
   }
 
   private fun getInjectees(method: MethodMirror): List<Injectee> {

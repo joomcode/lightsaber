@@ -41,6 +41,7 @@ interface ModuleRegistry {
 class ModuleRegistryImpl(
   private val grip: Grip,
   private val moduleParser: ModuleParser,
+  private val analyzerHelper: AnalyzerHelper,
   private val errorReporter: ErrorReporter,
   providableTargets: Collection<InjectionTarget>,
   factories: Collection<Factory>,
@@ -107,16 +108,7 @@ class ModuleRegistryImpl(
 
   private fun checkTypeCanBeModule(type: Type.Object): Boolean {
     val mirror = grip.classRegistry.getClassMirror(type)
-    val annotations = mirror.annotations
-    if (Types.MODULE_TYPE in annotations || Types.COMPONENT_TYPE in annotations) {
-      return true
-    }
-
-    if (mirror.superType == Types.CONTRACT_CONFIGURATION_TYPE) {
-      return true
-    }
-
-    return false
+    return analyzerHelper.isModule(mirror)
   }
 
   private fun <T : Any> groupEntitiesByModules(
