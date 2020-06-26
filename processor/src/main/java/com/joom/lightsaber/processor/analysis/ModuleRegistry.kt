@@ -20,6 +20,7 @@ import com.joom.lightsaber.ImportedBy
 import com.joom.lightsaber.ProvidedBy
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
+import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.ImportPoint
@@ -51,16 +52,11 @@ class ModuleRegistryImpl(
     val modulesQuery = grip select classes from files where annotatedWith(Types.MODULE_TYPE)
     val modules = modulesQuery.execute().classes
 
-    val defaultModuleTypes = modules.mapNotNull { mirror ->
-      val annotation = checkNotNull(mirror.annotations[Types.MODULE_TYPE])
-      if (annotation.values[com.joom.lightsaber.Module::isDefault.name] == true) mirror.type else null
-    }
-
     Externals(
       annotationImportPointsByImporterModules = groupAnnotationImportPointsByImporterModules(modules),
-      providableTargetsByModules = groupEntitiesByModules(providableTargets, defaultModuleTypes) { it.type },
-      factoriesByModules = groupEntitiesByModules(factories, defaultModuleTypes) { it.type },
-      contractsByModules = groupEntitiesByModules(contracts, defaultModuleTypes) { it.type }
+      providableTargetsByModules = groupEntitiesByModules(providableTargets) { it.type },
+      factoriesByModules = groupEntitiesByModules(factories) { it.type },
+      contractsByModules = groupEntitiesByModules(contracts) { it.type }
     )
   }
 
@@ -89,18 +85,18 @@ class ModuleRegistryImpl(
     val importerTypes = annotation.values[ImportedBy::value.name] as List<*>
 
     if (importerTypes.isEmpty()) {
-      errorReporter.reportError("Module ${module.type.className} should be imported by at least one module")
+      errorReporter.reportError("Module ${module.type.className} should be imported by at least one container")
       return emptyList()
     } else {
       return importerTypes.mapNotNull {
         val importerType = it as? Type.Object
         if (importerType == null) {
-          errorReporter.reportError("A non-class type is specified in @ProvidedBy annotation for ${module.type.className}")
+          errorReporter.reportError("A non-class type is specified in @ImportedBy annotation for ${module.type.className}")
           return@mapNotNull null
         }
 
         if (!checkTypeCanBeModule(importerType)) {
-          errorReporter.reportError("Module ${module.type.className} is imported by ${importerType.className}, which isn't a module")
+          errorReporter.reportError("Module ${module.type.className} is imported by ${importerType.className}, which isn't a container")
           return@mapNotNull null
         }
 
@@ -125,22 +121,17 @@ class ModuleRegistryImpl(
 
   private fun <T : Any> groupEntitiesByModules(
     entities: Collection<T>,
-    defaultModuleTypes: Collection<Type.Object>,
     typeSelector: (T) -> Type.Object
   ): Map<Type.Object, List<T>> {
     return HashMap<Type.Object, MutableList<T>>().also { entitiesByModule ->
       entities.forEach { entity ->
         val type = typeSelector(entity)
         val mirror = grip.classRegistry.getClassMirror(type)
-        val providedByAnnotation = mirror.annotations[Types.PROVIDED_BY_TYPE]
-        val moduleTypes = if (providedByAnnotation != null) providedByAnnotation.values[ProvidedBy::value.name] as List<*> else defaultModuleTypes
+        val annotation = mirror.annotations[Types.PROVIDED_BY_TYPE] ?: return@forEach
+        val moduleTypes = annotation.values[ProvidedBy::value.name] as List<*>
 
         if (moduleTypes.isEmpty()) {
-          errorReporter.reportError(
-            "Class ${type.className} should be bound to at least one module. " +
-                "You can annotate it with @ProvidedBy with a module list " +
-                "or make some of your modules default with @Module(isDefault = true)"
-          )
+          errorReporter.reportError("@ProvidedBy should contain at least one container: ${mirror.getDescription()}")
         } else {
           moduleTypes.forEach { moduleType ->
             if (moduleType is Type.Object) {

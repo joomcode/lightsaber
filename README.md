@@ -321,10 +321,6 @@ public class Droid {
 }
 ```
 
-If you have a module that should provide most of the dependencies you can make this module default by setting
-`isDefault` parameter in the `@Module` annotation to `true` and avoid using `@ProvidedBy` annotation on classes that
-need to be provided by this module.
-
 When providing a dependency using an injectable constructor Lightsaber will perform field and method injection into
 the provided instance.
 
