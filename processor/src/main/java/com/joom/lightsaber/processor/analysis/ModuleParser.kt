@@ -18,22 +18,13 @@ package com.joom.lightsaber.processor.analysis
 
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
-import com.joom.lightsaber.processor.commons.contains
 import com.joom.lightsaber.processor.commons.getDescription
-import com.joom.lightsaber.processor.commons.toFieldDescriptor
-import com.joom.lightsaber.processor.commons.toMethodDescriptor
-import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.logging.getLogger
-import com.joom.lightsaber.processor.model.Contract
-import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.ExternalSetup
-import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.ImportPoint
-import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.model.Scope
+import com.joom.lightsaber.processor.reportError
 import io.michaelrocks.grip.Grip
 import io.michaelrocks.grip.and
 import io.michaelrocks.grip.annotatedWith
@@ -43,15 +34,9 @@ import io.michaelrocks.grip.isStatic
 import io.michaelrocks.grip.methodType
 import io.michaelrocks.grip.methods
 import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 import io.michaelrocks.grip.not
 import io.michaelrocks.grip.returns
-import org.objectweb.asm.Opcodes.ACC_PRIVATE
-import org.objectweb.asm.Opcodes.ACC_PUBLIC
-import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 import java.util.HashMap
 
 interface ModuleParser {
@@ -61,6 +46,7 @@ interface ModuleParser {
 class ModuleParserImpl(
   private val grip: Grip,
   private val analyzerHelper: AnalyzerHelper,
+  private val provisionPointFactory: ProvisionPointFactory,
   private val importParser: ImportParser,
   private val contractParser: ContractParser,
   private val bindingRegistry: BindingRegistry,
@@ -70,8 +56,6 @@ class ModuleParserImpl(
 
   private val logger = getLogger()
 
-  private val bridgeRegistry = BridgeRegistry()
-
   private val modulesByTypes = HashMap<Type.Object, Module>()
   private val moduleTypeStack = ArrayList<Type.Object>()
 
@@ -79,7 +63,7 @@ class ModuleParserImpl(
     return withModuleTypeInStack(type) {
       modulesByTypes.getOrPut(type) {
         val mirror = grip.classRegistry.getClassMirror(type)
-        parseModule(mirror, isImported)
+        tryParseModule(mirror, isImported) ?: newEmptyModule(type)
       }
     }
   }
@@ -90,9 +74,14 @@ class ModuleParserImpl(
       if (moduleTypeStack.indexOf(moduleType) == moduleTypeStack.lastIndex) {
         action()
       } else {
-        val cycle = moduleTypeStack.joinToString(" -> ") { it.className }
-        errorReporter.reportError("Module cycle: $cycle")
-        Module(moduleType, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        errorReporter.reportError {
+          append("Module cycle:")
+          moduleTypeStack.forEach { type ->
+            append("\n  ")
+            append(type.getDescription())
+          }
+        }
+        newEmptyModule(moduleType)
       }
     } finally {
       val removedModuleType = moduleTypeStack.removeAt(moduleTypeStack.lastIndex)
@@ -100,11 +89,17 @@ class ModuleParserImpl(
     }
   }
 
-  private fun parseModule(mirror: ClassMirror, isImported: Boolean): Module {
+  private fun tryParseModule(mirror: ClassMirror, isImported: Boolean): Module? {
     if (isImported) {
       if (Types.MODULE_TYPE !in mirror.annotations) {
         errorReporter.reportError("Imported module ${mirror.getDescription()} isn't annotated with @Module")
+        return null
       }
+    }
+
+    if (mirror.signature.typeVariables.isNotEmpty()) {
+      errorReporter.reportError("Module cannot have a type parameters: ${mirror.type.className}")
+      return null
     }
 
     val annotationImportPoints = externalSetup.annotationModuleImportPointsByImporterModules[mirror.type].orEmpty()
@@ -112,26 +107,7 @@ class ModuleParserImpl(
     val factories = externalSetup.factoriesByModules[mirror.type].orEmpty()
     val contracts = externalSetup.contractsByModules[mirror.type].orEmpty()
 
-    return parseModule(mirror, annotationImportPoints, providableTargets, factories, contracts)
-  }
-
-  private fun parseModule(
-    mirror: ClassMirror,
-    annotationImportPoints: Collection<ImportPoint.Annotation>,
-    providableTargets: Collection<InjectionTarget>,
-    factories: Collection<Factory>,
-    contracts: Collection<Contract>
-  ): Module {
-    if (mirror.signature.typeVariables.isNotEmpty()) {
-      errorReporter.reportError("Module cannot have a type parameters: ${mirror.type.className}")
-      return Module(mirror.type, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
-    }
-
     val imports = importParser.parseImports(mirror, this, annotationImportPoints)
-
-    bridgeRegistry.clear()
-    mirror.methods.forEach { bridgeRegistry.reserveMethod(it.toMethodDescriptor()) }
-
     val provisionPoints = createProvisionPoints(mirror, providableTargets)
     val dependencies = provisionPoints.map { it.dependency } + factories.map { it.dependency } + contracts.map { it.dependency }
     val bindings = dependencies.flatMap { bindingRegistry.findBindingsByDependency(it) }
@@ -149,82 +125,23 @@ class ModuleParserImpl(
     logger.debug("Module: {}", mirror.type.className)
     providableTargets.mapTo(provisionPoints) { target ->
       logger.debug("  Constructor: {}", target.injectionPoints.first())
-      newConstructorProvisionPoint(target)
+      provisionPointFactory.newConstructorProvisionPoint(target)
     }
 
     methodsQuery.execute()[mirror.type].orEmpty().mapTo(provisionPoints) { method ->
       logger.debug("  Method: {}", method)
-      newMethodProvisionPoint(mirror.type, method)
+      provisionPointFactory.newMethodProvisionPoint(mirror.type, method)
     }
 
     fieldsQuery.execute()[mirror.type].orEmpty().mapTo(provisionPoints) { field ->
       logger.debug("  Field: {}", field)
-      newFieldProvisionPoint(mirror.type, field)
+      provisionPointFactory.newFieldProvisionPoint(mirror.type, field)
     }
 
     return provisionPoints
   }
 
-  private fun newConstructorProvisionPoint(target: InjectionTarget): ProvisionPoint.Constructor {
-    val mirror = grip.classRegistry.getClassMirror(target.type)
-    val dependency = Dependency(GenericType.Raw(target.type), analyzerHelper.findQualifier(mirror))
-    val scope = analyzerHelper.findScope(mirror)
-    val injectionPoint = target.injectionPoints.first() as InjectionPoint.Method
-    return ProvisionPoint.Constructor(dependency, scope, injectionPoint)
-  }
-
-  private fun newMethodProvisionPoint(container: Type.Object, method: MethodMirror): ProvisionPoint.Method {
-    val dependency = Dependency(method.signature.returnType, analyzerHelper.findQualifier(method))
-    val scope = analyzerHelper.findScope(method)
-    val injectionPoint = analyzerHelper.convertMethodToInjectionPoint(method, container)
-    return ProvisionPoint.Method(dependency, scope, injectionPoint, null).withBridge()
-  }
-
-  private fun newFieldProvisionPoint(container: Type.Object, field: FieldMirror): ProvisionPoint.Field {
-    val dependency = Dependency(field.signature.type, analyzerHelper.findQualifier(field))
-    val scope = analyzerHelper.findScope(field)
-    return ProvisionPoint.Field(container, dependency, scope, null, field).withBridge()
-  }
-
-  private fun ProvisionPoint.Method.withBridge(): ProvisionPoint.Method {
-    val method = injectionPoint.method
-    if (ACC_PRIVATE !in method.access) {
-      return this
-    }
-
-    val bridgeMethod = bridgeRegistry.addBridge(method)
-    val bridgeInjectionPoint = injectionPoint.copy(method = bridgeMethod)
-    val bridgeProvisionPoint = ProvisionPoint.Method(dependency, Scope.None, bridgeInjectionPoint, null)
-    return copy(bridge = bridgeProvisionPoint)
-  }
-
-  private fun ProvisionPoint.Field.withBridge(): ProvisionPoint.Field {
-    val field = field
-    if (ACC_PRIVATE !in field.access) {
-      return this
-    }
-
-    val bridgeMethod = bridgeRegistry.addBridge(field)
-    val bridgeInjectionPoint = InjectionPoint.Method(containerType, bridgeMethod, listOf())
-    val bridgeProvisionPoint = ProvisionPoint.Method(dependency, Scope.None, bridgeInjectionPoint, null)
-    return copy(bridge = bridgeProvisionPoint)
-  }
-
-  private fun BridgeRegistry.addBridge(method: MethodMirror): MethodMirror {
-    val bridge = addBridge(method.toMethodDescriptor())
-    return createBridgeMirror(bridge)
-  }
-
-  private fun BridgeRegistry.addBridge(field: FieldMirror): MethodMirror {
-    val bridge = addBridge(field.toFieldDescriptor())
-    return createBridgeMirror(bridge)
-  }
-
-  private fun createBridgeMirror(bridge: MethodDescriptor): MethodMirror {
-    return MethodMirror.Builder()
-      .access(ACC_PUBLIC or ACC_SYNTHETIC)
-      .name(bridge.name)
-      .type(bridge.type)
-      .build()
+  private fun newEmptyModule(type: Type.Object): Module {
+    return Module(type, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
   }
 }

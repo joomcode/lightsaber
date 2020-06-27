@@ -37,7 +37,10 @@ class Analyzer(
     val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(files)
     val importParser = ImportParserImpl(grip, contractParser, errorReporter)
     val externalSetup = ExternalSetupAnalyzerImpl(grip, analyzerHelper, providableTargets, factories, contracts, errorReporter).analyze(files)
-    val moduleParser = ModuleParserImpl(grip, analyzerHelper, importParser, contractParser, bindingRegistry, externalSetup, errorReporter)
+    val bridgeRegistry = BridgeRegistryImpl(grip.classRegistry)
+    val provisionPointFactory = ProvisionPointFactoryImpl(grip, analyzerHelper, bridgeRegistry)
+    val moduleParser =
+      ModuleParserImpl(grip, analyzerHelper, provisionPointFactory, importParser, contractParser, bindingRegistry, externalSetup, errorReporter)
     val components = ComponentsAnalyzerImpl(grip, moduleParser, errorReporter).analyze(files)
     val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleParser, contractParser).analyze(files)
     return InjectionContext(components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
