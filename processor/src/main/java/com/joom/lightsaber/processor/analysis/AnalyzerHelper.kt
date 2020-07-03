@@ -44,6 +44,7 @@ interface AnalyzerHelper {
   fun findConfigurationContractType(mirror: ClassMirror): Type.Object?
   fun findQualifier(annotated: Annotated): AnnotationMirror?
   fun findScope(annotated: Annotated): Scope
+  fun isModule(mirror: ClassMirror): Boolean
 }
 
 class AnalyzerHelperImpl(
@@ -110,7 +111,7 @@ class AnalyzerHelperImpl(
     val qualifierCount = annotated.annotations.count { isQualifier(it.type) }
     if (qualifierCount > 0) {
       if (qualifierCount > 1) {
-        errorReporter.reportError("Element $this has multiple qualifiers")
+        errorReporter.reportError("Element $annotated has multiple qualifiers")
       }
       return annotated.annotations.first { isQualifier(it.type) }
     } else {
@@ -123,15 +124,33 @@ class AnalyzerHelperImpl(
       scopeRegistry.findScopeProviderByAnnotationType(it.type)
     }
 
+    val isEager = Types.EAGER_TYPE in annotated.annotations
+    if (isEager && scopeProviders.isEmpty()) {
+      errorReporter.reportError("Element $annotated is annotated with @Eager but doesn't have a scope")
+    }
+
     return when (scopeProviders.size) {
       0 -> Scope.None
-      1 -> Scope.Class(scopeProviders[0])
+      1 -> Scope.Class(scopeProviders[0], isEager)
 
       else -> {
-        errorReporter.reportError("Element $this has multiple scopes: $scopeProviders")
+        errorReporter.reportError("Element $annotated has multiple scopes: $scopeProviders")
         Scope.None
       }
     }
+  }
+
+  override fun isModule(mirror: ClassMirror): Boolean {
+    val annotations = mirror.annotations
+    if (Types.MODULE_TYPE in annotations || Types.COMPONENT_TYPE in annotations) {
+      return true
+    }
+
+    if (mirror.superType == Types.CONTRACT_CONFIGURATION_TYPE) {
+      return true
+    }
+
+    return false
   }
 
   private fun getInjectees(method: MethodMirror): List<Injectee> {

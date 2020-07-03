@@ -16,14 +16,16 @@
 
 package com.joom.lightsaber.sample;
 
+import com.joom.lightsaber.ProvidedAs;
+import com.joom.lightsaber.ProvidedBy;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import com.joom.lightsaber.ProvidedAs;
-
 @Singleton
 @ProvidedAs(Wookiee.class)
+@ProvidedBy(LightsaberModule.class)
 class Chewbacca implements Wookiee {
   private final Planet planet;
 

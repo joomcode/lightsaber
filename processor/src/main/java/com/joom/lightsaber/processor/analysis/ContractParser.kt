@@ -26,6 +26,7 @@ import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 import io.michaelrocks.grip.mirrors.isInterface
+import io.michaelrocks.grip.mirrors.isStatic
 import io.michaelrocks.grip.mirrors.signature.GenericType
 import java.util.HashMap
 
@@ -77,6 +78,10 @@ class ContractParserImpl(
   }
 
   private fun tryParseContractProvisionPoint(mirror: ClassMirror, method: MethodMirror): ContractProvisionPoint? {
+    if (method.isStatic) {
+      return null
+    }
+
     if (method.signature.typeVariables.isNotEmpty()) {
       errorReporter.reportError("Contract's method  cannot have type parameters: ${mirror.type.className}.${method.name}")
       return null

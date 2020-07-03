@@ -16,10 +16,13 @@
 
 package com.joom.lightsaber.sample;
 
+import com.joom.lightsaber.ProvidedBy;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
+@ProvidedBy(LightsaberModule.class)
 class Kashyyyk implements Planet {
   private boolean isSettled = false;
 

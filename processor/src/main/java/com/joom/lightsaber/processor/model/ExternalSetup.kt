@@ -14,27 +14,13 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.sample
+package com.joom.lightsaber.processor.model
 
-import com.joom.lightsaber.ProvidedBy
-import javax.inject.Inject
-import javax.inject.Singleton
+import io.michaelrocks.grip.mirrors.Type
 
-@Singleton
-@ProvidedBy(LightsaberModule::class)
-internal class Kashyyyk @Inject private constructor() : Planet {
-
-  override val name = "Kashyyyk"
-  override val sector = "Mytaranor"
-
-  private var isSettled = false
-
-  @Inject
-  fun settle(droid1: Droid, droid2: Droid) {
-    if (isSettled) {
-      throw IllegalStateException("Already settled")
-    }
-    System.out.println("Settling Kashyyyk with $droid1 and $droid2")
-    isSettled = true
-  }
-}
+class ExternalSetup(
+  val annotationModuleImportPointsByImporterModules: Map<Type.Object, Collection<ImportPoint.Annotation>>,
+  val providableTargetsByModules: Map<Type.Object, Collection<InjectionTarget>>,
+  val factoriesByModules: Map<Type.Object, Collection<Factory>>,
+  val contractsByModules: Map<Type.Object, Collection<Contract>>
+)

@@ -28,7 +28,7 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:1.0.0-alpha01'
+    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:1.0.0-alpha03'
   }
 }
 
@@ -42,7 +42,7 @@ apply plugin: 'com.joom.lightsaber'
 
 // Optional, just if you need Kotlin extension functions.
 dependencies {
-  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:1.0.0-alpha01'
+  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:1.0.0-alpha03'
 }
 ```
 
@@ -321,10 +321,6 @@ public class Droid {
 }
 ```
 
-If you have a module that should provide most of the dependencies you can make this module default by setting
-`isDefault` parameter in the `@Module` annotation to `true` and avoid using `@ProvidedBy` annotation on classes that
-need to be provided by this module.
-
 When providing a dependency using an injectable constructor Lightsaber will perform field and method injection into
 the provided instance.
 
@@ -496,6 +492,20 @@ every time it's called because it returns a singleton instance of `ElectricalDro
 On the other hand, if the `ElectricalDroid` class isn't a singleton the `provideDroid()` method annotated with
 `@Singleton` will return a cached instance of `ElectricalDroid` so the instance will always be the same. But if
 `ElectricalDroid` is injected somewhere else a new instance of this class will be created.
+
+### Eager injection
+
+When using singleton injection a singleton instance is created lazily when it's accessed for the first time. If you need
+the instance to be created eagerly you can use the `@Eager` annotation with the `@Singleton` annotation. Eager
+dependencies are instantiated during creation of an `Injector` or a contract.
+
+```java
+@Eager
+@Singleton
+public class EagerDroid implements Droid {
+  /* ... */
+}
+```
 
 ### Lazy injection
 
@@ -909,7 +919,7 @@ To simplify unit testing and dependency substitution you can add a special testi
 
 ```groovy
 dependencies {
-  testImplementation 'com.joom.lightsaber:lightsaber-test:1.0.0-alpha01'
+  testImplementation 'com.joom.lightsaber:lightsaber-test:1.0.0-alpha03'
 }
 ```
 

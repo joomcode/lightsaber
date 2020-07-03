@@ -26,12 +26,14 @@ import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
+import com.joom.lightsaber.processor.generation.getInstance
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.requiresModule
 import com.joom.lightsaber.processor.generation.registerProvider
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.ImportPoint
+import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.mirrors.FieldMirror
@@ -44,6 +46,7 @@ import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 
 class ModulePatcher(
   classVisitor: ClassVisitor,
+  private val injectionContext: InjectionContext,
   private val generationContext: GenerationContext,
   private val module: Module
 ) : BaseInjectionClassVisitor(classVisitor) {
@@ -128,6 +131,10 @@ class ModulePatcher(
     newMethod(ACC_PUBLIC, CONFIGURE_INJECTOR_METHOD) {
       registerProviders()
       configureInjector()
+
+      if (injectionContext.findComponentByType(module.type) != null || injectionContext.findContractConfigurationByType(module.type) != null) {
+        instantiateEagerDependencies()
+      }
     }
   }
 
@@ -193,7 +200,7 @@ class ModulePatcher(
     return when (importPoint) {
       is ImportPoint.Method -> loadModule(importPoint)
       is ImportPoint.Field -> loadModule(importPoint)
-      is ImportPoint.Inverse -> loadModule(importPoint)
+      is ImportPoint.Annotation -> loadModule(importPoint)
     }
   }
 
@@ -215,7 +222,7 @@ class ModulePatcher(
     }
   }
 
-  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Inverse) {
+  private fun GeneratorAdapter.loadModule(importPoint: ImportPoint.Annotation) {
     newInstance(importPoint.importeeType)
     dup()
     invokeConstructor(importPoint.importeeType, MethodDescriptor.forDefaultConstructor())
@@ -226,6 +233,17 @@ class ModulePatcher(
       loadArg(0)
       registerProvider(keyRegistry, provider) {
         newContractImportProvider(provider, import)
+      }
+    }
+  }
+
+  private fun GeneratorAdapter.instantiateEagerDependencies() {
+    for (module in module.getModulesWithDescendants()) {
+      for (provisionPoint in module.provisionPoints) {
+        if (provisionPoint.scope.isEager) {
+          loadArg(0)
+          getInstance(keyRegistry, provisionPoint.dependency)
+        }
       }
     }
   }

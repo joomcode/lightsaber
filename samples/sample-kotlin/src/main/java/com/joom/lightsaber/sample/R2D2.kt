@@ -17,6 +17,7 @@
 package com.joom.lightsaber.sample
 
 import com.joom.lightsaber.Factory
+import com.joom.lightsaber.ProvidedBy
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
@@ -33,7 +34,9 @@ internal class R2D2 @Factory.Inject private constructor(
     return "R2-D2, S/N: " + body.serialNumber + ", color: " + color
   }
 
+  @ProvidedBy(LightsaberModule::class)
   private class Body @Inject private constructor() {
+
     val serialNumber = serialNumberCounter.incrementAndGet()
 
     companion object {

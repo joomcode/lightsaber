@@ -17,8 +17,10 @@
 package com.joom.lightsaber.sample
 
 import com.joom.lightsaber.Factory
+import com.joom.lightsaber.ProvidedBy
 
 @Factory
+@ProvidedBy(LightsaberModule::class)
 internal interface DroidFactory {
 
   @Factory.Return(R2D2::class)

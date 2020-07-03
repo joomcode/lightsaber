@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor.model
 
+import io.michaelrocks.grip.mirrors.AnnotationMirror
 import io.michaelrocks.grip.mirrors.FieldMirror
 import io.michaelrocks.grip.mirrors.MethodMirror
 import io.michaelrocks.grip.mirrors.Type
@@ -24,7 +25,8 @@ sealed class ImportPoint {
   data class Method(val method: MethodMirror) : ImportPoint()
   data class Field(val field: FieldMirror) : ImportPoint()
 
-  data class Inverse(
+  data class Annotation(
+    val annotation: AnnotationMirror,
     val importerType: Type.Object,
     val importeeType: Type.Object
   ) : ImportPoint()

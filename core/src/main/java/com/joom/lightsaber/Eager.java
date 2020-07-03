@@ -14,27 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.sample
+package com.joom.lightsaber;
 
-import com.joom.lightsaber.ProvidedBy
-import javax.inject.Inject
-import javax.inject.Singleton
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-@Singleton
-@ProvidedBy(LightsaberModule::class)
-internal class Kashyyyk @Inject private constructor() : Planet {
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-  override val name = "Kashyyyk"
-  override val sector = "Mytaranor"
-
-  private var isSettled = false
-
-  @Inject
-  fun settle(droid1: Droid, droid2: Droid) {
-    if (isSettled) {
-      throw IllegalStateException("Already settled")
-    }
-    System.out.println("Settling Kashyyyk with $droid1 and $droid2")
-    isSettled = true
-  }
+@Target({ TYPE, FIELD, METHOD })
+@Retention(RUNTIME)
+@Documented
+public @interface Eager {
 }

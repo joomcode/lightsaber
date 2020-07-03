@@ -16,55 +16,97 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
+import io.michaelrocks.grip.ClassRegistry
+import io.michaelrocks.grip.mirrors.ClassMirror
 import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.getMethodType
 
-class BridgeRegistry {
-  private val reservedMethods = HashSet<MethodDescriptor>()
-  private val descriptorToBridgeMap = LinkedHashMap<Any, MethodDescriptor>()
+interface BridgeRegistry {
+  fun addBridge(type: Type.Object, field: FieldDescriptor): MethodDescriptor
+  fun addBridge(type: Type.Object, method: MethodDescriptor): MethodDescriptor
+  fun getBridges(type: Type.Object): Collection<Map.Entry<Any, MethodDescriptor>>
+  fun getBridge(type: Type.Object, descriptor: Any): MethodDescriptor?
+}
 
-  fun reserveMethod(method: MethodDescriptor) {
-    reservedMethods += method
+class BridgeRegistryImpl(
+  private val classRegistry: ClassRegistry
+) : BridgeRegistry {
+
+  private val classMirrorBridgeRegistryByType = mutableMapOf<Type.Object, ClassMirrorBridgeRegistry>()
+
+  override fun addBridge(type: Type.Object, field: FieldDescriptor): MethodDescriptor {
+    return getOrCreateClassMirrorBridgeRegistry(type).addBridge(field)
   }
 
-  fun addBridge(field: FieldDescriptor): MethodDescriptor {
-    return descriptorToBridgeMap.getOrPut(field) { createBridgeMethod(field) }
+  override fun addBridge(type: Type.Object, method: MethodDescriptor): MethodDescriptor {
+    return getOrCreateClassMirrorBridgeRegistry(type).addBridge(method)
   }
 
-  fun addBridge(method: MethodDescriptor): MethodDescriptor {
-    return descriptorToBridgeMap.getOrPut(method) { createBridgeMethod(method) }
+  override fun getBridges(type: Type.Object): Collection<Map.Entry<Any, MethodDescriptor>> {
+    return getClassMirrorBridgeRegistry(type)?.getBridges().orEmpty()
   }
 
-  fun getBridges(): Collection<Map.Entry<Any, MethodDescriptor>> {
-    return descriptorToBridgeMap.entries
+  override fun getBridge(type: Type.Object, descriptor: Any): MethodDescriptor? {
+    return getClassMirrorBridgeRegistry(type)?.getBridge(descriptor)
   }
 
-  fun getBridge(descriptor: Any): MethodDescriptor? {
-    return descriptorToBridgeMap[descriptor]
+  private fun getOrCreateClassMirrorBridgeRegistry(type: Type.Object): ClassMirrorBridgeRegistry {
+    return classMirrorBridgeRegistryByType.getOrPut(type) {
+      ClassMirrorBridgeRegistry(classRegistry.getClassMirror(type))
+    }
   }
 
-  fun clear() {
-    reservedMethods.clear()
-    descriptorToBridgeMap.clear()
+  private fun getClassMirrorBridgeRegistry(type: Type.Object): ClassMirrorBridgeRegistry? {
+    return classMirrorBridgeRegistryByType[type]
   }
 
-  private fun createBridgeMethod(field: FieldDescriptor): MethodDescriptor {
-    return reserveBridge(field.name, 0, getMethodType(field.type))
-  }
+  private class ClassMirrorBridgeRegistry(mirror: ClassMirror) {
+    private val reservedMethods = mutableSetOf<MethodDescriptor>()
+    private val descriptorToBridgeMap = mutableMapOf<Any, MethodDescriptor>()
 
-  private fun createBridgeMethod(method: MethodDescriptor): MethodDescriptor {
-    return reserveBridge(method.name, 0, method.type)
-  }
-
-  private tailrec fun reserveBridge(baseName: String, index: Int, type: Type.Method): MethodDescriptor {
-    val bridgeName = "$baseName\$Lightsaber\$$index"
-    val bridge = MethodDescriptor(bridgeName, type)
-    if (reservedMethods.add(bridge)) {
-      return bridge
+    init {
+      mirror.methods.forEach { method ->
+        reservedMethods += method.toMethodDescriptor()
+      }
     }
 
-    return reserveBridge(baseName, index + 1, type)
+    fun addBridge(field: FieldDescriptor): MethodDescriptor {
+      return descriptorToBridgeMap.getOrPut(field) { createBridgeMethod(field) }
+    }
+
+    fun addBridge(method: MethodDescriptor): MethodDescriptor {
+      return descriptorToBridgeMap.getOrPut(method) { createBridgeMethod(method) }
+    }
+
+    fun getBridges(): Collection<Map.Entry<Any, MethodDescriptor>> {
+      return descriptorToBridgeMap.entries
+    }
+
+    fun getBridge(descriptor: Any): MethodDescriptor? {
+      return descriptorToBridgeMap[descriptor]
+    }
+
+    private fun createBridgeMethod(field: FieldDescriptor): MethodDescriptor {
+      return reserveBridge(field.name, getMethodType(field.type))
+    }
+
+    private fun createBridgeMethod(method: MethodDescriptor): MethodDescriptor {
+      return reserveBridge(method.name, method.type)
+    }
+
+    private fun reserveBridge(baseName: String, methodType: Type.Method): MethodDescriptor {
+      for (index in 0..Int.MAX_VALUE) {
+        val bridgeName = "$baseName\$Bridge$index"
+        val bridge = MethodDescriptor(bridgeName, methodType)
+        if (reservedMethods.add(bridge)) {
+          return bridge
+        }
+      }
+
+      error("Cannot reserve a bridge name for $baseName")
+    }
   }
 }

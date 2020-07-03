@@ -16,30 +16,11 @@
 
 package com.joom.lightsaber.processor.analysis
 
-import com.joom.lightsaber.Factory.Return
-import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
-import com.joom.lightsaber.processor.commons.associateByIndexedTo
-import com.joom.lightsaber.processor.commons.boxed
-import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.FactoryInjectee
-import com.joom.lightsaber.processor.model.FactoryInjectionPoint
-import com.joom.lightsaber.processor.model.FactoryProvisionPoint
-import com.joom.lightsaber.processor.model.Injectee
-import com.joom.lightsaber.processor.model.InjectionPoint
 import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.and
 import io.michaelrocks.grip.annotatedWith
 import io.michaelrocks.grip.classes
-import io.michaelrocks.grip.from
-import io.michaelrocks.grip.isConstructor
-import io.michaelrocks.grip.methods
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
-import io.michaelrocks.grip.mirrors.signature.GenericType
 import java.io.File
 
 interface FactoriesAnalyzer {
@@ -48,117 +29,13 @@ interface FactoriesAnalyzer {
 
 class FactoriesAnalyzerImpl(
   private val grip: Grip,
-  private val analyzerHelper: AnalyzerHelper,
-  private val errorReporter: ErrorReporter,
-  private val projectName: String
+  private val factoryParser: FactoryParser
 ) : FactoriesAnalyzer {
 
   override fun analyze(files: Collection<File>): Collection<Factory> {
     val factoriesQuery = grip select classes from files where annotatedWith(Types.FACTORY_TYPE)
-    return factoriesQuery.execute().classes.mapNotNull {
-      maybeCreateFactory(it)
+    return factoriesQuery.execute().types.map { type ->
+      factoryParser.parseFactory(type)
     }
-  }
-
-  private fun maybeCreateFactory(mirror: ClassMirror): Factory? {
-    val provisionPoints = mirror.methods.mapNotNull { maybeCreateFactoryProvisionPoint(mirror, it) }
-    if (provisionPoints.isEmpty()) {
-      return null
-    }
-
-    val implementationType =
-      getObjectTypeByInternalName(mirror.type.internalName + "\$Lightsaber\$Factory\$$projectName")
-    val qualifier = analyzerHelper.findQualifier(mirror)
-    val dependency = Dependency(GenericType.Raw(mirror.type), qualifier)
-    return Factory(mirror.type, implementationType, dependency, provisionPoints)
-  }
-
-  private fun maybeCreateFactoryProvisionPoint(mirror: ClassMirror, method: MethodMirror): FactoryProvisionPoint? {
-    val returnType = tryExtractReturnTypeFromFactoryMethod(mirror, method) ?: return null
-
-    val dependencyMirror = grip.classRegistry.getClassMirror(returnType)
-    val dependencyConstructorsQuery =
-      grip select methods from dependencyMirror where (isConstructor() and annotatedWith(Types.FACTORY_INJECT_TYPE))
-    val dependencyConstructors = dependencyConstructorsQuery.execute().values.singleOrNull().orEmpty()
-    if (dependencyConstructors.isEmpty()) {
-      error("Class ${dependencyMirror.type.className} must have a constructor annotated with @Factory.Inject")
-      return null
-    }
-
-    if (dependencyConstructors.size != 1) {
-      error("Class ${dependencyMirror.type.className} must have a single constructor annotated with @Factory.Inject")
-      return null
-    }
-
-    val methodInjectionPoint = analyzerHelper.convertMethodToInjectionPoint(method, mirror.type)
-    validateNoDuplicateInjectees(methodInjectionPoint)
-    val argumentIndexToInjecteeMap = methodInjectionPoint.injectees.associateByIndexedTo(
-      HashMap(),
-      keySelector = { _, injectee -> injectee },
-      valueSelector = { index, _ -> index }
-    )
-
-    val constructor = dependencyConstructors.single()
-    val constructorInjectionPoint = analyzerHelper.convertMethodToInjectionPoint(constructor, mirror.type)
-
-    val factoryInjectees = constructorInjectionPoint.injectees.mapNotNull { injectee ->
-      if (Types.FACTORY_PARAMETER_TYPE in injectee.annotations) {
-        val argumentIndex = argumentIndexToInjecteeMap[injectee]
-        if (argumentIndex == null) {
-          val dependencyClassName = dependencyMirror.type.className
-          val factoryClassName = mirror.type.className
-          error("Class $dependencyClassName contains a @Factory.Parameter not provided by factory $factoryClassName: ${injectee.dependency}")
-          null
-        } else {
-          FactoryInjectee.FromMethod(injectee, argumentIndex)
-        }
-      } else {
-        FactoryInjectee.FromInjector(injectee)
-      }
-    }
-
-    val factoryInjectionPoint = FactoryInjectionPoint(returnType, constructor, factoryInjectees)
-    return FactoryProvisionPoint(mirror.type, method, factoryInjectionPoint)
-  }
-
-  private fun tryExtractReturnTypeFromFactoryMethod(mirror: ClassMirror, method: MethodMirror): Type.Object? {
-    val returnAnnotation = method.annotations[Types.FACTORY_RETURN_TYPE]
-    if (returnAnnotation != null) {
-      val returnType = returnAnnotation.values[Return::value.name]
-      if (returnType !is Type) {
-        error("Method ${mirror.type.className}.${method.name} is annotated with @Factory.Return that has a wrong parameter $returnType")
-        return null
-      }
-
-      if (returnType !is Type.Object) {
-        error("Method ${mirror.type.className}.${method.name} is annotated with @Factory.Return with ${returnType.className} value, but its value must be a class")
-        return null
-      }
-
-      return returnType
-    }
-
-    val returnType = method.type.returnType
-    if (returnType !is Type.Object) {
-      error("Method ${mirror.type.className}.${method.name} returns ${returnType.className}, but must return a class")
-      return null
-    }
-
-    return returnType
-  }
-
-  private fun validateNoDuplicateInjectees(injectionPoint: InjectionPoint.Method) {
-    val visitedInjectees = hashSetOf<Injectee>()
-    injectionPoint.injectees.forEach { injectee ->
-      if (!visitedInjectees.add(injectee.boxed())) {
-        val className = injectionPoint.containerType.className
-        val methodName = injectionPoint.method.name
-        error("Method $className.$methodName accepts $injectee multiple times")
-      }
-    }
-  }
-
-  private fun error(message: String) {
-    errorReporter.reportError(message)
   }
 }
