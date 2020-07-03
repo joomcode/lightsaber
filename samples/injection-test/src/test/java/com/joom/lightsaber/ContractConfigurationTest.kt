@@ -74,6 +74,15 @@ class ContractConfigurationTest {
     Assert.assertEquals("BaseContract1, BaseContract2", complexContract.string)
   }
 
+  @Test
+  fun testStaticContractConfiguration() {
+    val lightsaber = Lightsaber.Builder().build()
+
+    StaticContract.init(lightsaber)
+
+    Assert.assertEquals("String", StaticContract.instance.string)
+  }
+
   class SimpleContractConfiguration : ContractConfiguration<SimpleContract>() {
     @Provide
     fun provideString(): String = "String"
@@ -186,4 +195,21 @@ class ContractConfigurationTest {
 
   @Module
   class BaseModule(@Provide private val string: String)
+
+  interface StaticContract {
+    val string: String
+
+    class Configuration : ContractConfiguration<StaticContract>() {
+      @Provide
+      fun provideString(): String = "String"
+    }
+
+    companion object {
+      lateinit var instance: StaticContract
+
+      fun init(lightsaber: Lightsaber) {
+        instance = lightsaber.createContract(Configuration())
+      }
+    }
+  }
 }
