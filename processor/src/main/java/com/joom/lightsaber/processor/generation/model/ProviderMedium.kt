@@ -17,6 +17,7 @@
 package com.joom.lightsaber.processor.generation.model
 
 import com.joom.lightsaber.processor.model.Dependency
+import io.michaelrocks.grip.mirrors.Type
 
 sealed class ProviderMedium {
   abstract val dependency: Dependency
@@ -50,6 +51,7 @@ sealed class ProviderMedium {
   }
 
   data class ContractProvisionPoint(
+    val contractType: Type.Object,
     val contractProvisionPoint: com.joom.lightsaber.processor.model.ContractProvisionPoint
   ) : ProviderMedium() {
 

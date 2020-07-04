@@ -30,7 +30,7 @@ import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderMedium
-import com.joom.lightsaber.processor.generation.model.requiresModule
+import com.joom.lightsaber.processor.generation.model.moduleType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
@@ -57,12 +57,10 @@ class ProviderClassGenerator(
   private val provider: Provider
 ) {
 
+  private val moduleType = provider.moduleType
+
   private val providerConstructor: MethodDescriptor
-    get() = if (!provider.requiresModule) {
-      CONSTRUCTOR_WITH_INJECTOR
-    } else {
-      MethodDescriptor.forConstructor(provider.moduleType, Types.INJECTOR_TYPE)
-    }
+    get() = if (moduleType == null) CONSTRUCTOR_WITH_INJECTOR else MethodDescriptor.forConstructor(moduleType, Types.INJECTOR_TYPE)
 
   fun generate(): ByteArray {
     val classWriter = StandaloneClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS, classRegistry)
@@ -86,16 +84,16 @@ class ProviderClassGenerator(
 
   private fun generateFields(classVisitor: ClassVisitor) {
     generateInjectorField(classVisitor)
-    if (provider.requiresModule) {
-      generateModuleField(classVisitor)
+    if (moduleType != null) {
+      generateModuleField(classVisitor, moduleType)
     }
   }
 
-  private fun generateModuleField(classVisitor: ClassVisitor) {
+  private fun generateModuleField(classVisitor: ClassVisitor, moduleType: Type.Object) {
     val fieldVisitor = classVisitor.visitField(
       ACC_PRIVATE or ACC_FINAL,
       MODULE_FIELD_NAME,
-      provider.moduleType.descriptor,
+      moduleType.descriptor,
       null,
       null
     )
@@ -119,7 +117,7 @@ class ProviderClassGenerator(
       loadThis()
       invokeConstructor(Types.OBJECT_TYPE, MethodDescriptor.forDefaultConstructor())
 
-      if (!provider.requiresModule) {
+      if (moduleType == null) {
         loadThis()
         loadArg(0)
         putField(provider.type, INJECTOR_FIELD)
@@ -130,7 +128,7 @@ class ProviderClassGenerator(
 
         loadThis()
         loadArg(0)
-        putField(provider.type, MODULE_FIELD_NAME, provider.moduleType)
+        putField(provider.type, MODULE_FIELD_NAME, moduleType)
       }
     }
   }
@@ -143,7 +141,7 @@ class ProviderClassGenerator(
           is ProviderMedium.Binding -> provideFromBinding(medium.binding)
           is ProviderMedium.Factory -> provideFactory(medium.factory)
           is ProviderMedium.Contract -> provideContract(medium.contract)
-          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractProvisionPoint)
+          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.contractProvisionPoint)
         }
       )
 
@@ -168,9 +166,9 @@ class ProviderClassGenerator(
 
   private fun GeneratorAdapter.provideFromField(provisionPoint: ProvisionPoint.Field) {
     loadThis()
-    getField(provider.type, MODULE_FIELD_NAME, provider.moduleType)
+    getField(provider.type, MODULE_FIELD_NAME, provisionPoint.containerType)
     val field = provisionPoint.field.toFieldDescriptor()
-    getField(provider.moduleType, field)
+    getField(provisionPoint.containerType, field)
   }
 
   private fun GeneratorAdapter.provideFromConstructor(provisionPoint: ProvisionPoint.Constructor) {
@@ -188,9 +186,9 @@ class ProviderClassGenerator(
 
   private fun GeneratorAdapter.provideFromMethod(provisionPoint: ProvisionPoint.Method) {
     loadThis()
-    getField(provider.type, MODULE_FIELD_NAME, provider.moduleType)
+    getField(provider.type, MODULE_FIELD_NAME, provisionPoint.containerType)
     loadArguments(provisionPoint)
-    invokeVirtual(provider.moduleType, provisionPoint.method.toMethodDescriptor())
+    invokeVirtual(provisionPoint.containerType, provisionPoint.method.toMethodDescriptor())
 
     if (provider.dependency.type.rawType.isPrimitive) {
       return
@@ -246,10 +244,10 @@ class ProviderClassGenerator(
     invokeConstructor(type, CONSTRUCTOR_WITH_INJECTOR)
   }
 
-  private fun GeneratorAdapter.provideFromContractProvisionPoint(contractProvisionPoint: ContractProvisionPoint) {
+  private fun GeneratorAdapter.provideFromContractProvisionPoint(contractType: Type.Object, contractProvisionPoint: ContractProvisionPoint) {
     loadThis()
-    getField(provider.type, MODULE_FIELD_NAME, provider.moduleType)
-    invokeInterface(provider.moduleType, contractProvisionPoint.method.toMethodDescriptor())
+    getField(provider.type, MODULE_FIELD_NAME, contractType)
+    invokeInterface(contractProvisionPoint.container, contractProvisionPoint.method.toMethodDescriptor())
 
     if (provider.dependency.type.rawType.isPrimitive) {
       return

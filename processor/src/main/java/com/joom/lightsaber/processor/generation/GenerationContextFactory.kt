@@ -27,6 +27,7 @@ import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.PackageInvader
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderFactory
+import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
@@ -48,16 +49,18 @@ class GenerationContextFactory(
 ) {
 
   fun createGenerationContext(injectionContext: InjectionContext): GenerationContext {
-    val modules = injectionContext.getModulesWithDescendants().toList()
+    val modules = injectionContext.getModulesWithDescendants()
+    val contracts = injectionContext.getImportsWithDescendants().filterIsInstance<Import.Contract>().map { it.contract }
     val dependencies = findAllDependencies(modules)
     return GenerationContext(
-      composeProviders(modules),
+      groupProvidersByModuleType(modules),
+      groupProvidersByContractType(contracts),
       composePackageInvaders(dependencies),
       composeKeyRegistry(dependencies)
     )
   }
 
-  private fun findAllDependencies(modules: Collection<Module>): Collection<Dependency> {
+  private fun findAllDependencies(modules: Sequence<Module>): Collection<Dependency> {
     return modules.asSequence().flatMapTo(LinkedHashSet()) { getModuleDependencies(it) }
   }
 
@@ -76,10 +79,22 @@ class GenerationContextFactory(
     }
   }
 
-  private fun composeProviders(modules: Collection<Module>): Collection<Provider> {
+  private fun groupProvidersByModuleType(modules: Sequence<Module>): Map<Type.Object, Collection<Provider>> {
     return modules
       .distinctBy { it.type }
-      .flatMap { providerFactory.createProvidersForModule(it) }
+      .associateBy(
+        keySelector = { it.type },
+        valueTransform = { providerFactory.createProvidersForModule(it) }
+      )
+  }
+
+  private fun groupProvidersByContractType(contracts: Sequence<Contract>): Map<Type.Object, Collection<Provider>> {
+    return contracts
+      .distinctBy { it.type }
+      .associateBy(
+        keySelector = { it.type },
+        valueTransform = { providerFactory.createProvidersForContract(it) }
+      )
   }
 
   private fun composePackageInvaders(dependencies: Collection<Dependency>): Collection<PackageInvader> {

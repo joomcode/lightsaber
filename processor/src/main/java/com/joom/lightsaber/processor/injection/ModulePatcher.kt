@@ -29,7 +29,7 @@ import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.getInstance
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Provider
-import com.joom.lightsaber.processor.generation.model.requiresModule
+import com.joom.lightsaber.processor.generation.model.moduleType
 import com.joom.lightsaber.processor.generation.registerProvider
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.ImportPoint
@@ -142,21 +142,22 @@ class ModulePatcher(
     generationContext.findProvidersByModuleType(module.type).forEach { provider ->
       loadArg(0)
       registerProvider(keyRegistry, provider) {
-        if (!provider.requiresModule) {
-          newConstructorProvider(provider)
+        val moduleType = provider.moduleType
+        if (moduleType != null) {
+          newModuleProvider(provider, moduleType)
         } else {
-          newModuleProvider(provider)
+          newConstructorProvider(provider)
         }
       }
     }
   }
 
-  private fun GeneratorAdapter.newModuleProvider(provider: Provider) {
+  private fun GeneratorAdapter.newModuleProvider(provider: Provider, moduleType: Type.Object) {
     newInstance(provider.type)
     dup()
     loadThis()
     loadArg(0)
-    val constructor = MethodDescriptor.forConstructor(provider.moduleType, Types.INJECTOR_TYPE)
+    val constructor = MethodDescriptor.forConstructor(moduleType, Types.INJECTOR_TYPE)
     invokeConstructor(provider.type, constructor)
   }
 
@@ -229,7 +230,7 @@ class ModulePatcher(
   }
 
   private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
-    generationContext.findProvidersByModuleType(import.contract.type).forEach { provider ->
+    generationContext.findProvidersByContractType(import.contract.type).forEach { provider ->
       loadArg(0)
       registerProvider(keyRegistry, provider) {
         newContractImportProvider(provider, import)
