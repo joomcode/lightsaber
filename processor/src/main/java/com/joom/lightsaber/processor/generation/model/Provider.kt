@@ -23,24 +23,23 @@ import io.michaelrocks.grip.mirrors.Type
 
 data class Provider(
   val type: Type.Object,
-  val moduleType: Type.Object,
   val medium: ProviderMedium
 ) {
 
   val dependency: Dependency get() = medium.dependency
 }
 
-val Provider.requiresModule: Boolean
+val Provider.moduleType: Type.Object?
   get() = when (medium) {
     is ProviderMedium.ProvisionPoint -> when (medium.provisionPoint) {
-      is ProvisionPoint.Constructor -> false
+      is ProvisionPoint.Constructor -> null
       is ProvisionPoint.Method,
-      is ProvisionPoint.Field -> true
+      is ProvisionPoint.Field -> medium.provisionPoint.containerType
     }
     is ProviderMedium.Binding,
     is ProviderMedium.Factory,
-    is ProviderMedium.Contract -> false
-    is ProviderMedium.ContractProvisionPoint -> true
+    is ProviderMedium.Contract -> null
+    is ProviderMedium.ContractProvisionPoint -> medium.contractType
   }
 
 val Provider.scope: Scope

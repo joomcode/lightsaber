@@ -20,16 +20,22 @@ import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.packageName
 
 data class GenerationContext(
-  val providers: Collection<Provider>,
+  private val providersByModuleType: Map<Type.Object, Collection<Provider>>,
+  private val providersByContractType: Map<Type.Object, Collection<Provider>>,
   val packageInvaders: Collection<PackageInvader>,
   val keyRegistry: KeyRegistry
 ) {
 
-  private val providersByModuleType = providers.groupBy { it.moduleType }
+  val providers: Collection<Provider> = providersByModuleType.values.plus(providersByContractType.values).flatten().distinctBy { it.type }
+
   private val packageInvadersByPackageName = packageInvaders.associateBy { it.packageName }
 
   fun findProvidersByModuleType(moduleType: Type.Object): Collection<Provider> {
     return providersByModuleType[moduleType] ?: emptyList()
+  }
+
+  fun findProvidersByContractType(contractType: Type.Object): Collection<Provider> {
+    return providersByContractType[contractType] ?: emptyList()
   }
 
   fun findPackageInvaderByTargetType(targetType: Type.Object): PackageInvader? {

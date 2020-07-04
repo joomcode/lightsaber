@@ -21,7 +21,6 @@ import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import io.michaelrocks.grip.FileRegistry
@@ -30,6 +29,7 @@ import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 
 interface ProviderFactory {
   fun createProvidersForModule(module: Module): Collection<Provider>
+  fun createProvidersForContract(contract: Contract): Collection<Provider>
 }
 
 class ProviderFactoryImpl(
@@ -39,72 +39,85 @@ class ProviderFactoryImpl(
 
   private val typeRegistry = mutableSetOf<Type.Object>()
 
+  private val providersByModuleType = mutableMapOf<Type.Object, Collection<Provider>>()
+  private val providerByProvidableTargetType = mutableMapOf<Type.Object, Provider>()
+  private val providerByBinding = mutableMapOf<Binding, Provider>()
+  private val providerByFactoryType = mutableMapOf<Type.Object, Provider>()
+  private val providerByContractType = mutableMapOf<Type.Object, Provider>()
+  private val providersByImportedContractType = mutableMapOf<Type.Object, Collection<Provider>>()
+
   override fun createProvidersForModule(module: Module): Collection<Provider> {
-    val providers = ArrayList<Provider>()
-    module.provisionPoints.mapTo(providers) { provisionPoint -> newProviderForProvisionPoint(module, provisionPoint) }
-    module.bindings.mapTo(providers) { newBindingProvider(module, it) }
-    module.factories.mapTo(providers) { newFactoryProvider(module, it) }
-    module.contracts.mapTo(providers) { newContractProvider(module, it) }
-    module.imports.flatMapTo(providers) { createProvidersForImport(it) }
-    return providers
+    return providersByModuleType.getOrPut(module.type) {
+      val providers = ArrayList<Provider>()
+      module.provisionPoints.mapTo(providers) { newProviderForProvisionPoint(it) }
+      module.bindings.mapTo(providers) { newBindingProvider(it) }
+      module.factories.mapTo(providers) { newFactoryProvider(it) }
+      module.contracts.mapTo(providers) { newContractProvider(it) }
+      providers
+    }
   }
 
-  private fun newProviderForProvisionPoint(module: Module, provisionPoint: ProvisionPoint): Provider {
+  override fun createProvidersForContract(contract: Contract): Collection<Provider> {
+    return providersByImportedContractType.getOrPut(contract.type) {
+      contract.provisionPoints.map { provisionPoint ->
+        newContractProvisionPointProvider(contract, provisionPoint)
+      }
+    }
+  }
+
+  private fun newProviderForProvisionPoint(provisionPoint: ProvisionPoint): Provider {
     return when (provisionPoint) {
-      is ProvisionPoint.Constructor -> newConstructorProvider(module, provisionPoint)
-      is ProvisionPoint.Method -> newMethodProvider(module, provisionPoint)
-      is ProvisionPoint.Field -> newFieldProvider(module, provisionPoint)
+      is ProvisionPoint.Constructor -> newConstructorProvider(provisionPoint)
+      is ProvisionPoint.Method -> newMethodProvider(provisionPoint)
+      is ProvisionPoint.Field -> newFieldProvider(provisionPoint)
     }
   }
 
-  private fun newConstructorProvider(module: Module, provisionPoint: ProvisionPoint.Constructor): Provider {
+  private fun newConstructorProvider(provisionPoint: ProvisionPoint.Constructor): Provider {
+    val dependencyType = provisionPoint.containerType
+    return providerByProvidableTargetType.getOrPut(dependencyType) {
+      val providerType = getObjectTypeByUniqueInternalName("${dependencyType.internalName}\$ConstructorProvider%d\$$projectName")
+      Provider(providerType, ProviderMedium.ProvisionPoint(provisionPoint))
+    }
+  }
+
+  private fun newMethodProvider(provisionPoint: ProvisionPoint.Method): Provider {
     val moduleType = provisionPoint.containerType
-    val providerType = getObjectTypeByUniqueInternalName("${moduleType.internalName}\$ConstructorProvider%d\$$projectName")
-    return Provider(providerType, module.type, ProviderMedium.ProvisionPoint(provisionPoint))
+    val providerType = getObjectTypeByUniqueInternalName("${moduleType.internalName}\$MethodProvider%d\$$projectName")
+    return Provider(providerType, ProviderMedium.ProvisionPoint(provisionPoint))
   }
 
-  private fun newMethodProvider(module: Module, provisionPoint: ProvisionPoint.Method): Provider {
-    val providerType = getObjectTypeByUniqueInternalName("${module.type.internalName}\$MethodProvider%d\$$projectName")
-    return Provider(providerType, module.type, ProviderMedium.ProvisionPoint(provisionPoint))
+  private fun newFieldProvider(provisionPoint: ProvisionPoint.Field): Provider {
+    val moduleType = provisionPoint.containerType
+    val providerType = getObjectTypeByUniqueInternalName("${moduleType.internalName}\$FieldProvider%d\$$projectName")
+    return Provider(providerType, ProviderMedium.ProvisionPoint(provisionPoint))
   }
 
-  private fun newFieldProvider(module: Module, provisionPoint: ProvisionPoint.Field): Provider {
-    val providerType = getObjectTypeByUniqueInternalName("${module.type.internalName}\$FieldProvider%d\$$projectName")
-    return Provider(providerType, module.type, ProviderMedium.ProvisionPoint(provisionPoint))
-  }
-
-  private fun newBindingProvider(module: Module, binding: Binding): Provider {
-    val dependencyType = binding.dependency.type.rawType as Type.Object
-    val providerType = getObjectTypeByUniqueInternalName("${dependencyType.internalName}\$BindingProvider%d\$$projectName")
-    return Provider(providerType, module.type, ProviderMedium.Binding(binding))
-  }
-
-  private fun newFactoryProvider(module: Module, factory: Factory): Provider {
-    val providerType = getObjectTypeByUniqueInternalName("${factory.type.internalName}\$FactoryProvider%d\$$projectName")
-    return Provider(providerType, module.type, ProviderMedium.Factory(factory))
-  }
-
-  private fun newContractProvider(module: Module, contract: Contract): Provider {
-    val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$ContractProvider%d\$$projectName")
-    return Provider(providerType, module.type, ProviderMedium.Contract(contract))
-  }
-
-  private fun createProvidersForImport(import: Import): Collection<Provider> {
-    return when (import) {
-      is Import.Module -> emptyList()
-      is Import.Contract -> createProvidersForContractImport(import)
+  private fun newBindingProvider(binding: Binding): Provider {
+    return providerByBinding.getOrPut(binding) {
+      val dependencyType = binding.dependency.type.rawType as Type.Object
+      val providerType = getObjectTypeByUniqueInternalName("${dependencyType.internalName}\$BindingProvider%d\$$projectName")
+      Provider(providerType, ProviderMedium.Binding(binding))
     }
   }
 
-  private fun createProvidersForContractImport(import: Import.Contract): Collection<Provider> {
-    return import.contract.provisionPoints.map { provisionPoint ->
-      newContractProvisionPointProvider(import.contract, provisionPoint)
+  private fun newFactoryProvider(factory: Factory): Provider {
+    return providerByFactoryType.getOrPut(factory.type) {
+      val providerType = getObjectTypeByUniqueInternalName("${factory.type.internalName}\$FactoryProvider%d\$$projectName")
+      Provider(providerType, ProviderMedium.Factory(factory))
+    }
+  }
+
+  private fun newContractProvider(contract: Contract): Provider {
+    return providerByContractType.getOrPut(contract.type) {
+      val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$ContractProvider%d\$$projectName")
+      Provider(providerType, ProviderMedium.Contract(contract))
     }
   }
 
   private fun newContractProvisionPointProvider(contract: Contract, contractProvisionPoint: ContractProvisionPoint): Provider {
     val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$MethodProvider%d\$$projectName")
-    return Provider(providerType, contract.type, ProviderMedium.ContractProvisionPoint(contractProvisionPoint))
+    return Provider(providerType, ProviderMedium.ContractProvisionPoint(contract.type, contractProvisionPoint))
   }
 
   private fun getObjectTypeByUniqueInternalName(pattern: String): Type.Object {
