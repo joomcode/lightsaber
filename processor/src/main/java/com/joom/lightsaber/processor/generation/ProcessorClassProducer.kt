@@ -17,7 +17,6 @@
 package com.joom.lightsaber.processor.generation
 
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.ProcessingException
 import com.joom.lightsaber.processor.io.FileSink
 import com.joom.lightsaber.processor.logging.getLogger
 import java.io.IOException
@@ -31,12 +30,11 @@ class ProcessorClassProducer(
 
   override fun produceClass(internalName: String, classData: ByteArray) {
     logger.debug("Producing class {}", internalName)
-    val classFileName = internalName + ".class"
+    val classFileName = "$internalName.class"
     try {
       fileSink.createFile(classFileName, classData)
     } catch (exception: IOException) {
-      val message = "Failed to produce class with %d bytes".format(classData.size)
-      errorReporter.reportError(ProcessingException(message, exception, classFileName))
+      errorReporter.reportError("Failed to produce class with ${classData.size} bytes: $classFileName", exception)
     }
   }
 }

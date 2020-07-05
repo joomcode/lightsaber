@@ -130,13 +130,9 @@ class ClassProcessor(
   }
 
   private fun checkErrors() {
-    if (errorReporter.hasErrors()) {
-      throw ProcessingException(composeErrorMessage())
+    if (errorReporter.hasErrors) {
+      throw ProcessingException("Errors found")
     }
-  }
-
-  private fun composeErrorMessage(): String {
-    return errorReporter.getErrors().joinToString("\n") { it.message.orEmpty() }
   }
 
   private fun InjectionContext.dump() {
