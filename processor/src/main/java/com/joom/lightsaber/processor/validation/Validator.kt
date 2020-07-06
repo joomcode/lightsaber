@@ -188,14 +188,62 @@ class Validator(
       }
     }
 
-    for (component in leafComponents) {
-      val resolver = dependencyResolverFactory.getOrCreate(component)
-      if (getDependencies().all { resolver.isResolved(it) }) {
-        return
-      }
+    val dependencies = getDependencies().toList()
+    if (dependencies.isEmpty()) {
+      return
     }
 
-    errorReporter.reportError("Dependencies of ${injectionTarget.type.className} cannot be fully resolved by any component")
+    val candidates = findCandidateComponentsForInjectionTargetDependencies(dependencies)
+    if (candidates.isNotEmpty()) {
+      errorReporter.reportError {
+        append("Dependencies of ")
+        append(injectionTarget.type.className)
+        append(" cannot be fully resolved by any component")
+        append("\n")
+        append("Best candidates and unresolved dependencies:")
+        for (candidate in candidates) {
+          append("\n  ")
+          append(candidate.component.type.getDescription())
+
+          for (unresolvedDependency in candidate.unresolvedDependencies) {
+            append("\n    ")
+            append(unresolvedDependency.getDescription())
+          }
+        }
+      }
+    }
+  }
+
+  private fun findCandidateComponentsForInjectionTargetDependencies(dependencies: Collection<Dependency>): List<CandidateComponent> {
+    val candidates = mutableListOf<CandidateComponent>()
+
+    components@ for (component in leafComponents) {
+      val resolver = dependencyResolverFactory.getOrCreate(component)
+      val unresolvedDependencies = ArrayList<Dependency>(dependencies.size)
+      val topCandidateUnresolvedDependencyCount = candidates.firstOrNull()?.unresolvedDependencies?.size ?: Int.MAX_VALUE
+
+      for (dependency in dependencies) {
+        if (!resolver.isResolved(dependency)) {
+          if (unresolvedDependencies.size >= topCandidateUnresolvedDependencyCount) {
+            continue@components
+          }
+
+          unresolvedDependencies += dependency
+        }
+      }
+
+      if (unresolvedDependencies.isEmpty()) {
+        return emptyList()
+      }
+
+      if (unresolvedDependencies.size < topCandidateUnresolvedDependencyCount) {
+        candidates.clear()
+      }
+
+      candidates += CandidateComponent(component, unresolvedDependencies)
+    }
+
+    return candidates
   }
 
   private inline fun <T : Any> validateNoDuplicateValues(
@@ -278,4 +326,9 @@ class Validator(
 
     return parentComponent
   }
+
+  private class CandidateComponent(
+    val component: Component,
+    val unresolvedDependencies: Collection<Dependency>
+  )
 }
