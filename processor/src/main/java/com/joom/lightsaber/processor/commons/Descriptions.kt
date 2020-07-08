@@ -26,85 +26,120 @@ import io.michaelrocks.grip.mirrors.Type
 import io.michaelrocks.grip.mirrors.signature.GenericType
 
 fun Dependency.getDescription(): String {
-  val typeDescription = type.getDescription()
-  return if (qualifier == null) typeDescription else "${qualifier.getDescription()} $typeDescription"
+  return if (qualifier == null) type.getDescription() else buildString { appendDescriptionTo(this) }
+}
+
+fun Dependency.appendDescriptionTo(appendable: Appendable) {
+  if (qualifier != null) {
+    qualifier.appendDescriptionTo(appendable)
+    appendable.append(" ")
+  }
+
+  type.appendDescriptionTo(appendable)
 }
 
 fun AnnotationMirror.getDescription(): String {
-  return buildString {
-    append("@")
-    appendAnnotationMirror(this@getDescription)
-  }
+  return buildString { appendDescriptionTo(this) }
+}
+
+fun AnnotationMirror.appendDescriptionTo(appendable: Appendable) {
+  appendable.append("@")
+  appendAnnotationMirrorTo(appendable, this)
 }
 
 fun FieldMirror.getDescription(): String {
-  return "${signature.type} $name"
+  return buildString { appendDescriptionTo(this) }
+}
+
+fun FieldMirror.appendDescriptionTo(appendable: Appendable) {
+  signature.type.appendDescriptionTo(appendable)
+  appendable.append(" ")
+  appendable.append(name)
 }
 
 fun MethodMirror.getDescription(): String {
-  return buildString {
-    append(signature.returnType)
-    append(" ")
-    append(name)
-    append("(")
-    signature.parameterTypes.joinTo(this)
-    append(")")
+  return buildString { appendDescriptionTo(this) }
+}
+
+fun MethodMirror.appendDescriptionTo(appendable: Appendable) {
+  signature.returnType.appendDescriptionTo(appendable)
+  appendable.append(" ")
+  appendable.append(name)
+  appendable.append("(")
+  signature.parameterTypes.forEachIndexed { index, parameterType ->
+    if (index != 0) {
+      appendable.append(", ")
+      parameterType.appendDescriptionTo(appendable)
+    }
   }
+  appendable.append(")")
 }
 
 fun ClassMirror.getDescription(): String {
   return type.getDescription()
 }
 
+fun ClassMirror.appendDescriptionTo(appendable: Appendable) {
+  appendable.append(getDescription())
+}
+
 fun GenericType.getDescription(): String {
   return toString()
+}
+
+fun GenericType.appendDescriptionTo(appendable: Appendable) {
+  appendable.append(getDescription())
 }
 
 fun Type.getDescription(): String {
   return className
 }
 
-private fun StringBuilder.appendAnnotationMirror(mirror: AnnotationMirror): StringBuilder = apply {
-  append(mirror.type.getDescription())
-  append("(")
+fun Type.appendDescriptionTo(appendable: Appendable) {
+  appendable.append(getDescription())
+}
+
+private fun appendAnnotationMirrorTo(appendable: Appendable, mirror: AnnotationMirror) {
+  mirror.type.appendDescriptionTo(appendable)
+  appendable.append("(")
   mirror.values.entries.forEachIndexed { index, (name, value) ->
     if (index > 0) {
-      append(", ")
+      appendable.append(", ")
     }
-    append(name)
-    append(" = ")
-    appendAnnotationValue(value)
+    appendable.append(name)
+    appendable.append(" = ")
+    appendAnnotationValueTo(appendable, value)
   }
-  append(")")
+  appendable.append(")")
 }
 
-private fun StringBuilder.appendAnnotationValue(value: Any): StringBuilder = apply {
-  return when (value) {
-    is String -> append("\"").append(value).append("\"")
-    is Type -> append(value.getDescription())
-    is List<*> -> appendAnnotationArrayValue(value)
-    is EnumMirror -> append(value.value)
-    is AnnotationMirror -> appendAnnotationMirror(value)
-    else -> append(value)
+private fun appendAnnotationValueTo(appendable: Appendable, value: Any) {
+  when (value) {
+    is String -> appendable.append("\"").append(value).append("\"")
+    is Type -> appendable.append(value.getDescription())
+    is List<*> -> appendAnnotationArrayValueTo(appendable, value)
+    is EnumMirror -> appendable.append(value.value)
+    is AnnotationMirror -> appendAnnotationMirrorTo(appendable, value)
+    else -> appendable.append(value.toString())
   }
 }
 
-private fun StringBuilder.appendAnnotationArrayValue(array: List<*>): StringBuilder = apply {
+private fun appendAnnotationArrayValueTo(appendable: Appendable, array: List<*>) {
   if (array.isEmpty()) {
-    append("{}")
+    appendable.append("{}")
   }
 
-  append("{")
+  appendable.append("{")
   array.forEachIndexed { index, value ->
     if (index > 0) {
-      append(", ")
+      appendable.append(", ")
     }
 
     if (value != null) {
-      appendAnnotationValue(value)
+      appendAnnotationValueTo(appendable, value)
     } else {
-      append("null")
+      appendable.append("null")
     }
   }
-  append("}")
+  appendable.append("}")
 }
