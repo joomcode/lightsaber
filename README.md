@@ -24,7 +24,7 @@ Usage
 ```groovy
 buildscript {
   repositories {
-    jcenter()
+    mavenCentral()
   }
 
   dependencies {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,6 @@
 
 package com.joom.lightsaber.processor.annotations.proxy
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getMethodType
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
-import io.michaelrocks.grip.mirrors.internalName
-import io.michaelrocks.grip.mirrors.toType
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.AnnotationAnnotation
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.AnnotationArrayAnnotation
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.BooleanAnnotation
@@ -58,6 +44,14 @@ import com.joom.lightsaber.processor.annotations.proxy.Annotations.ShortArrayAnn
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.StringAnnotation
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.StringArrayAnnotation
 import com.joom.lightsaber.processor.commons.Types
+import io.michaelrocks.grip.ClassRegistry
+import io.michaelrocks.grip.mirrors.ClassMirror
+import io.michaelrocks.grip.mirrors.MethodMirror
+import io.michaelrocks.grip.mirrors.Type
+import io.michaelrocks.grip.mirrors.getMethodType
+import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
+import io.michaelrocks.grip.mirrors.internalName
+import io.michaelrocks.grip.mirrors.toType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -65,6 +59,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.objectweb.asm.Opcodes
 import java.lang.annotation.RetentionPolicy
 import java.lang.reflect.Constructor

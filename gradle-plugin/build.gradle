@@ -61,6 +61,8 @@ idea {
   }
 }
 
-shadowJar {
-  relocate 'com.joom.lightsaber', 'com.joom.lightsaber'
+pablo {
+  shadow {
+    relocate 'com.joom.lightsaber'
+  }
 }

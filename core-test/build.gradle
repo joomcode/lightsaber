@@ -19,5 +19,5 @@ jar {
 }
 
 pablo {
-  artifactName 'lightsaber-test'
+  artifactName = 'lightsaber-test'
 }
