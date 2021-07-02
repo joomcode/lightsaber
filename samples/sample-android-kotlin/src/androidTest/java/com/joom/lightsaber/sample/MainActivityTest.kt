@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.joom.lightsaber.sample
 
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.rule.ActivityTestRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
 class MainActivityTest {
 
   @get:Rule
-  val activityTestRule = ActivityTestRule(MainActivity::class.java)
+  val activityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
 
   @Test
   fun mainActivityTest() = Unit

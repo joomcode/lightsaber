@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class PrimitiveInjectionTest {
     val module = UnboxedPrimitiveModule()
     assertEquals(module.provideBoolean(), container.booleanField)
     assertEquals(module.provideByte().toLong(), container.byteField.toLong())
-    assertEquals(module.provideChar().toLong(), container.charField.toLong())
+    assertEquals(module.provideChar().code.toLong(), container.charField.code.toLong())
     assertEquals(module.provideDouble(), container.doubleField, java.lang.Double.MIN_VALUE)
     assertEquals(module.provideFloat(), container.floatField, java.lang.Float.MIN_VALUE)
     assertEquals(module.provideInt().toLong(), container.intField.toLong())
@@ -48,7 +48,7 @@ class PrimitiveInjectionTest {
     val module = UnboxedPrimitiveModule()
     assertEquals(module.provideBoolean(), container.booleanField)
     assertEquals(module.provideByte().toLong(), (container.byteField as Byte).toLong())
-    assertEquals(module.provideChar().toLong(), (container.characterField as Char).toLong())
+    assertEquals(module.provideChar().code.toLong(), (container.characterField as Char).code.toLong())
     assertEquals(module.provideDouble(), container.doubleField!!, java.lang.Double.MIN_VALUE)
     assertEquals(module.provideFloat(), container.floatField!!, java.lang.Float.MIN_VALUE)
     assertEquals(module.provideInt().toLong(), (container.integerField as Int).toLong())
@@ -98,7 +98,7 @@ class PrimitiveInjectionTest {
     val module = UnboxedPrimitiveModule()
     assertEquals(module.provideBoolean(), container.booleanField)
     assertEquals(module.provideByte().toLong(), container.byteField.toLong())
-    assertEquals(module.provideChar().toLong(), container.charField.toLong())
+    assertEquals(module.provideChar().code.toLong(), container.charField.code.toLong())
     assertEquals(module.provideDouble(), container.doubleField, java.lang.Double.MIN_VALUE)
     assertEquals(module.provideFloat(), container.floatField, java.lang.Float.MIN_VALUE)
     assertEquals(module.provideInt().toLong(), container.intField.toLong())
@@ -114,7 +114,7 @@ class PrimitiveInjectionTest {
     val module = UnboxedPrimitiveModule()
     assertEquals(module.provideBoolean(), container.booleanField)
     assertEquals(module.provideByte().toLong(), (container.byteField as Byte).toLong())
-    assertEquals(module.provideChar().toLong(), (container.characterField as Char).toLong())
+    assertEquals(module.provideChar().code.toLong(), (container.characterField as Char).code.toLong())
     assertEquals(module.provideDouble(), container.doubleField!!, java.lang.Double.MIN_VALUE)
     assertEquals(module.provideFloat(), container.floatField!!, java.lang.Float.MIN_VALUE)
     assertEquals(module.provideInt().toLong(), (container.integerField as Int).toLong())
@@ -199,7 +199,7 @@ class PrimitiveInjectionTest {
     ) {
       assertEquals(booleanField, booleanArg)
       assertEquals(byteField.toLong(), byteArg.toLong())
-      assertEquals(charField.toLong(), charArg.toLong())
+      assertEquals(charField.code.toLong(), charArg.code.toLong())
       assertEquals(doubleField, doubleArg, java.lang.Double.MIN_VALUE)
       assertEquals(floatField, floatArg, java.lang.Float.MIN_VALUE)
       assertEquals(intField.toLong(), intArg.toLong())
@@ -220,7 +220,7 @@ class PrimitiveInjectionTest {
     ) {
       assertEquals(booleanField, booleanArg)
       assertEquals(byteField.toLong(), (byteArg as Byte).toLong())
-      assertEquals(charField.toLong(), (characterArg as Char).toLong())
+      assertEquals(charField.code.toLong(), (characterArg as Char).code.toLong())
       assertEquals(doubleField, doubleArg!!, java.lang.Double.MIN_VALUE)
       assertEquals(floatField, floatArg!!, java.lang.Float.MIN_VALUE)
       assertEquals(intField.toLong(), (integerArg as Int).toLong())
@@ -322,7 +322,7 @@ class PrimitiveInjectionTest {
     ): UnboxedResult {
       assertEquals(provideBoolean(), booleanArg)
       assertEquals(provideByte().toLong(), byteArg.toLong())
-      assertEquals(provideChar().toLong(), charArg.toLong())
+      assertEquals(provideChar().code.toLong(), charArg.code.toLong())
       assertEquals(provideDouble(), doubleArg, java.lang.Double.MIN_VALUE)
       assertEquals(provideFloat(), floatArg, java.lang.Float.MIN_VALUE)
       assertEquals(provideInt().toLong(), intArg.toLong())
@@ -344,7 +344,7 @@ class PrimitiveInjectionTest {
     ): BoxedResult {
       assertEquals(provideBoolean(), booleanArg)
       assertEquals(provideByte().toLong(), (byteArg as Byte).toLong())
-      assertEquals(provideChar().toLong(), (characterArg as Char).toLong())
+      assertEquals(provideChar().code.toLong(), (characterArg as Char).code.toLong())
       assertEquals(provideDouble(), doubleArg!!, java.lang.Double.MIN_VALUE)
       assertEquals(provideFloat(), floatArg!!, java.lang.Float.MIN_VALUE)
       assertEquals(provideInt().toLong(), (integerArg as Int).toLong())
@@ -354,6 +354,7 @@ class PrimitiveInjectionTest {
     }
   }
 
+  @Suppress("RedundantNullableReturnType")
   @Module
   private class BoxedPrimitiveModule {
 
