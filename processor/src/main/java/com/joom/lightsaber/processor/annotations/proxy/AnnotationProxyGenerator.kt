@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -323,7 +323,7 @@ class AnnotationProxyGenerator(
       addComma = true
     }
 
-    generator.push(')'.toInt())
+    generator.push(')'.code)
     generateStringBuilderAppendInvocation(generator, Type.Primitive.Char)
     generator.invokeVirtual(STRING_BUILDER_TYPE, Methods.TO_STRING_METHOD)
 

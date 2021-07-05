@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'idea'
-apply plugin: 'io.michaelrocks.pablo'
+apply from: "$rootDir/pablo.gradle"
 
 targetCompatibility = javaVersion
 sourceCompatibility = javaVersion
@@ -61,6 +61,8 @@ idea {
   }
 }
 
-shadowJar {
-  relocate 'com.joom.lightsaber', 'com.joom.lightsaber'
+pablo {
+  shadow {
+    relocate 'com.joom.lightsaber'
+  }
 }

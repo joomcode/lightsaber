@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ class ContractImportTest {
       defaultStringArray = arrayOf("String"),
       defaultIntList = listOf(42),
       defaultStringList = listOf("String"),
+      annotatedBoolean = false,
       annotatedByte = -42,
       annotatedChar = 'y',
       annotatedDouble = Double.MIN_VALUE,
@@ -263,6 +264,7 @@ class ContractImportTest {
       defaultStringArray: Array<String>,
       defaultIntList: List<Int>,
       defaultStringList: List<String>,
+      @Named("Annotated") annotatedBoolean: Boolean,
       @Named("Annotated") annotatedByte: Byte,
       @Named("Annotated") annotatedChar: Char,
       @Named("Annotated") annotatedDouble: Double,
@@ -304,6 +306,7 @@ class ContractImportTest {
         defaultStringArray,
         defaultIntList,
         defaultStringList,
+        annotatedBoolean,
         annotatedByte,
         annotatedChar,
         annotatedDouble,
@@ -351,6 +354,7 @@ class ContractImportTest {
     val defaultStringArray: Array<String>
     val defaultIntList: List<Int>
     val defaultStringList: List<String>
+    @get:Named("Annotated") val annotatedBoolean: Boolean
     @get:Named("Annotated") val annotatedByte: Byte
     @get:Named("Annotated") val annotatedChar: Char
     @get:Named("Annotated") val annotatedDouble: Double
@@ -393,6 +397,7 @@ class ContractImportTest {
     override val defaultStringArray: Array<String>,
     override val defaultIntList: List<Int>,
     override val defaultStringList: List<String>,
+    @get:Named("Annotated") override val annotatedBoolean: Boolean,
     @get:Named("Annotated") override val annotatedByte: Byte,
     @get:Named("Annotated") override val annotatedChar: Char,
     @get:Named("Annotated") override val annotatedDouble: Double,

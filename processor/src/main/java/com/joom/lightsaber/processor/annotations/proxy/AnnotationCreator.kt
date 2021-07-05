@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ class AnnotationCreator(
     return when (value) {
       is Boolean -> if (value) 1 else 0
       is Byte -> value.toInt()
-      is Char -> value.toInt()
+      is Char -> value.code
       is Short -> value.toInt()
       else -> value
     }

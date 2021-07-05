@@ -1,38 +1,38 @@
 allprojects {
-  version = '1.0.0-alpha04'
+  version = '1.0.0-alpha05'
   group = 'com.joom.lightsaber'
 
-  ext.javaVersion = JavaVersion.VERSION_1_6
-  ext.kotlinVersion = '1.3.72'
-  ext.kotlinRuntimeVariant = ''
-  ext.pabloVersion = '1.0.5'
+  ext.javaVersion = JavaVersion.VERSION_1_8
+  ext.kotlinVersion = '1.5.20'
+  ext.kotlinRuntimeVariant = '-jdk8'
+  ext.pabloVersion = '1.2.0'
 
   ext.javaxInjectVersion = '1'
   ext.jsr305Version = '3.0.2'
-  ext.asmVersion = '8.0.1'
-  ext.gripVersion = '0.7.0-beta'
-  ext.bimapVersion = '1.0.2'
+  ext.asmVersion = '9.1'
+  ext.gripVersion = '0.7.1-beta'
+  ext.bimapVersion = '1.1.0'
   ext.logbackVersion = '1.2.3'
 
-  ext.junitVersion = '4.13'
-  ext.mockitoVersion = '3.3.3'
-  ext.mockitoKotlinVersion = '2.2.0'
+  ext.junitVersion = '4.13.2'
+  ext.mockitoVersion = '3.11.1'
+  ext.mockitoKotlinVersion = '3.2.0'
 
-  ext.androidCompileSdkVersion = 29
-  ext.androidTargetSdkVersion = 29
+  ext.androidCompileSdkVersion = 30
+  ext.androidTargetSdkVersion = 30
   ext.androidMinSdkVersion = 16
-  ext.androidBuildToolsVersion = '29.0.3'
-  ext.androidToolsVersion = '4.0.0'
-  ext.androidxAnnotationVersion = '1.1.0'
-  ext.androidxEspressoVersion = '3.2.0'
-  ext.androidxTestRunnerVersion = '1.2.0'
-  ext.androidxTestExtJunitVersion = '1.1.1'
+  ext.androidBuildToolsVersion = '30.0.3'
+  ext.androidToolsVersion = '4.2.1'
+  ext.androidxAnnotationVersion = '1.2.0'
+  ext.androidxEspressoVersion = '3.3.0'
+  ext.androidxTestRunnerVersion = '1.3.0'
+  ext.androidxTestExtJunitVersion = '1.1.2'
 
   buildscript {
     repositories {
       mavenLocal()
       google()
-      jcenter()
+      mavenCentral()
     }
 
     dependencies {
@@ -49,6 +49,6 @@ allprojects {
   repositories {
     mavenLocal()
     google()
-    jcenter()
+    mavenCentral()
   }
 }

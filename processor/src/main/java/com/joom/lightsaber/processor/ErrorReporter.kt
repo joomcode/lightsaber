@@ -16,25 +16,17 @@
 
 package com.joom.lightsaber.processor
 
-import java.util.ArrayList
+import com.joom.lightsaber.processor.logging.getLogger
 
 class ErrorReporter {
-  private val errors = ArrayList<Exception>()
+  private val logger = getLogger()
 
-  fun hasErrors(): Boolean {
-    return errors.isNotEmpty()
-  }
+  var hasErrors: Boolean = false
+    private set
 
-  fun getErrors(): List<Exception> {
-    return errors
-  }
-
-  fun reportError(errorMessage: String) {
-    reportError(ProcessingException(errorMessage))
-  }
-
-  fun reportError(error: Exception) {
-    errors.add(error)
+  fun reportError(errorMessage: String, exception: Throwable? = null) {
+    hasErrors = true
+    logger.error(errorMessage, exception)
   }
 }
 

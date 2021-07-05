@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'application'
-apply plugin: 'io.michaelrocks.pablo'
+apply from: "$rootDir/pablo.gradle"
 
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
@@ -12,14 +12,14 @@ dependencies {
   implementation project(':core')
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
-  implementation "io.michaelrocks:bimap:$bimapVersion"
+  implementation "io.michaelrocks.bimap:bimap:$bimapVersion"
   implementation "ch.qos.logback:logback-classic:$logbackVersion"
 
   relocate "org.ow2.asm:asm:$asmVersion"
   relocate "org.ow2.asm:asm-commons:$asmVersion"
   relocate "io.michaelrocks:grip:$gripVersion"
 
-  testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion"
+  testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion"
   testImplementation "junit:junit:$junitVersion"
 }
 
@@ -33,8 +33,10 @@ jar {
   destinationDirectory.set(file('build/jar'))
 }
 
-shadowJar {
-  relocate 'com.joom.lightsaber', 'com.joom.lightsaber'
-  relocate 'io.michaelrocks.grip', 'com.joom.lightsaber.grip'
-  relocate 'org.objectweb.asm', 'com.joom.lightsaber.asm'
+pablo {
+  shadow {
+    relocate 'com.joom.lightsaber'
+    relocate 'io.michaelrocks.grip', 'com.joom.lightsaber.grip'
+    relocate 'org.objectweb.asm', 'com.joom.lightsaber.asm'
+  }
 }

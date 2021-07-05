@@ -16,13 +16,11 @@
 
 package com.joom.lightsaber.processor.validation
 
-import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractConfiguration
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
-import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.FactoryInjectionPoint
 import com.joom.lightsaber.processor.model.FactoryProvisionPoint
@@ -31,21 +29,17 @@ import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
 
 data class DependencyResolverPath(
   val path: DependencyResolverPath?,
-  val segment: String
+  val segment: DependencyResolverPathSegment
 ) {
 
   fun getDescription(indent: String = "", separator: String = "\n"): String {
     fun StringBuilder.appendPath(path: DependencyResolverPath): StringBuilder = apply {
       path.path?.let { appendPath(it).append(separator) }
       append(indent)
-      append(path.segment)
+      path.segment.appendDescriptionTo(this)
     }
 
     return buildString {
@@ -54,145 +48,66 @@ data class DependencyResolverPath(
   }
 
   fun with(module: Module): DependencyResolverPath {
-    return DependencyResolverPath(this, newSegment(module))
+    return DependencyResolverPath(this, DependencyResolverPathSegment.create(module))
   }
 
   fun with(provisionPoint: ProvisionPoint): DependencyResolverPath {
     return when (provisionPoint) {
       is ProvisionPoint.Constructor ->
-        with(newSegment(provisionPoint.containerType, "Class"))
-          .with(newSegment(provisionPoint.injectionPoint.method, "Constructor"))
-      is ProvisionPoint.Method -> with(newSegment(provisionPoint.method))
-      is ProvisionPoint.Field -> with(newSegment(provisionPoint.field))
+        with(DependencyResolverPathSegment.create(provisionPoint.containerType, "Class"))
+          .with(DependencyResolverPathSegment.create(provisionPoint.injectionPoint.method, "Constructor"))
+      is ProvisionPoint.Method -> with(DependencyResolverPathSegment.create(provisionPoint.method))
+      is ProvisionPoint.Field -> with(DependencyResolverPathSegment.create(provisionPoint.field))
     }
   }
 
   fun with(injectionTarget: InjectionTarget): DependencyResolverPath {
-    return with(newSegment(injectionTarget))
+    return with(DependencyResolverPathSegment.create(injectionTarget))
   }
 
   fun with(injectionPoint: InjectionPoint): DependencyResolverPath {
-    return with(newSegment(injectionPoint))
+    return with(DependencyResolverPathSegment.create(injectionPoint))
   }
 
   fun with(binding: Binding): DependencyResolverPath {
-    return with(newSegment(binding))
+    return with(DependencyResolverPathSegment.create(binding))
   }
 
   fun with(factory: Factory): DependencyResolverPath {
-    return with(newSegment(factory))
+    return with(DependencyResolverPathSegment.create(factory))
   }
 
   fun with(factoryProvisionPoint: FactoryProvisionPoint): DependencyResolverPath {
-    return with(newSegment(factoryProvisionPoint))
+    return with(DependencyResolverPathSegment.create(factoryProvisionPoint))
   }
 
   fun with(factoryInjectionPoint: FactoryInjectionPoint): DependencyResolverPath {
-    return with(newSegment(factoryInjectionPoint))
+    return with(DependencyResolverPathSegment.create(factoryInjectionPoint))
   }
 
   fun with(contract: Contract): DependencyResolverPath {
-    return with(newSegment(contract))
+    return with(DependencyResolverPathSegment.create(contract))
   }
 
   fun with(contractProvisionPoint: ContractProvisionPoint): DependencyResolverPath {
-    return with(newSegment(contractProvisionPoint))
+    return with(DependencyResolverPathSegment.create(contractProvisionPoint))
   }
 
   fun with(importPoint: ImportPoint): DependencyResolverPath {
-    return with(newSegment(importPoint))
+    return with(DependencyResolverPathSegment.create(importPoint))
   }
 
-  private fun with(segment: String): DependencyResolverPath {
+  private fun with(segment: DependencyResolverPathSegment): DependencyResolverPath {
     return DependencyResolverPath(this, segment)
   }
 
   companion object {
     fun from(component: Component): DependencyResolverPath {
-      return DependencyResolverPath(null, newSegment(component))
+      return DependencyResolverPath(null, DependencyResolverPathSegment.create(component))
     }
 
     fun from(contractConfiguration: ContractConfiguration): DependencyResolverPath {
-      return DependencyResolverPath(null, newSegment(contractConfiguration))
-    }
-
-    private fun newSegment(component: Component): String {
-      return newSegment(component.type, "Component")
-    }
-
-    private fun newSegment(contractConfiguration: ContractConfiguration): String {
-      return newSegment(contractConfiguration.type, "ContractConfiguration")
-    }
-
-    private fun newSegment(module: Module): String {
-      return newSegment(module.type, "Module")
-    }
-
-    private fun newSegment(injectionTarget: InjectionTarget): String {
-      return newSegment(injectionTarget.type, "Class")
-    }
-
-    private fun newSegment(injectionPoint: InjectionPoint): String {
-      return when (injectionPoint) {
-        is InjectionPoint.Method -> newSegment(injectionPoint.method)
-        is InjectionPoint.Field -> newSegment(injectionPoint.field)
-      }
-    }
-
-    private fun newSegment(binding: Binding): String {
-      return newSegment(binding.ancestor, "Binding")
-    }
-
-    private fun newSegment(factory: Factory): String {
-      return newSegment(factory.type, "Factory")
-    }
-
-    private fun newSegment(factoryProvisionPoint: FactoryProvisionPoint): String {
-      return newSegment(factoryProvisionPoint.method)
-    }
-
-    private fun newSegment(factoryInjectionPoint: FactoryInjectionPoint): String {
-      return newSegment(factoryInjectionPoint.method)
-    }
-
-    private fun newSegment(contract: Contract): String {
-      return newSegment(contract.type, "Contract")
-    }
-
-    private fun newSegment(contractProvisionPoint: ContractProvisionPoint): String {
-      return newSegment(contractProvisionPoint.method)
-    }
-
-    private fun newSegment(importPoint: ImportPoint): String {
-      return when (importPoint) {
-        is ImportPoint.Method -> newSegment(importPoint.method)
-        is ImportPoint.Field -> newSegment(importPoint.field)
-        is ImportPoint.Annotation -> newSegment(importPoint.annotation)
-      }
-    }
-
-    private fun newSegment(dependency: Dependency, name: String): String {
-      return newSegment(dependency.getDescription(), name)
-    }
-
-    private fun newSegment(type: Type, name: String): String {
-      return newSegment(type.getDescription(), name)
-    }
-
-    private fun newSegment(annotation: AnnotationMirror, name: String = "Annotation"): String {
-      return newSegment(annotation.getDescription(), name)
-    }
-
-    private fun newSegment(method: MethodMirror, name: String = "Method"): String {
-      return newSegment(method.getDescription(), name)
-    }
-
-    private fun newSegment(field: FieldMirror, name: String = "Field"): String {
-      return newSegment(field.getDescription(), name)
-    }
-
-    private fun newSegment(value: String, name: String): String {
-      return "$name: $value"
+      return DependencyResolverPath(null, DependencyResolverPathSegment.create(contractConfiguration))
     }
   }
 }
