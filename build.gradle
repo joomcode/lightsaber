@@ -4,7 +4,7 @@ allprojects {
 
   ext.javaVersion = JavaVersion.VERSION_1_8
   ext.kotlinVersion = '1.5.20'
-  ext.kotlinRuntimeVariant = ''
+  ext.kotlinRuntimeVariant = '-jdk8'
   ext.pabloVersion = '1.2.0'
 
   ext.javaxInjectVersion = '1'
