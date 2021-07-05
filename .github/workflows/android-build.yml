@@ -88,4 +88,4 @@ jobs:
 
       - name: Upload Artifacts
         run: |
-          ./gradlew publishMavenPublicationToSonatypeRepository ${{ env.PABLO_OPTS }}
+          ./gradlew publishMavenPublicationToSonatypeRepository -Pbootstrap=true ${{ env.PABLO_OPTS }}
