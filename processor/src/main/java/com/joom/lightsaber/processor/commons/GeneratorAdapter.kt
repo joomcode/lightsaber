@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.ACONST_NULL
-import org.objectweb.asm.Opcodes.ASM5
+import org.objectweb.asm.Opcodes.ASM9
 import org.objectweb.asm.Opcodes.DOUBLE
 import org.objectweb.asm.Opcodes.FLOAT
 import org.objectweb.asm.Opcodes.INTEGER
@@ -44,7 +44,7 @@ class GeneratorAdapter(
   access: Int,
   name: String,
   desc: String
-) : org.objectweb.asm.commons.GeneratorAdapter(ASM5, methodVisitor, access, name, desc) {
+) : org.objectweb.asm.commons.GeneratorAdapter(ASM9, methodVisitor, access, name, desc) {
 
   companion object {
     private fun visitMethod(

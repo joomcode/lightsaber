@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.objectweb.asm.Opcodes
 import java.io.File
 import java.io.IOException
 
-class WatermarkChecker : ClassVisitor(Opcodes.ASM5) {
+class WatermarkChecker : ClassVisitor(Opcodes.ASM9) {
   companion object {
     private val CLASS_EXTENSION = "class"
 
