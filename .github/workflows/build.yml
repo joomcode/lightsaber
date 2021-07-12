@@ -1,5 +1,4 @@
 name: Build
-
 on: [ push, pull_request ]
 
 env:
@@ -34,7 +33,7 @@ jobs:
         run: ./gradlew publishToMavenLocal -Pbootstrap=true ${{ env.PABLO_OPTS }}
 
       - name: Run unit tests
-        run: ./gradlew check --no-daemon
+        run: ./gradlew check
 
   test:
     name: Test
@@ -66,8 +65,7 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
-          script: |
-            ./gradlew connectedCheck --no-daemon
+          script: ./gradlew connectedCheck
 
   publish:
     name: Publish
@@ -87,5 +85,4 @@ jobs:
           java-version: 8
 
       - name: Upload Artifacts
-        run: |
-          ./gradlew publishMavenPublicationToSonatypeRepository -Pbootstrap=true ${{ env.PABLO_OPTS }}
+        run: ./gradlew publishMavenPublicationToSonatypeRepository -Pbootstrap=true ${{ env.PABLO_OPTS }}
