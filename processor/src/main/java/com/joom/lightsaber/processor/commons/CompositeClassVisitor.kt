@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.TypePath
 import java.util.ArrayList
 
-class CompositeClassVisitor : ClassVisitor(Opcodes.ASM5), CompositeVisitor<ClassVisitor> {
+class CompositeClassVisitor : ClassVisitor(Opcodes.ASM9), CompositeVisitor<ClassVisitor> {
   override val visitors = ArrayList<ClassVisitor>()
 
   override fun addVisitor(visitor: ClassVisitor) {

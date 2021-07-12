@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.objectweb.asm.Opcodes
 open class WatermarkClassVisitor(
   classVisitor: ClassVisitor,
   private val isDirtyByDefault: Boolean
-) : ClassVisitor(Opcodes.ASM5, classVisitor) {
+) : ClassVisitor(Opcodes.ASM9, classVisitor) {
 
   var isDirty: Boolean = false
   private var isAttributeAdded: Boolean = false

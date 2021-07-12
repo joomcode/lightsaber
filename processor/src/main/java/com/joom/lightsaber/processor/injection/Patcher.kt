@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2021 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class Patcher(
   private val classRegistry: ClassRegistry,
   private val injectionContext: InjectionContext,
   private val generationContext: GenerationContext
-) : ClassVisitor(Opcodes.ASM5, classVisitor) {
+) : ClassVisitor(Opcodes.ASM9, classVisitor) {
 
   private val keyRegistry get() = generationContext.keyRegistry
 
