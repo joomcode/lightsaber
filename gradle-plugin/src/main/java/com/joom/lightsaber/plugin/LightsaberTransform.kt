@@ -109,7 +109,7 @@ class LightsaberTransform(private val project: Project) : Transform() {
   }
 
   override fun isCacheable(): Boolean {
-    return true
+    return false
   }
 
   private fun TransformOutputProvider.getContentLocation(
