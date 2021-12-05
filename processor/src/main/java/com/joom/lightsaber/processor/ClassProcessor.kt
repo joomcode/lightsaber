@@ -97,7 +97,7 @@ class ClassProcessor(
   }
 
   private fun copyAndPatchClasses(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    fileSourcesAndSinks.forEach { (fileSource, fileSink) ->
+    fileSourcesAndSinks.parallelStream().forEach { (fileSource, fileSink) ->
       logger.debug("Copy from {} to {}", fileSource, fileSink)
       fileSource.listFiles { path, type ->
         logger.debug("Copy file {} of type {}", path, type)
