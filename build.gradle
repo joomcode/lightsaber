@@ -1,5 +1,5 @@
 allprojects {
-  version = '1.0.0-alpha08'
+  version = '1.0.0-alpha09'
   group = 'com.joom.lightsaber'
 
   ext.javaVersion = JavaVersion.VERSION_1_8
