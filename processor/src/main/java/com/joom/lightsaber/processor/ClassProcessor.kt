@@ -46,6 +46,7 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.Closeable
 import java.io.File
+import kotlin.streams.toList
 
 class ClassProcessor(
   private val inputs: List<File>,
@@ -69,6 +70,7 @@ class ClassProcessor(
   private val classSink = DirectoryFileSink(genPath)
 
   fun processClasses() {
+    warmUpGripCaches(grip, inputs)
     val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, projectName)
     val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, projectName)
@@ -127,6 +129,13 @@ class ClassProcessor(
     val generator = Generator(grip.classRegistry, errorReporter, classSink)
     generator.generate(injectionContext, generationContext)
     checkErrors()
+  }
+
+  private fun warmUpGripCaches(grip: Grip, inputs: List<File>) {
+    inputs.flatMap { grip.fileRegistry.findTypesForFile(it) }
+      .parallelStream()
+      .map { grip.classRegistry.getClassMirror(it) }
+      .toList()
   }
 
   private fun checkErrors() {
