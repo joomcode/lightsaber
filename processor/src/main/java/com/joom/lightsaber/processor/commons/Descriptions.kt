@@ -16,14 +16,14 @@
 
 package com.joom.lightsaber.processor.commons
 
+import com.joom.grip.mirrors.AnnotationMirror
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.EnumMirror
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.model.Dependency
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.EnumMirror
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 
 fun Dependency.getDescription(): String {
   return if (qualifier == null) type.getDescription() else buildString { appendDescriptionTo(this) }

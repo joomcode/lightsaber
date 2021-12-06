@@ -16,10 +16,10 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.ContractConfiguration
 import com.joom.lightsaber.processor.model.InjectionContext
-import io.michaelrocks.grip.mirrors.Type
 
 class DependencyResolverFactory(
   private val injectionContext: InjectionContext

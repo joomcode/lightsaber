@@ -16,13 +16,12 @@
 
 package com.joom.lightsaber.processor.model
 
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isConstructor
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.isConstructor
-import java.util.HashSet
 
 data class InjectionTarget(
   val type: Type.Object,

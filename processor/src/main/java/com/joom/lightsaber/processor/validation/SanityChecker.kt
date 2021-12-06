@@ -16,6 +16,14 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isAbstract
+import com.joom.grip.mirrors.isDefaultConstructor
+import com.joom.grip.mirrors.isInterface
+import com.joom.grip.mirrors.isStatic
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.AccessFlagStringifier
 import com.joom.lightsaber.processor.commons.Types
@@ -29,14 +37,6 @@ import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.isAbstract
-import io.michaelrocks.grip.mirrors.isDefaultConstructor
-import io.michaelrocks.grip.mirrors.isInterface
-import io.michaelrocks.grip.mirrors.isStatic
-import io.michaelrocks.grip.mirrors.signature.GenericType
 import org.objectweb.asm.Opcodes
 
 class SanityChecker(
@@ -136,7 +136,7 @@ class SanityChecker(
     if (mirror.superType != Types.OBJECT_TYPE && mirror.superType != Types.CONTRACT_CONFIGURATION_TYPE) {
       errorReporter.reportError(
         "${type.className} has a super type of ${mirror.type.className} instead of " +
-            "${Types.OBJECT_TYPE.className} or ${Types.CONTRACT_CONFIGURATION_TYPE.className}"
+          "${Types.OBJECT_TYPE.className} or ${Types.CONTRACT_CONFIGURATION_TYPE.className}"
       )
     }
   }
@@ -203,7 +203,7 @@ class SanityChecker(
       if (returnType !in classRegistry.getAncestors(dependencyType)) {
         errorReporter.reportError(
           "Method ${provisionPoint.containerType.className}.${method.name} returns ${returnType.className} which isn't an ancestor of " +
-              "${dependencyType.className} from the @Factory.Return annotation"
+            "${dependencyType.className} from the @Factory.Return annotation"
         )
         return
       }

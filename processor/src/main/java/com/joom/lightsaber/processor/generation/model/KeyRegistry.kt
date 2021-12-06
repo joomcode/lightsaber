@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.generation.model
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.model.Dependency
-import io.michaelrocks.grip.mirrors.Type
 
 data class KeyRegistry(
   val type: Type.Object,

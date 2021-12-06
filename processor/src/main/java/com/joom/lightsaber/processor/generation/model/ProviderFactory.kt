@@ -16,6 +16,9 @@
 
 package com.joom.lightsaber.processor.generation.model
 
+import com.joom.grip.FileRegistry
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
@@ -23,9 +26,6 @@ import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import io.michaelrocks.grip.FileRegistry
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 
 interface ProviderFactory {
   fun createProvidersForModule(module: Module): Collection<Provider>

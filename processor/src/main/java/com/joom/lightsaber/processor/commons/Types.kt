@@ -16,6 +16,8 @@
 
 package com.joom.lightsaber.processor.commons
 
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectType
 import com.joom.lightsaber.Component
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
@@ -32,8 +34,6 @@ import com.joom.lightsaber.ProvidedAs
 import com.joom.lightsaber.ProvidedBy
 import io.michaelrocks.bimap.BiMap
 import io.michaelrocks.bimap.HashBiMap
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectType
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Qualifier

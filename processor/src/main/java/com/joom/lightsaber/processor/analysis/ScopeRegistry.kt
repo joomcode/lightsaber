@@ -16,9 +16,9 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.Types
-import io.michaelrocks.grip.mirrors.Type
 
 class ScopeRegistry {
   fun findScopeProviderByAnnotationType(annotationType: Type.Object): Type.Object? {

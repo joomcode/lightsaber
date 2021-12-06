@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.commons
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import io.michaelrocks.grip.mirrors.Type
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Opcodes
 

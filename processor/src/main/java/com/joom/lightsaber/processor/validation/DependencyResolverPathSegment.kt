@@ -16,6 +16,10 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.mirrors.AnnotationMirror
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.commons.appendDescriptionTo
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Component
@@ -30,10 +34,6 @@ import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
 
 sealed class DependencyResolverPathSegment {
 

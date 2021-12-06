@@ -16,7 +16,7 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.mirrors.Type
 
 class ExternalSetup(
   val annotationModuleImportPointsByImporterModules: Map<Type.Object, Collection<ImportPoint.Annotation>>,

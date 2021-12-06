@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
 
 data class FactoryProvisionPoint(
   val containerType: Type.Object,

@@ -16,12 +16,12 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.annotations.proxy.AnnotationCreator
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.io.FileSink
 import com.joom.lightsaber.processor.model.InjectionContext
-import io.michaelrocks.grip.ClassRegistry
 
 class Generator(
   private val classRegistry: ClassRegistry,

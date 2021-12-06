@@ -16,9 +16,9 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.model.InjectionContext
-import io.michaelrocks.grip.Grip
 import java.io.File
 
 class Analyzer(

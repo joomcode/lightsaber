@@ -16,13 +16,13 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getMethodType
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getMethodType
 
 interface BridgeRegistry {
   fun addBridge(type: Type.Object, field: FieldDescriptor): MethodDescriptor

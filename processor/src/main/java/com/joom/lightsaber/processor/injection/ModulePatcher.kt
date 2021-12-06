@@ -16,6 +16,10 @@
 
 package com.joom.lightsaber.processor.injection
 
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isStatic
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Types
@@ -36,10 +40,6 @@ import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.isStatic
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_SYNTHETIC

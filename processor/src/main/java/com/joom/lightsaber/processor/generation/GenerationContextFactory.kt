@@ -16,6 +16,13 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.FileRegistry
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.grip.mirrors.isPublic
+import com.joom.grip.mirrors.packageName
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.associateByIndexedNotNullTo
 import com.joom.lightsaber.processor.commons.associateByIndexedTo
@@ -32,14 +39,6 @@ import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.FileRegistry
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
-import io.michaelrocks.grip.mirrors.isPublic
-import io.michaelrocks.grip.mirrors.packageName
-import io.michaelrocks.grip.mirrors.signature.GenericType
-import java.util.HashMap
 
 class GenerationContextFactory(
   private val fileRegistry: FileRegistry,

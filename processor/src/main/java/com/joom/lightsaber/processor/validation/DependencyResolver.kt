@@ -16,6 +16,8 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.boxed
 import com.joom.lightsaber.processor.commons.getInjectees
@@ -40,8 +42,6 @@ import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 
 interface DependencyResolver {
   fun getImportsWithPaths(): Map<Type.Object, Collection<DependencyResolverPath>>

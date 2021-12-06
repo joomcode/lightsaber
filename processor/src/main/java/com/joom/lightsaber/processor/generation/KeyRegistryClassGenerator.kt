@@ -16,6 +16,11 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectType
+import com.joom.grip.mirrors.signature.GenericType
+import com.joom.grip.mirrors.toArrayType
 import com.joom.lightsaber.internal.GenericArrayTypeImpl
 import com.joom.lightsaber.internal.ParameterizedTypeImpl
 import com.joom.lightsaber.processor.annotations.proxy.AnnotationCreator
@@ -31,11 +36,6 @@ import com.joom.lightsaber.processor.generation.model.Key
 import com.joom.lightsaber.processor.generation.model.PackageInvader
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectType
-import io.michaelrocks.grip.mirrors.signature.GenericType
-import io.michaelrocks.grip.mirrors.toArrayType
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.ACC_FINAL

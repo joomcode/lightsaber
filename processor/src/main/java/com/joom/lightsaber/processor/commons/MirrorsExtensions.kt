@@ -16,13 +16,13 @@
 
 package com.joom.lightsaber.processor.commons
 
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
+import com.joom.grip.mirrors.toArrayType
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
-import io.michaelrocks.grip.mirrors.toArrayType
 
 val GenericType.isParameterized: Boolean
   get() = this is GenericType.Parameterized

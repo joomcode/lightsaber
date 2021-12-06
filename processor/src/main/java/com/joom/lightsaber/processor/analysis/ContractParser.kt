@@ -16,19 +16,18 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.grip.mirrors.isInterface
+import com.joom.grip.mirrors.isStatic
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Dependency
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
-import io.michaelrocks.grip.mirrors.isInterface
-import io.michaelrocks.grip.mirrors.isStatic
-import io.michaelrocks.grip.mirrors.signature.GenericType
-import java.util.HashMap
 
 interface ContractParser {
   fun parseContract(type: Type.Object): Contract

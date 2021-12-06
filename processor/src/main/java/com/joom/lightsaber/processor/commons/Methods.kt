@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.commons
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import io.michaelrocks.grip.mirrors.Type
 
 object Methods {
   val HASH_CODE_METHOD = MethodDescriptor.forMethod("hashCode", Type.Primitive.Int)

@@ -16,6 +16,8 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Types
@@ -30,8 +32,6 @@ import com.joom.lightsaber.processor.model.Converter
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.Scope
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 
 private val ADAPTER_CONSTRUCTOR = MethodDescriptor.forConstructor(Types.PROVIDER_TYPE)
 

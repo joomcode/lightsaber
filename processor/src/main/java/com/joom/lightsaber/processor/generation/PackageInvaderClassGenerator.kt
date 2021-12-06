@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.Types
@@ -25,7 +26,6 @@ import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.descriptors.descriptor
 import com.joom.lightsaber.processor.generation.model.PackageInvader
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
-import io.michaelrocks.grip.ClassRegistry
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.ACC_FINAL

@@ -16,6 +16,14 @@
 
 package com.joom.lightsaber.processor.annotations.proxy
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getMethodType
+import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.grip.mirrors.internalName
+import com.joom.grip.mirrors.toType
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.AnnotationAnnotation
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.AnnotationArrayAnnotation
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.BooleanAnnotation
@@ -44,14 +52,6 @@ import com.joom.lightsaber.processor.annotations.proxy.Annotations.ShortArrayAnn
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.StringAnnotation
 import com.joom.lightsaber.processor.annotations.proxy.Annotations.StringArrayAnnotation
 import com.joom.lightsaber.processor.commons.Types
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getMethodType
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
-import io.michaelrocks.grip.mirrors.internalName
-import io.michaelrocks.grip.mirrors.toType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals

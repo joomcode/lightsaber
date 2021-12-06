@@ -16,10 +16,10 @@
 
 package com.joom.lightsaber.processor.generation.model
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.model.Scope
-import io.michaelrocks.grip.mirrors.Type
 
 data class Provider(
   val type: Type.Object,

@@ -16,6 +16,14 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.Annotated
+import com.joom.grip.mirrors.AnnotationMirror
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.ProcessingException
@@ -26,14 +34,6 @@ import com.joom.lightsaber.processor.model.Dependency
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.Scope
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.Annotated
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 
 interface AnalyzerHelper {
   fun convertMethodToInjectionPoint(method: MethodMirror, container: Type.Object): InjectionPoint.Method

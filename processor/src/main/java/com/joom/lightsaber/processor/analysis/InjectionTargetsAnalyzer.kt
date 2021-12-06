@@ -16,6 +16,14 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.FieldsResult
+import com.joom.grip.Grip
+import com.joom.grip.MethodsResult
+import com.joom.grip.annotatedWith
+import com.joom.grip.fields
+import com.joom.grip.methods
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isConstructor
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.cast
@@ -23,17 +31,7 @@ import com.joom.lightsaber.processor.commons.given
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
-import io.michaelrocks.grip.FieldsResult
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.MethodsResult
-import io.michaelrocks.grip.annotatedWith
-import io.michaelrocks.grip.fields
-import io.michaelrocks.grip.methods
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.isConstructor
 import java.io.File
-import java.util.ArrayList
-import java.util.HashSet
 
 interface InjectionTargetsAnalyzer {
   fun analyze(files: Collection<File>): Result

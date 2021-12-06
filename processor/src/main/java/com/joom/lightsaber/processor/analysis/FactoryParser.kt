@@ -16,6 +16,17 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.and
+import com.joom.grip.annotatedWith
+import com.joom.grip.from
+import com.joom.grip.isConstructor
+import com.joom.grip.methods
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.Factory.Return
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
@@ -28,17 +39,6 @@ import com.joom.lightsaber.processor.model.FactoryInjectionPoint
 import com.joom.lightsaber.processor.model.FactoryProvisionPoint
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.InjectionPoint
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.and
-import io.michaelrocks.grip.annotatedWith
-import io.michaelrocks.grip.from
-import io.michaelrocks.grip.isConstructor
-import io.michaelrocks.grip.methods
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
-import io.michaelrocks.grip.mirrors.signature.GenericType
 
 interface FactoryParser {
   fun parseFactory(type: Type.Object): Factory

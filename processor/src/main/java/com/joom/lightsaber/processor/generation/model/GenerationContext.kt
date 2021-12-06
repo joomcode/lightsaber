@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.generation.model
 
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.packageName
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.packageName
 
 data class GenerationContext(
   private val providersByModuleType: Map<Type.Object, Collection<Provider>>,

@@ -16,13 +16,13 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.classes
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.superType
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractConfiguration
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.classes
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.superType
 import java.io.File
 
 interface ContractConfigurationAnalyzer {

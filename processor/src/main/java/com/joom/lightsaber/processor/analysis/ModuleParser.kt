@@ -16,6 +16,18 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.and
+import com.joom.grip.annotatedWith
+import com.joom.grip.fields
+import com.joom.grip.from
+import com.joom.grip.isStatic
+import com.joom.grip.methodType
+import com.joom.grip.methods
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.not
+import com.joom.grip.returns
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.getDescription
@@ -25,19 +37,6 @@ import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.reportError
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.and
-import io.michaelrocks.grip.annotatedWith
-import io.michaelrocks.grip.fields
-import io.michaelrocks.grip.from
-import io.michaelrocks.grip.isStatic
-import io.michaelrocks.grip.methodType
-import io.michaelrocks.grip.methods
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.not
-import io.michaelrocks.grip.returns
-import java.util.HashMap
 
 interface ModuleParser {
   fun parseModule(type: Type.Object, isImported: Boolean): Module

@@ -16,17 +16,17 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.annotatedWith
+import com.joom.grip.classes
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.ProvidedAs
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Dependency
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.annotatedWith
-import io.michaelrocks.grip.classes
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.signature.GenericType
 import java.io.File
 
 interface BindingsAnalyzer {

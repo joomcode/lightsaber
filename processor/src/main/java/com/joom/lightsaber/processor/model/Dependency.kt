@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.signature.GenericType
+import com.joom.grip.mirrors.AnnotationMirror
+import com.joom.grip.mirrors.signature.GenericType
 
 data class Dependency(
   val type: GenericType,

@@ -16,13 +16,13 @@
 
 package com.joom.lightsaber.processor.injection
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionTarget
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Opcodes
 

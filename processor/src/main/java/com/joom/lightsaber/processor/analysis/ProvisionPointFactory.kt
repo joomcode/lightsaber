@@ -16,6 +16,12 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isConstructor
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.commons.contains
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
@@ -25,12 +31,6 @@ import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.model.Scope
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.mirrors.FieldMirror
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.isConstructor
-import io.michaelrocks.grip.mirrors.signature.GenericType
 import org.objectweb.asm.Opcodes
 
 interface ProvisionPointFactory {

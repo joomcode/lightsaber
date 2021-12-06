@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.getDescription
@@ -29,7 +30,6 @@ import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.reportError
-import io.michaelrocks.grip.ClassRegistry
 
 class Validator(
   private val classRegistry: ClassRegistry,

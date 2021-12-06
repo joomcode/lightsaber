@@ -16,9 +16,9 @@
 
 package com.joom.lightsaber.processor.commons
 
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.ClassRegistry
+import com.joom.grip.Grip
+import com.joom.grip.mirrors.Type
 
 fun Grip.getAncestors(type: Type.Object): Sequence<Type.Object> = classRegistry.getAncestors(type)
 

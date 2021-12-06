@@ -16,7 +16,7 @@
 
 package com.joom.lightsaber.processor.commons
 
-import io.michaelrocks.grip.mirrors.signature.GenericType
+import com.joom.grip.mirrors.signature.GenericType
 
 fun GenericType.boxed(): GenericType {
   if (this !is GenericType.Raw) {

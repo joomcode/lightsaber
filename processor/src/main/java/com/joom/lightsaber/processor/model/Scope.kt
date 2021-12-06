@@ -16,7 +16,7 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.mirrors.Type
 
 sealed class Scope {
   abstract val isEager: Boolean

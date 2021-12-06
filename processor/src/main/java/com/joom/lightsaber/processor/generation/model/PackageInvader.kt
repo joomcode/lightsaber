@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.generation.model
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
-import io.michaelrocks.grip.mirrors.Type
 
 data class PackageInvader(
   val type: Type.Object,

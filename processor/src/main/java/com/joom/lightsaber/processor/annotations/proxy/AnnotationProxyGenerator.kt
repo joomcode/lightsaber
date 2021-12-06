@@ -16,6 +16,12 @@
 
 package com.joom.lightsaber.processor.annotations.proxy
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getArrayType
+import com.joom.grip.mirrors.getObjectType
+import com.joom.grip.mirrors.isPrimitive
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Methods
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
@@ -24,12 +30,6 @@ import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.descriptors.descriptor
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getArrayType
-import io.michaelrocks.grip.mirrors.getObjectType
-import io.michaelrocks.grip.mirrors.isPrimitive
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Label

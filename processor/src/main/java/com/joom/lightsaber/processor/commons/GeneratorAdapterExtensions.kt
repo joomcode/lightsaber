@@ -16,9 +16,9 @@
 
 package com.joom.lightsaber.processor.commons
 
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.isPrivate
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isPrivate
 
 inline fun GeneratorAdapter.newLocal(type: Type, valueProvider: () -> Unit): Int {
   val local = newLocal(type)

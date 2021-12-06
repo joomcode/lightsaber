@@ -16,7 +16,7 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.mirrors.Type
 
 data class InjectionContext(
   val components: Collection<Component>,
@@ -41,12 +41,12 @@ data class InjectionContext(
 
   fun getModulesWithDescendants(): Sequence<Module> {
     return components.asSequence().flatMap { it.getModulesWithDescendants() } +
-        contractConfigurations.asSequence().flatMap { it.getModulesWithDescendants() }
+      contractConfigurations.asSequence().flatMap { it.getModulesWithDescendants() }
   }
 
   fun getImportsWithDescendants(): Sequence<Import> {
     return components.asSequence().flatMap { it.getImportsWithDescendants() } +
-        contractConfigurations.asSequence().flatMap { it.getImportsWithDescendants() }
+      contractConfigurations.asSequence().flatMap { it.getImportsWithDescendants() }
   }
 
   fun findComponentByType(componentType: Type.Object): Component? =

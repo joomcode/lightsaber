@@ -16,6 +16,10 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectType
+import com.joom.grip.mirrors.isPrimitive
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
@@ -39,10 +43,6 @@ import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.Injectee
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectType
-import io.michaelrocks.grip.mirrors.isPrimitive
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.ACC_FINAL

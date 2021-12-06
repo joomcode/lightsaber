@@ -16,17 +16,16 @@
 
 package com.joom.lightsaber.processor.annotations.proxy
 
+import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.AnnotationMirror
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.EnumMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.ClassProducer
-import io.michaelrocks.grip.ClassRegistry
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.ClassMirror
-import io.michaelrocks.grip.mirrors.EnumMirror
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 import java.lang.reflect.Array
-import java.util.HashSet
 
 class AnnotationCreator(
   private val classProducer: ClassProducer,

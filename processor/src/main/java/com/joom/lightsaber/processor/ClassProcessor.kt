@@ -16,6 +16,8 @@
 
 package com.joom.lightsaber.processor
 
+import com.joom.grip.Grip
+import com.joom.grip.GripFactory
 import com.joom.lightsaber.processor.analysis.Analyzer
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.closeQuietly
@@ -40,8 +42,6 @@ import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.Validator
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.GripFactory
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.Closeable
@@ -58,7 +58,7 @@ class ClassProcessor(
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.create(inputs + classpath + bootClasspath)
+  private val grip: Grip = GripFactory.INSTANCE.create(inputs + classpath + bootClasspath)
   private val errorReporter = ErrorReporter()
 
   private val fileSourcesAndSinks = inputs.zip(outputs) { input, output ->

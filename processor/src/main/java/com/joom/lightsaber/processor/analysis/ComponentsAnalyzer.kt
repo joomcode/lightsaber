@@ -16,16 +16,16 @@
 
 package com.joom.lightsaber.processor.analysis
 
+import com.joom.grip.Grip
+import com.joom.grip.annotatedWith
+import com.joom.grip.classes
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.graph.DirectedGraph
 import com.joom.lightsaber.processor.graph.HashDirectedGraph
 import com.joom.lightsaber.processor.graph.reversed
 import com.joom.lightsaber.processor.model.Component
-import io.michaelrocks.grip.Grip
-import io.michaelrocks.grip.annotatedWith
-import io.michaelrocks.grip.classes
-import io.michaelrocks.grip.mirrors.Type
 import java.io.File
 
 interface ComponentsAnalyzer {

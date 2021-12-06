@@ -16,9 +16,9 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.logging.getLogger
-import io.michaelrocks.grip.ClassRegistry
 
 class PackageInvadersGenerator(
   private val classProducer: ClassProducer,

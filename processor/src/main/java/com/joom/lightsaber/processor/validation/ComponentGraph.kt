@@ -16,10 +16,10 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.graph.DirectedGraph
 import com.joom.lightsaber.processor.graph.HashDirectedGraph
 import com.joom.lightsaber.processor.model.Component
-import io.michaelrocks.grip.mirrors.Type
 
 fun buildComponentGraph(components: Collection<Component>): DirectedGraph<Type.Object> {
   return HashDirectedGraph<Type.Object>().apply {

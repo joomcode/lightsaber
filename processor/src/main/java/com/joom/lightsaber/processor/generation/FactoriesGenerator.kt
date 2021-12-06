@@ -16,10 +16,10 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.InjectionContext
-import io.michaelrocks.grip.ClassRegistry
 
 class FactoriesGenerator(
   private val classProducer: ClassProducer,

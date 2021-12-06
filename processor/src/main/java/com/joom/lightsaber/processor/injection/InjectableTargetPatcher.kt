@@ -16,6 +16,8 @@
 
 package com.joom.lightsaber.processor.injection
 
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Types
@@ -27,11 +29,8 @@ import com.joom.lightsaber.processor.generation.getDependency
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
-import io.michaelrocks.grip.mirrors.Type
-import io.michaelrocks.grip.mirrors.getObjectTypeByInternalName
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
-import java.util.ArrayList
 
 class InjectableTargetPatcher(
   classVisitor: ClassVisitor,

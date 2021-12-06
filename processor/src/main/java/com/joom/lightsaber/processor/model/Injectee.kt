@@ -16,10 +16,10 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.Annotated
-import io.michaelrocks.grip.mirrors.AnnotationCollection
-import io.michaelrocks.grip.mirrors.AnnotationMirror
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.mirrors.Annotated
+import com.joom.grip.mirrors.AnnotationCollection
+import com.joom.grip.mirrors.AnnotationMirror
+import com.joom.grip.mirrors.Type
 
 data class Injectee(
   val dependency: Dependency,

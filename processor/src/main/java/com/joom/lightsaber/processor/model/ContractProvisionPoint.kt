@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.model
 
-import io.michaelrocks.grip.mirrors.MethodMirror
-import io.michaelrocks.grip.mirrors.Type
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
 
 class ContractProvisionPoint(
   val container: Type.Object,
