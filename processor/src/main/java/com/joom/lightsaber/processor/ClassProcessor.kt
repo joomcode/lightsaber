@@ -46,7 +46,6 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.Closeable
 import java.io.File
-import kotlin.streams.toList
 
 class ClassProcessor(
   private val inputs: List<File>,
@@ -134,8 +133,9 @@ class ClassProcessor(
   private fun warmUpGripCaches(grip: Grip, inputs: List<File>) {
     inputs.flatMap { grip.fileRegistry.findTypesForFile(it) }
       .parallelStream()
-      .map { grip.classRegistry.getClassMirror(it) }
-      .toList()
+      .forEach {
+        grip.classRegistry.getClassMirror(it)
+      }
   }
 
   private fun checkErrors() {

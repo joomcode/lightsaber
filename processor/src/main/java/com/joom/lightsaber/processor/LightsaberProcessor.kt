@@ -29,9 +29,9 @@ class LightsaberProcessor(private val parameters: LightsaberParameters) {
     val projectName = parameters.projectName
     val classpath = parameters.classpath
     val bootClasspath = parameters.bootClasspath
-    ClassProcessor(inputs, outputs, genPath, projectName, classpath, bootClasspath).apply {
-      processClasses()
-      close()
+
+    ClassProcessor(inputs, outputs, genPath, projectName, classpath, bootClasspath).use { processor ->
+      processor.processClasses()
     }
 
     logger.info("DONE")
