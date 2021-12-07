@@ -48,31 +48,26 @@ import java.io.Closeable
 import java.io.File
 
 class ClassProcessor(
-  private val inputs: List<File>,
-  private val outputs: List<File>,
-  private val genPath: File,
-  private val projectName: String,
-  classpath: List<File>,
-  bootClasspath: List<File>
+  private val parameters: LightsaberParameters
 ) : Closeable {
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.INSTANCE.create(inputs + classpath + bootClasspath)
+  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.bootClasspath)
   private val errorReporter = ErrorReporter()
 
-  private val fileSourcesAndSinks = inputs.zip(outputs) { input, output ->
+  private val fileSourcesAndSinks = parameters.inputs.zip(parameters.outputs) { input, output ->
     val source = IoFactory.createFileSource(input)
     val sink = IoFactory.createFileSink(input, output)
     source to sink
   }
-  private val classSink = DirectoryFileSink(genPath)
+  private val classSink = DirectoryFileSink(parameters.gen)
 
   fun processClasses() {
-    warmUpGripCaches(grip, inputs)
+    warmUpGripCaches(grip, parameters.inputs)
     val injectionContext = performAnalysisAndValidation()
-    val providerFactory = ProviderFactoryImpl(grip.fileRegistry, projectName)
-    val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, projectName)
+    val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
+    val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
     copyAndPatchClasses(injectionContext, generationContext)
@@ -89,8 +84,8 @@ class ClassProcessor(
   }
 
   private fun performAnalysisAndValidation(): InjectionContext {
-    val analyzer = Analyzer(grip, errorReporter, projectName)
-    val context = analyzer.analyze(inputs)
+    val analyzer = Analyzer(grip, errorReporter, parameters.projectName)
+    val context = analyzer.analyze(parameters.inputs)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory).validate()
     checkErrors()

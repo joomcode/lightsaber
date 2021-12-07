@@ -18,19 +18,14 @@ package com.joom.lightsaber.processor
 
 import com.joom.lightsaber.processor.logging.getLogger
 
-class LightsaberProcessor(private val parameters: LightsaberParameters) {
+class LightsaberProcessor(
+  private val parameters: LightsaberParameters
+) {
   private val logger = getLogger()
 
   @Throws(Exception::class)
   fun process() {
-    val inputs = parameters.inputs
-    val outputs = parameters.outputs
-    val genPath = parameters.gen
-    val projectName = parameters.projectName
-    val classpath = parameters.classpath
-    val bootClasspath = parameters.bootClasspath
-
-    ClassProcessor(inputs, outputs, genPath, projectName, classpath, bootClasspath).use { processor ->
+    ClassProcessor(parameters).use { processor ->
       processor.processClasses()
     }
 
