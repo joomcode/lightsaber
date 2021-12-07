@@ -19,10 +19,10 @@ package com.joom.lightsaber.processor
 import java.io.File
 
 data class LightsaberParameters(
-  var inputs: List<File>,
-  var outputs: List<File>,
-  var classpath: List<File>,
-  var bootClasspath: List<File>,
-  var gen: File,
-  var projectName: String
+  val inputs: List<File>,
+  val outputs: List<File>,
+  val classpath: List<File>,
+  val bootClasspath: List<File>,
+  val gen: File,
+  val projectName: String
 )
