@@ -31,7 +31,10 @@ import java.io.File
 import java.io.IOException
 import java.util.EnumSet
 
-class LightsaberTransform(private val project: Project) : Transform() {
+class LightsaberTransform(
+  private val project: Project,
+  private val extension: AndroidLightsaberPluginExtension
+) : Transform() {
   private val logger = getLogger()
 
   override fun transform(invocation: TransformInvocation) {
@@ -87,6 +90,12 @@ class LightsaberTransform(private val project: Project) : Transform() {
     return EnumSet.of(QualifiedContent.DefaultContentType.CLASSES)
   }
 
+  override fun getParameterInputs(): MutableMap<String, Any> {
+    return mutableMapOf(
+      "cacheable" to extension.cacheable
+    )
+  }
+
   override fun getScopes(): MutableSet<in QualifiedContent.Scope> {
     return EnumSet.of(
       QualifiedContent.Scope.PROJECT,
@@ -109,7 +118,7 @@ class LightsaberTransform(private val project: Project) : Transform() {
   }
 
   override fun isCacheable(): Boolean {
-    return false
+    return extension.cacheable
   }
 
   private fun TransformOutputProvider.getContentLocation(

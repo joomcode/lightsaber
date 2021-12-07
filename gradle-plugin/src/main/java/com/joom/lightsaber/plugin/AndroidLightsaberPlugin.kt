@@ -24,11 +24,14 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
     super.apply(project)
 
-    if (project.hasAndroid) {
-      addDependencies(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
-      project.android.registerTransform(LightsaberTransform(project))
-    } else {
+    if (!project.hasAndroid) {
       throw GradleException("Lightsaber plugin must be applied *AFTER* Android plugin")
     }
+
+    val extension = project.extensions.create("lightsaber", AndroidLightsaberPluginExtension::class.java)
+    val transform = LightsaberTransform(project, extension)
+
+    addDependencies(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
+    project.android.registerTransform(transform)
   }
 }
