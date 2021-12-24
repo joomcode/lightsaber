@@ -29,9 +29,13 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     }
 
     val extension = project.extensions.create("lightsaber", AndroidLightsaberPluginExtension::class.java)
-    val transform = LightsaberTransform(project, extension)
+    val transform = LightsaberTransform(extension)
 
     addDependencies(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
     project.android.registerTransform(transform)
+
+    project.afterEvaluate {
+      extension.bootClasspath = project.android.bootClasspath
+    }
   }
 }

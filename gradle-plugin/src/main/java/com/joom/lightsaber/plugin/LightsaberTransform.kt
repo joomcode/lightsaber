@@ -26,13 +26,11 @@ import com.android.build.api.transform.TransformOutputProvider
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.logging.getLogger
-import org.gradle.api.Project
 import java.io.File
 import java.io.IOException
 import java.util.EnumSet
 
 class LightsaberTransform(
-  private val project: Project,
   private val extension: AndroidLightsaberPluginExtension
 ) : Transform() {
   private val logger = getLogger()
@@ -65,7 +63,7 @@ class LightsaberTransform(
       classpath = invocation.referencedInputs.flatMap {
         it.jarInputs.map { it.file } + it.directoryInputs.map { it.file }
       },
-      bootClasspath = project.android.bootClasspath,
+      bootClasspath = extension.bootClasspath,
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$')
     )
     logger.info("Starting Lightsaber processor: {}", parameters)
@@ -92,7 +90,11 @@ class LightsaberTransform(
 
   override fun getParameterInputs(): MutableMap<String, Any> {
     return mutableMapOf(
-      "cacheable" to extension.cacheable
+      "cacheable" to extension.cacheable,
+      "bootClasspath" to extension.bootClasspath
+        .map { it.absolutePath }
+        .sorted()
+        .joinToString()
     )
   }
 
