@@ -41,11 +41,12 @@ import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.validation.DependencyResolverFactory
+import com.joom.lightsaber.processor.validation.HintsBuilder
 import com.joom.lightsaber.processor.validation.Validator
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassWriter
 import java.io.Closeable
 import java.io.File
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
 
 class ClassProcessor(
   private val parameters: LightsaberParameters
@@ -87,7 +88,8 @@ class ClassProcessor(
     val analyzer = Analyzer(grip, errorReporter, parameters.projectName)
     val context = analyzer.analyze(parameters.inputs)
     val dependencyResolverFactory = DependencyResolverFactory(context)
-    Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory).validate()
+    val hintsBuilder = HintsBuilder(grip.classRegistry)
+    Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
     checkErrors()
     return context
   }
