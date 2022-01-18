@@ -22,20 +22,15 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.commons.getInjectees
 import com.joom.lightsaber.processor.graph.findCycles
-import com.joom.lightsaber.processor.model.Component
-import com.joom.lightsaber.processor.model.ContractConfiguration
-import com.joom.lightsaber.processor.model.Converter
-import com.joom.lightsaber.processor.model.Dependency
-import com.joom.lightsaber.processor.model.Import
-import com.joom.lightsaber.processor.model.InjectionContext
-import com.joom.lightsaber.processor.model.InjectionTarget
+import com.joom.lightsaber.processor.model.*
 import com.joom.lightsaber.processor.reportError
 
 class Validator(
   private val classRegistry: ClassRegistry,
   private val errorReporter: ErrorReporter,
   private val context: InjectionContext,
-  private val dependencyResolverFactory: DependencyResolverFactory
+  private val dependencyResolverFactory: DependencyResolverFactory,
+  private val hintsBuilder: HintsBuilder
 ) {
 
   private val leafComponents: Collection<Component> by lazy {
@@ -54,6 +49,7 @@ class Validator(
     validateComponents()
     validateContractConfigurations()
     validateImportedContracts()
+    validateBindings()
     validateInjectionTargets()
   }
 
@@ -166,6 +162,25 @@ class Validator(
               }
             }
           }
+        }
+      }
+    }
+  }
+
+  private fun validateBindings() {
+    for (binding in context.bindings) {
+      val isResolvedByComponent = context.components.any { component ->
+        dependencyResolverFactory.getOrCreate(component).isResolved(binding.dependency)
+      }
+
+      val isResolvedByContractConfiguration = context.contractConfigurations.any { contractConfiguration ->
+        dependencyResolverFactory.getOrCreate(contractConfiguration).isResolved(binding.dependency)
+      }
+
+      if (!isResolvedByComponent && !isResolvedByContractConfiguration) {
+        errorReporter.reportError {
+          append("Invalid configuration for dependency: ${binding.ancestor.type}. ")
+          hintsBuilder.buildHint(binding.dependency)?.let(::append)
         }
       }
     }
