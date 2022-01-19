@@ -28,7 +28,7 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:1.0.0-alpha08'
+    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:1.0.0-alpha13'
   }
 }
 
@@ -42,7 +42,7 @@ apply plugin: 'com.joom.lightsaber'
 
 // Optional, just if you need Kotlin extension functions.
 dependencies {
-  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:1.0.0-alpha08'
+  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:1.0.0-alpha13'
 }
 ```
 
@@ -919,7 +919,7 @@ To simplify unit testing and dependency substitution you can add a special testi
 
 ```groovy
 dependencies {
-  testImplementation 'com.joom.lightsaber:lightsaber-test:1.0.0-alpha08'
+  testImplementation 'com.joom.lightsaber:lightsaber-test:1.0.0-alpha13'
 }
 ```
 
