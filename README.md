@@ -109,17 +109,110 @@ following order.
 2. Inject fields starting from ancestor classes.
 3. Invoke injectable methods starting from ancestor classes. The order of injectable method invocations is undefined.
 
+### Contracts
+
+A contract is an interface that may contain any number of methods and can extend other interfaces which act as a typed dependency provider.
+Contract's methods must have no arguments and must return a non-`void` type.
+
+```java
+public interface DroidContract {
+  Droid getDroid();
+}
+```
+
+When the contract is provided by a container this container must also provide dependencies returned
+by every method of the contract. If at least one dependency isn't provided the compilation will
+fail. Contract instances created by Lightsaber don't actually hold any dependencies. Instead every
+contract's method just delegates to the container, which means that contract's dependencies aren't
+instantiated when the contract instance is created.
+
+There're two ways to create a contract. The first way is to annotate the contract interface
+with `@Contract` and
+`@ProvidedBy` annotations. In this case the contract will be provided from a module just like any
+other dependency.
+
+```java
+
+@Module
+public class DroidModule {
+    @Provide
+    public Droid provideDroid() {
+        return new Droid();
+    }
+}
+
+@Contract
+@ProvidedBy(DroidModule.class)
+public interface DroidContract {
+    Droid getDroid();
+}
+```
+
+But this approach requires annotating the contract interface so it cannot be used with the interface you don't control.
+Moreover, you'll need to retrieve the contract somehow.
+ 
+Luckily there's the second, more type safe way to create the contract. You can define a `ContractConfiguration` for this
+contract and then get an instance of the contract from `Lightsaber`. 
+
+```java
+public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
+  @Provide
+  public Droid provideDroid() {
+    return new Droid();
+  }
+}
+
+Lightsaber lightsaber = new Lightsaber.Builder().build(); 
+DroidContract contract = lightsaber.createContract(new DroidContractConfiguration());
+```
+
+The only thing `ContractConfiguration` is different from modules (see [modules](#modules) for more details) is that is should extend from
+`ContractConfiguration` instead of being annotated with some annotation. Meaning to say it can
+provide dependencies, import modules, and do other stuff.
+
+Contracts can be used not just for accessing dependencies in a statically typed way but also for
+providing dependencies to modules, and other contracts' configurations. In order to do that you just
+have to add a method that returns a contract instance and to annotate this method with `@Import`
+and `@Contract` annotations. In this case all the dependencies provided by the contract will be
+imported to the container.
+
+```java
+public interface DroidContract {
+    Battery getBattery();
+
+    MemoryCore getMemoryCore();
+}
+
+public interface DroidContract {
+    Droid droid;
+}
+
+public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
+    @Import
+    @Contract
+    private final DroidContract droidContract;
+
+    public DroidContractConfiguration(final DroidContract droidContract) {
+        this.droidContract = droidContract;
+    }
+
+    @Provide
+    public Droid provideDroid(final Battery battery, final MemoryCore memoryCore) {
+        return new Droid(battery, memoryCore);
+    }
+}
+``` 
+
 ### Providing dependencies
 
 In order to be able to inject a dependency you have to provide this dependency first. In other words you have to tell
-Lightsaber what it have to return when requested a dependency of some type. This can be done in three ways: using
-modules and their provider methods, via injectable constructors mentioned earlier, and by using the `@ProvidedAs`
+Lightsaber what it have to return when requested a dependency of some type. This can be done in three ways: using contracts,
+using modules and their provider methods, via injectable constructors mentioned earlier, and by using the `@ProvidedAs`
 annotation.
 
 #### Provider methods
 
-Lightsaber requires provider methods to be defined in modules that need to be combined into
-contracts configurations.
+Lightsaber requires provider methods to be defined in modules that need to be combined into contracts configurations.
 
 ##### Modules
 
@@ -190,100 +283,6 @@ public class DroidModule {
 }
 ```
 
-##### Contracts
-
-Contract is the statically typed dependency provider. A contract is an interface that may contain
-any number of methods and can extend other interfaces. Contract's methods must have no arguments and
-must return a non-`void` type.
-
-```java
-public interface DroidContract {
-  Droid getDroid();
-}
-```
-
-When the contract is provided by a container this container must also provide dependencies returned
-by every method of the contract. If at least one dependency isn't provided the compilation will
-fail. Contract instances created by Lightsaber don't actually hold any dependencies. Instead every
-contract's method just delegates to the container, which means that contract's dependencies aren't
-instantiated when the contract instance is created.
-
-There're two ways to create a contract. The first way is to annotate the contract interface
-with `@Contract` and
-`@ProvidedBy` annotations. In this case the contract will be provided from a module just like any
-other dependency.
-
-```java
-
-@Module
-public class DroidModule {
-    @Provide
-    public Droid provideDroid() {
-        return new Droid();
-    }
-}
-
-@Contract
-@ProvidedBy(DroidModule.class)
-public interface DroidContract {
-    Droid getDroid();
-}
-```
-
-But this approach requires annotating the contract interface so it cannot be used with the interface you don't control.
-Moreover, you'll need to retrieve the contract somehow.
- 
-Luckily there's the second, more type safe way to create the contract. You can define a `ContractConfiguration` for this
-contract and then get an instance of the contract from `Lightsaber`. 
-
-```java
-public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
-  @Provide
-  public Droid provideDroid() {
-    return new Droid();
-  }
-}
-
-Lightsaber lightsaber = new Lightsaber.Builder().build(); 
-DroidContract contract = lightsaber.createContract(new DroidContractConfiguration());
-```
-
-The only thing `ContractConfiguration` is different from modules is that is should extend from
-`ContractConfiguration` instead of being annotated with some annotation. Meaning to say it can
-provide dependencies, import modules, and do other stuff.
-
-Contracts can be used not just for accessing dependencies in a statically typed way but also for
-providing dependencies to modules, and other contracts' configurations. In order to do that you just
-have to add a method that returns a contract instance and to annotate this method with `@Import`
-and `@Contract` annotations. In this case all the dependencies provided by the contract will be
-imported to the container.
-
-```java
-public interface DroidContract {
-    Battery getBattery();
-
-    MemoryCore getMemoryCore();
-}
-
-public interface DroidContract {
-    Droid droid;
-}
-
-public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
-    @Import
-    @Contract
-    private final DroidContract droidContract;
-
-    public DroidContractConfiguration(final DroidContract droidContract) {
-        this.droidContract = droidContract;
-    }
-
-    @Provide
-    public Droid provideDroid(final Battery battery, final MemoryCore memoryCore) {
-        return new Droid(battery, memoryCore);
-    }
-}
-``` 
 
 #### Injectable constructors
 
