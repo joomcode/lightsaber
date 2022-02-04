@@ -109,16 +109,110 @@ following order.
 2. Inject fields starting from ancestor classes.
 3. Invoke injectable methods starting from ancestor classes. The order of injectable method invocations is undefined.
 
+### Contracts
+
+A contract is an interface that may contain any number of methods and can extend other interfaces which act as a typed dependency provider.
+Contract's methods must have no arguments and must return a non-`void` type.
+
+```java
+public interface DroidContract {
+  Droid getDroid();
+}
+```
+
+When the contract is provided by a container this container must also provide dependencies returned
+by every method of the contract. If at least one dependency isn't provided the compilation will
+fail. Contract instances created by Lightsaber don't actually hold any dependencies. Instead every
+contract's method just delegates to the container, which means that contract's dependencies aren't
+instantiated when the contract instance is created.
+
+There're two ways to create a contract. The first way is to annotate the contract interface
+with `@Contract` and
+`@ProvidedBy` annotations. In this case the contract will be provided from a module just like any
+other dependency.
+
+```java
+
+@Module
+public class DroidModule {
+    @Provide
+    public Droid provideDroid() {
+        return new Droid();
+    }
+}
+
+@Contract
+@ProvidedBy(DroidModule.class)
+public interface DroidContract {
+    Droid getDroid();
+}
+```
+
+But this approach requires annotating the contract interface so it cannot be used with the interface you don't control.
+Moreover, you'll need to retrieve the contract somehow.
+ 
+Luckily there's the second, more type safe way to create the contract. You can define a `ContractConfiguration` for this
+contract and then get an instance of the contract from `Lightsaber`. 
+
+```java
+public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
+  @Provide
+  public Droid provideDroid() {
+    return new Droid();
+  }
+}
+
+Lightsaber lightsaber = new Lightsaber.Builder().build(); 
+DroidContract contract = lightsaber.createContract(new DroidContractConfiguration());
+```
+
+The only thing `ContractConfiguration` is different from modules (see [modules](#modules) for more details) is that is should extend from
+`ContractConfiguration` instead of being annotated with some annotation. Meaning to say it can
+provide dependencies, import modules, and do other stuff.
+
+Contracts can be used not just for accessing dependencies in a statically typed way but also for
+providing dependencies to modules, and other contracts' configurations. In order to do that you just
+have to add a method that returns a contract instance and to annotate this method with `@Import`
+and `@Contract` annotations. In this case all the dependencies provided by the contract will be
+imported to the container.
+
+```java
+public interface DroidContract {
+    Battery getBattery();
+
+    MemoryCore getMemoryCore();
+}
+
+public interface DroidContract {
+    Droid droid;
+}
+
+public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
+    @Import
+    @Contract
+    private final DroidContract droidContract;
+
+    public DroidContractConfiguration(final DroidContract droidContract) {
+        this.droidContract = droidContract;
+    }
+
+    @Provide
+    public Droid provideDroid(final Battery battery, final MemoryCore memoryCore) {
+        return new Droid(battery, memoryCore);
+    }
+}
+``` 
+
 ### Providing dependencies
 
 In order to be able to inject a dependency you have to provide this dependency first. In other words you have to tell
-Lightsaber what it have to return when requested a dependency of some type. This can be done in three ways: using
-modules and their provider methods, via injectable constructors mentioned earlier, and by using the `@ProvidedAs`
+Lightsaber what it have to return when requested a dependency of some type. This can be done in three ways: using contracts,
+using modules and their provider methods, via injectable constructors mentioned earlier, and by using the `@ProvidedAs`
 annotation.
 
 #### Provider methods
 
-Lightsaber requires provider methods to be defined in modules that need to be combined into components.
+Lightsaber requires provider methods to be defined in modules that need to be combined into contracts configurations.
 
 ##### Modules
 
@@ -144,37 +238,13 @@ instance. But you can do that via [manual injection](#manual-injection) or by cr
 
 ##### Components
 
-To make Lightsaber aware of modules and their provided dependencies the modules have to be organized into a component.
-A component is just a class annotated with the `@Component` annotation. The goal of this class is to import modules
-to Lightsaber. Every method that imports a module must be annotated with `@Import`. Moreover, a component can provide
-its own dependencies, just like a module. Neither the component class itself nor its provider methods have to be
-`public`.
-
-```java
-@Component
-public class DroidComponent {
-  @Import
-  public DroidModule importDroidModule() {
-    return new DroidModule();
-  }
-}
-```
-
-One of the reasons why you need a component is that its instance should be passed as an arguments to a method that
-creates an `Injector`. Finally, when a component is defined you can create an injector with this component.
-
-```java
-Lightsaber lightsaber = new Lightsaber.Builder().build(); 
-Injector injector = lightsaber.createInjector(DroidComponent());
-```
-
-The `createInjector()` method accepts a single component and returns an injector that can provide any dependency from
-any module of the component and from any class with an [injectable constructor](#injectable-constructors).
+Components now deprecated and will be removed in further versions. Use [contracts](#contracts)
+instead)
 
 ##### Nested modules 
 
-Not only components can import modules but modules can import other modules too. So if you have a reusable module
-with some common dependencies you can import it to another module the same way you import it to a component:
+Modules can import other modules. So if you have a reusable module with some common dependencies you
+can import it to another module:
 
 ```java
 @Module
@@ -196,121 +266,34 @@ public class DroidModule {
 
 ##### Inversion of import
 
-Sometimes you may want to specify that a module should be imported by another modules and/or components without
+Sometimes you may want to specify that a module should be imported by another modules without
 modifying them. It can be achieved by applying the `@ImportedBy` annotation to the module that needs to be imported:
 
 ```java
-@Component
-public class DroidComponent {
-  /* ... */
+
+@Module
+public class RobotModule {
+    /* ... */
 }
 
 @Module
-@ImportedBy(DroidComponent.class)
+@ImportedBy(RobotModule.class)
 public class DroidModule {
-  /* ... */
+    /* ... */
 }
 ```
 
-##### Contracts
-
-While components allow to create an `Injector` that provides an instance by its type, there's also a way to create a
-statically typed dependency provider, which is a contract. A contract is an interface that may contain any number of
-methods and can extend other interfaces. Contract's methods must have no arguments and must return a non-`void` type.
-
-```java
-public interface DroidContract {
-  Droid getDroid();
-}
-```
-
-When the contract is provided by a container this container must also provide dependencies returned by every method
-of the contract. If at least one dependency isn't provided the compilation will fail. Contract instances created by
-Lightsaber don't actually hold any dependencies. Instead every contract's method just delegates to the container,
-which means that contract's dependencies aren't instantiated when the contract instance is created. 
-
-There're two ways to create a contract. The first way is to annotate the contract interface with `@Contract` and
-`@ProvidedBy` annotations. In this case the contract will be provided from a module or a component just like any other
-dependency.
-
-```java
-@Component
-public class DroidComponent {
-  @Provide
-  public Droid provideDroid() {
-    return new Droid();
-  }
-}
-
-@Contract
-@ProvidedBy(DroidComponent.class)
-public interface DroidContract {
-  Droid getDroid();
-}
-```
-
-But this approach requires annotating the contract interface so it cannot be used with the interface you don't control.
-Moreover, you'll need to retrieve the contract somehow.
- 
-Luckily there's the second, more type safe way to create the contract. You can define a `ContractConfiguration` for this
-contract and then get an instance of the contract from `Lightsaber`. 
-
-```java
-public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
-  @Provide
-  public Droid provideDroid() {
-    return new Droid();
-  }
-}
-
-Lightsaber lightsaber = new Lightsaber.Builder().build(); 
-DroidContract contract = lightsaber.createContract(new DroidContractConfiguration());
-```
-
-The only thing `ContractConfiguration` is different from modules and components is that is should extend from
-`ContractConfiguration` instead of being annotated with some annotation. Meaning to say it can provide dependencies,
-import modules, and do other stuff.
-
-Contracts can be used not just for accessing dependencies in a statically typed way but also for providing dependencies
-to components, modules, and other contracts' configurations. In order to do that you just have to add a method that 
-returns a contract instance and to annotate this method with `@Import` and `@Contract` annotations. In this case all 
-the dependencies provided by the contract will be imported to the container.
-
-```java
-public interface DroidComponents {
-  Battery getBattery();
-  MemoryCore getMemoryCore(); 
-}
-
-public interface DroidContract {
-  Droid droid; 
-}
-
-public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
-  @Import
-  @Contract
-  private final DroidComponents droidComponents;
-
-  public DroidContractConfiguration(final DroidComponents droidComponents) {
-    this.droidComponents = droidComponents;
-  }
-
-  @Provide
-  public Droid provideDroid(final Battery battery, final MemoryCore memoryCore) {
-    return new Droid(battery, memoryCore);
-  } 
-}
-``` 
 
 #### Injectable constructors
 
-A class may have one and only one injectable constructor. This constructor must be annotated with `@Inject` and can
-have any number of arguments. When instantiating a class with an injectable constructor via an injector the injector
-must be able to provide instances for every argument of the constructor.
+A class may have one and only one injectable constructor. This constructor must be annotated
+with `@Inject` and can have any number of arguments. When instantiating a class with an injectable
+constructor via an injector the injector must be able to provide instances for every argument of the
+constructor.
 
-Classes with injectable constructors should be bound to a module and thus to a component that provides the module.
-This binding can be defined by annotating the class with `@ProvidedBy` annotation and specifying module classes in its
-default parameter.
+Classes with injectable constructors should be bound to a module and thus to a contract
+configuration that provides the module. This binding can be defined by annotating the class
+with `@ProvidedBy` annotation and specifying module classes in its default parameter.
 
 ```java
 @ProvidedBy(DroidModule.class)
@@ -385,9 +368,10 @@ Provider<Droid> droidProvider = injector.getProvider(Droid.class);
 Droid droid = droidProvider.get();
 ```
 
-When creating an instance of a dependency manually Lightsaber performs field and method injection for this instance.
-But sometimes you already have an instance and want to inject dependencies into it. You can do that by calling the
-`injectMember()` method of the `Injector` passing the instance to it.
+When creating an instance of a dependency manually Lightsaber performs field and method injection
+for this instance. But sometimes you already have an instance and want to inject dependencies into
+it. You can do that by calling the
+`injectMembers()` method of the `Injector` passing the instance to it.
 
 ```java
 public class DroidController {
@@ -672,123 +656,6 @@ And these types you cannot use:
 - `List<? extends CharSequence>`
 - `Map<String, T>`
 
-### Child injection
-
-When defining a component you can specify any number of parent components of the component. Given an injector created
-with one of the parent components you can create a child injector by passing an instance of the child component to
-the `createChildInjector()` method of the `Injector` interface.
-
-The child injector inherits all the dependencies of its ancestor components, overrides the `Injector` dependency with
-itself, and adds dependencies defined in its component. At the moment Lightsaber doesn't support dependency overriding
-so all the components in a component chain must have distinct dependencies provided.
-
-Consider the following case. In different parts of an application we need to construct droids. But depending on
-a construction point we need to inject a battery of the corresponding type into a droid.
-
-The following classes define a component that provides droids. Each droid accepts a `Battery` as a dependency.
-
-```java
-public class ElectricalDroid implements Droid {
-  private Battery battery;
-
-  @Inject
-  public ElectricalDroid(Battery battery) {
-    this.battery = battery;
-  }
-
-  /* ... */
-}
-```
-
-```java
-@Module
-public class DroidModule {
-  @Provide
-  @Singleton
-  public Droid provideDroid(ElectricalDroid droid) {
-    return droid;
-  }
-}
-```
-
-```java
-@Component
-public class DroidComponent {
-  @Import
-  public DroidModule importDroidModule() {
-    return new DroidModule();
-  }
-}
-```
-
-As you can see the `Battery` is not provided anywhere. Here's our trivial `Battery` class.
-
-```java
-public class Battery {
-  private String name;
-
-  public Battery(String name) {
-    this.name = name;
-  }
-
-  /* ... */
-}
-```
-
-Let's define a component that provides a `Battery` with a given name.
-
-```java
-@Module
-public class BatteryModule {
-  private String name;
-
-  public BatteryModule(String name) {
-    this.name = name;
-  }
-
-  @Provide
-  public Droid provideBattery() {
-    return new Battery(name);
-  }
-}
-```
-
-```java
-@Component(parent = DroidComponent.class)
-public class BatteryComponent {
-  private String name;
-
-  public BatteryComponent(String name) {
-    this.name = name;
-  }
-
-  @Import
-  public BatteryModule importBatteryModule() {
-    return new BatteryModule(name);
-  }
-}
-```
-
-Now we can create child injectors passing different instances of the `BatteryComponent` class to the
-`createChildInjector()` method.
-
-```
-Lightsaber lightsaber = new Lightsaber.Builder().build();
-Injector droidInjector = lightsaber.createInjector(new DroidComponent());
-Injector nuclearBatteryInjector = 
-    droidInjector.createChildInjector(new BatteryComponent("Nuclear"));
-Injector plasmBatteryInjector =
-    droidInjector.createChildInjector(new BatteryComponent("Plasm"));
-
-Droid nuclearBatteryDroid = nuclearBatteryInjector.getInstance(Droid.class);
-Droid plasmBatteryDroid = plasmBatteryInjector.getInstance(Droid.class);
-```
-
-In the example above we created two singleton instances of the `ElectricalDroid` class passing different instances of
-the `Battery` class to them. Please, note that if for some reason a singleton dependency was instantiated via a parent
-injector and then child injectors were created the child injectors would return the same singleton instance created by
-the parent injector.
-
 ### Factories (assisted injection)
 
 In some cases you may want to instantiate an object passing some arguments to its constructor from an injector and
@@ -811,9 +678,9 @@ public class Droid {
 }
 ```
 
-`Droid`'s constructor is annotated with `@Factory.Inject` annotation. This annotation means that this constructor can be
-used for injections but some of its arguments aren't provided by injector's component. Now let's define a module that
-will be used for providing a `Battery` for the `Droid`:
+`Droid`'s constructor is annotated with `@Factory.Inject` annotation. This annotation means that
+this constructor can be used for injections but some of its arguments aren't provided by injector.
+Now let's define a module that will be used for providing a `Battery` for the `Droid`:
 
 ```java
 @Module
@@ -837,15 +704,16 @@ public interface DroidFactory {
 }
 ```
 
-The factory must be an interface annotated with `@Factory` annotation and may contain any number of factory methods. 
-The factory method may contain any number of parameters with unique types. If you need the factory method to contain 
-multiple parameters of the same type they have to be annotated with different qualifiers like `@Named("parameterName")`.
-Lightsaber matches factory method's parameters with constructor's parameters annotated with `@Factory.Parameter` by
-a type and a qualifier. A component that provides a factory must provide dependencies for all constructor's parameters
-that aren't annotated with `@Factory.Parameter`.
+The factory must be an interface annotated with `@Factory` annotation and may contain any number of
+factory methods. The factory method may contain any number of parameters with unique types. If you
+need the factory method to contain multiple parameters of the same type they have to be annotated
+with different qualifiers like `@Named("parameterName")`. Lightsaber matches factory method's
+parameters with constructor's parameters annotated with `@Factory.Parameter` by a type and a
+qualifier. The injector that provides a factory must be able to provide dependencies for all
+constructor's parameters that aren't annotated with `@Factory.Parameter`.
 
-After the factory is defined as shown above it can be injected or retrieved manually from an injector as any other
-dependency:
+After the factory is defined as shown above it can be injected or retrieved manually from an
+injector as any other dependency:
 
 ```java
 public class DroidParty {
