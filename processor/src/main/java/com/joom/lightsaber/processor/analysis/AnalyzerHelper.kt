@@ -20,6 +20,7 @@ import com.joom.grip.ClassRegistry
 import com.joom.grip.mirrors.Annotated
 import com.joom.grip.mirrors.AnnotationMirror
 import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.Element
 import com.joom.grip.mirrors.FieldMirror
 import com.joom.grip.mirrors.MethodMirror
 import com.joom.grip.mirrors.Type
@@ -126,7 +127,7 @@ class AnalyzerHelperImpl(
 
     val isEager = Types.EAGER_TYPE in annotated.annotations
     if (isEager && scopeProviders.isEmpty()) {
-      errorReporter.reportError("Element $annotated is annotated with @Eager but doesn't have a scope")
+      errorReporter.reportError("Element ${annotated.name} is annotated with @Eager but doesn't have a scope")
     }
 
     return when (scopeProviders.size) {
@@ -134,7 +135,7 @@ class AnalyzerHelperImpl(
       1 -> Scope.Class(scopeProviders[0], isEager)
 
       else -> {
-        errorReporter.reportError("Element $annotated has multiple scopes: $scopeProviders")
+        errorReporter.reportError("Element ${annotated.name} has multiple scopes: $scopeProviders")
         Scope.None
       }
     }
@@ -192,4 +193,12 @@ class AnalyzerHelperImpl(
 
     return Dependency(this, qualifier)
   }
+
+  private val Annotated.name: String
+    get() {
+      return when (this) {
+        is Element<*> -> this.name
+        else -> this.toString()
+      }
+    }
 }

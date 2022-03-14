@@ -22,9 +22,14 @@ import com.joom.grip.classes
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Contract
 import java.io.File
+import java.nio.file.Path
 
 interface ContractAnalyzer {
-  fun analyze(files: Collection<File>): Collection<Contract>
+  fun analyze(files: Collection<File>): Collection<Contract> {
+    return analyzePaths(files.map { it.toPath() })
+  }
+
+  fun analyzePaths(paths: Collection<Path>): Collection<Contract>
 }
 
 class ContractAnalyzerImpl(
@@ -32,8 +37,8 @@ class ContractAnalyzerImpl(
   private val contractParser: ContractParser
 ) : ContractAnalyzer {
 
-  override fun analyze(files: Collection<File>): Collection<Contract> {
-    val contractsQuery = grip select classes from files where annotatedWith(Types.CONTRACT_TYPE)
+  override fun analyzePaths(paths: Collection<Path>): Collection<Contract> {
+    val contractsQuery = grip select classes from paths where annotatedWith(Types.CONTRACT_TYPE)
     return contractsQuery.execute().classes.map {
       contractParser.parseContract(it.type)
     }

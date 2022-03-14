@@ -28,9 +28,14 @@ import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Dependency
 import java.io.File
+import java.nio.file.Path
 
 interface BindingsAnalyzer {
-  fun analyze(files: Collection<File>): BindingRegistry
+  fun analyze(files: Collection<File>): BindingRegistry {
+    return analyzePaths(files.map { it.toPath() })
+  }
+
+  fun analyzePaths(paths: Collection<Path>): BindingRegistry
 }
 
 class BindingsAnalyzerImpl(
@@ -39,9 +44,9 @@ class BindingsAnalyzerImpl(
   private val errorReporter: ErrorReporter
 ) : BindingsAnalyzer {
 
-  override fun analyze(files: Collection<File>): BindingRegistry {
+  override fun analyzePaths(paths: Collection<Path>): BindingRegistry {
     val bindingRegistry = BindingRegistryImpl()
-    val bindingsQuery = grip select classes from files where annotatedWith(Types.PROVIDED_AS_TYPE)
+    val bindingsQuery = grip select classes from paths where annotatedWith(Types.PROVIDED_AS_TYPE)
     bindingsQuery.execute().classes.forEach { mirror ->
       createBindingsForClass(mirror).forEach { binding ->
         bindingRegistry.registerBinding(binding)

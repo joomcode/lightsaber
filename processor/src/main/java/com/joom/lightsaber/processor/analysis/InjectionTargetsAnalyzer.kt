@@ -32,9 +32,14 @@ import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import java.io.File
+import java.nio.file.Path
 
 interface InjectionTargetsAnalyzer {
-  fun analyze(files: Collection<File>): Result
+  fun analyze(files: Collection<File>): Result {
+    return analyzePaths(files.map { it.toPath() })
+  }
+
+  fun analyzePaths(paths: Collection<Path>): Result
 
   data class Result(
     val injectableTargets: Collection<InjectionTarget>,
@@ -50,14 +55,14 @@ class InjectionTargetsAnalyzerImpl(
 
   private val logger = getLogger()
 
-  override fun analyze(files: Collection<File>): InjectionTargetsAnalyzer.Result {
-    val context = createInjectionTargetsContext(files)
+  override fun analyzePaths(paths: Collection<Path>): InjectionTargetsAnalyzer.Result {
+    val context = createInjectionTargetsContext(paths)
     val injectableTargets = analyzeInjectableTargets(context)
     val providableTargets = analyzeProvidableTargets(context)
     return InjectionTargetsAnalyzer.Result(injectableTargets, providableTargets)
   }
 
-  private fun createInjectionTargetsContext(files: Collection<File>): InjectionTargetsContext {
+  private fun createInjectionTargetsContext(files: Collection<Path>): InjectionTargetsContext {
     val methodsQuery = grip select methods from files where annotatedWith(Types.INJECT_TYPE)
     val fieldsQuery = grip select fields from files where annotatedWith(Types.INJECT_TYPE)
 

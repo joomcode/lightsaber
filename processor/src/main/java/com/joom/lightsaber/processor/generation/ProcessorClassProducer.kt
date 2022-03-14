@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.joom.lightsaber.processor.generation
 
+import com.joom.grip.io.FileSink
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.io.FileSink
 import com.joom.lightsaber.processor.logging.getLogger
 import java.io.IOException
 

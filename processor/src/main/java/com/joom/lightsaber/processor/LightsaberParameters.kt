@@ -17,12 +17,33 @@
 package com.joom.lightsaber.processor
 
 import java.io.File
+import java.nio.file.Path
 
 data class LightsaberParameters(
-  val inputs: List<File>,
-  val outputs: List<File>,
-  val classpath: List<File>,
-  val bootClasspath: List<File>,
-  val gen: File,
-  val projectName: String
-)
+  val inputs: List<Path>,
+  val outputs: List<Path>,
+  val classpath: List<Path>,
+  val bootClasspath: List<Path>,
+  val gen: Path,
+  val projectName: String,
+  val errorReporter: ErrorReporter = ErrorReporterImpl()
+) {
+
+  constructor(
+    inputs: List<File>,
+    outputs: List<File>,
+    classpath: List<File>,
+    bootClasspath: List<File>,
+    gen: File,
+    projectName: String,
+    errorReporter: ErrorReporter = ErrorReporterImpl()
+  ) : this(
+    inputs.map { it.toPath() },
+    outputs.map { it.toPath() },
+    classpath.map { it.toPath() },
+    bootClasspath.map { it.toPath() },
+    gen.toPath(),
+    projectName,
+    errorReporter
+  )
+}
