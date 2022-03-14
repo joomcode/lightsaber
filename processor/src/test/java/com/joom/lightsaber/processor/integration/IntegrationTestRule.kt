@@ -19,9 +19,9 @@ package com.joom.lightsaber.processor.integration
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.ErrorReporterImpl
 import com.joom.lightsaber.processor.LightsaberParameters
+import com.joom.lightsaber.processor.LightsaberParameters.Companion.RT_PATH
 import com.joom.lightsaber.processor.LightsaberProcessor
 import java.io.File
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -69,7 +69,7 @@ class IntegrationTestRule(
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
       outputs = listOf(processedDirectory),
-      bootClasspath = listOf(Paths.get(URI.create("jrt:/")).resolve("/modules/java.base")),
+      bootClasspath = RT_PATH,
       classpath = classpathWithAllChildJars,
       projectName = sourceCodeDir,
       gen = processedDirectory,
@@ -140,7 +140,6 @@ class IntegrationTestRule(
       return paths
         .filter(filter)
         .toList()
-
     }
   }
 

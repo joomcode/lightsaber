@@ -27,15 +27,10 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Dependency
-import java.io.File
 import java.nio.file.Path
 
 interface BindingsAnalyzer {
-  fun analyze(files: Collection<File>): BindingRegistry {
-    return analyzePaths(files.map { it.toPath() })
-  }
-
-  fun analyzePaths(paths: Collection<Path>): BindingRegistry
+  fun analyze(paths: Collection<Path>): BindingRegistry
 }
 
 class BindingsAnalyzerImpl(
@@ -44,7 +39,7 @@ class BindingsAnalyzerImpl(
   private val errorReporter: ErrorReporter
 ) : BindingsAnalyzer {
 
-  override fun analyzePaths(paths: Collection<Path>): BindingRegistry {
+  override fun analyze(paths: Collection<Path>): BindingRegistry {
     val bindingRegistry = BindingRegistryImpl()
     val bindingsQuery = grip select classes from paths where annotatedWith(Types.PROVIDED_AS_TYPE)
     bindingsQuery.execute().classes.forEach { mirror ->

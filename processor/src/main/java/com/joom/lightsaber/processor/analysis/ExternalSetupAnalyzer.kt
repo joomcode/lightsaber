@@ -31,15 +31,10 @@ import com.joom.lightsaber.processor.model.ExternalSetup
 import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
-import java.io.File
 import java.nio.file.Path
 
 interface ExternalSetupAnalyzer {
-  fun analyze(files: Collection<File>): ExternalSetup {
-    return analyzePaths(files.map { it.toPath() })
-  }
-
-  fun analyzePaths(paths: Collection<Path>): ExternalSetup
+  fun analyze(paths: Collection<Path>): ExternalSetup
 }
 
 class ExternalSetupAnalyzerImpl(
@@ -51,7 +46,7 @@ class ExternalSetupAnalyzerImpl(
   private val errorReporter: ErrorReporter
 ) : ExternalSetupAnalyzer {
 
-  override fun analyzePaths(paths: Collection<Path>): ExternalSetup {
+  override fun analyze(paths: Collection<Path>): ExternalSetup {
     val modulesQuery = grip select classes from paths where annotatedWith(Types.MODULE_TYPE)
     val modules = modulesQuery.execute().classes
 

@@ -14,7 +14,6 @@ dependencies {
 
   implementation "io.michaelrocks.bimap:bimap:$bimapVersion"
   implementation "ch.qos.logback:logback-classic:$logbackVersion"
-  implementation "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
 
   relocate "org.ow2.asm:asm:$asmVersion"
   relocate "org.ow2.asm:asm-commons:$asmVersion"
@@ -22,6 +21,7 @@ dependencies {
 
   testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion"
   testImplementation "junit:junit:$junitVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

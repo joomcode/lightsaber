@@ -26,15 +26,10 @@ import com.joom.lightsaber.processor.graph.DirectedGraph
 import com.joom.lightsaber.processor.graph.HashDirectedGraph
 import com.joom.lightsaber.processor.graph.reversed
 import com.joom.lightsaber.processor.model.Component
-import java.io.File
 import java.nio.file.Path
 
 interface ComponentsAnalyzer {
-  fun analyze(files: Collection<File>): Collection<Component> {
-    return analyzePaths(files.map { it.toPath() })
-  }
-
-  fun analyzePaths(paths: Collection<Path>): Collection<Component>
+  fun analyze(paths: Collection<Path>): Collection<Component>
 }
 
 class ComponentsAnalyzerImpl(
@@ -43,7 +38,7 @@ class ComponentsAnalyzerImpl(
   private val errorReporter: ErrorReporter
 ) : ComponentsAnalyzer {
 
-  override fun analyzePaths(paths: Collection<Path>): Collection<Component> {
+  override fun analyze(paths: Collection<Path>): Collection<Component> {
     val componentsQuery = grip select classes from paths where annotatedWith(Types.COMPONENT_TYPE)
     val graph = buildComponentGraph(componentsQuery.execute().types)
     val reversedGraph = graph.reversed()

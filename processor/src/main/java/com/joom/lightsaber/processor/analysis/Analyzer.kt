@@ -19,7 +19,6 @@ package com.joom.lightsaber.processor.analysis
 import com.joom.grip.Grip
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.model.InjectionContext
-import java.io.File
 import java.nio.file.Path
 
 class Analyzer(
@@ -28,27 +27,22 @@ class Analyzer(
   private val projectName: String
 ) {
 
-  @Deprecated("Deprecated.", ReplaceWith("analyzePaths(files.map{ it.toPath() })"))
-  fun analyze(files: Collection<File>): InjectionContext {
-    return analyzePaths(files.map { it.toPath() })
-  }
-
-  fun analyzePaths(paths: Collection<Path>): InjectionContext {
+  fun analyze(paths: Collection<Path>): InjectionContext {
     val analyzerHelper = AnalyzerHelperImpl(grip.classRegistry, ScopeRegistry(), errorReporter)
-    val (injectableTargets, providableTargets) = InjectionTargetsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyzePaths(paths)
-    val bindingRegistry = BindingsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyzePaths(paths)
+    val (injectableTargets, providableTargets) = InjectionTargetsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(paths)
+    val bindingRegistry = BindingsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(paths)
     val factoryParser = FactoryParserImpl(grip, analyzerHelper, errorReporter, projectName)
-    val factories = FactoriesAnalyzerImpl(grip, factoryParser).analyzePaths(paths)
+    val factories = FactoriesAnalyzerImpl(grip, factoryParser).analyze(paths)
     val contractParser = ContractParserImpl(grip, analyzerHelper, errorReporter, projectName)
-    val contracts = ContractAnalyzerImpl(grip, contractParser).analyzePaths(paths)
+    val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(paths)
     val importParser = ImportParserImpl(grip, contractParser, errorReporter)
-    val externalSetup = ExternalSetupAnalyzerImpl(grip, analyzerHelper, providableTargets, factories, contracts, errorReporter).analyzePaths(paths)
+    val externalSetup = ExternalSetupAnalyzerImpl(grip, analyzerHelper, providableTargets, factories, contracts, errorReporter).analyze(paths)
     val bridgeRegistry = BridgeRegistryImpl(grip.classRegistry)
     val provisionPointFactory = ProvisionPointFactoryImpl(grip, analyzerHelper, bridgeRegistry)
     val moduleParser =
       ModuleParserImpl(grip, analyzerHelper, provisionPointFactory, importParser, contractParser, bindingRegistry, externalSetup, errorReporter)
-    val components = ComponentsAnalyzerImpl(grip, moduleParser, errorReporter).analyzePaths(paths)
-    val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleParser, contractParser).analyzePaths(paths)
+    val components = ComponentsAnalyzerImpl(grip, moduleParser, errorReporter).analyze(paths)
+    val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleParser, contractParser).analyze(paths)
     return InjectionContext(components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
   }
 }

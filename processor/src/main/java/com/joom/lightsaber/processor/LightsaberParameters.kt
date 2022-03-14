@@ -16,8 +16,9 @@
 
 package com.joom.lightsaber.processor
 
-import java.io.File
+import java.net.URI
 import java.nio.file.Path
+import java.nio.file.Paths
 
 data class LightsaberParameters(
   val inputs: List<Path>,
@@ -28,22 +29,7 @@ data class LightsaberParameters(
   val projectName: String,
   val errorReporter: ErrorReporter = ErrorReporterImpl()
 ) {
-
-  constructor(
-    inputs: List<File>,
-    outputs: List<File>,
-    classpath: List<File>,
-    bootClasspath: List<File>,
-    gen: File,
-    projectName: String,
-    errorReporter: ErrorReporter = ErrorReporterImpl()
-  ) : this(
-    inputs.map { it.toPath() },
-    outputs.map { it.toPath() },
-    classpath.map { it.toPath() },
-    bootClasspath.map { it.toPath() },
-    gen.toPath(),
-    projectName,
-    errorReporter
-  )
+  companion object {
+    val RT_PATH = listOf(Paths.get(URI.create("jrt:/")).resolve("/modules/java.base"))
+  }
 }
