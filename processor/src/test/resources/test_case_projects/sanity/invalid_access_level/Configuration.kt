@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.sanity.invalid_access_level
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.ProvidedBy
+import javax.inject.Inject
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Contract
+interface AppContract
+
+class AppContractConfiguration : ContractConfiguration<AppContract>()
+
+@ProvidedBy(AppContractConfiguration::class)
+abstract class AbstractClassDependency @Inject constructor()

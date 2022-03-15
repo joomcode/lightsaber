@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.validator.provided_as_without_provided_by
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.ProvidedAs
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Contract
+interface AppContract {
+  val dependency: DependencyInterface
+}
+
+class AppContractConfiguration : ContractConfiguration<AppContract>()
+
+interface DependencyInterface
+
+@ProvidedAs(DependencyInterface::class)
+internal class DependencyImplementation : DependencyInterface

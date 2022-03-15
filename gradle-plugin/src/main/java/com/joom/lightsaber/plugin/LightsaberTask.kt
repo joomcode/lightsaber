@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.joom.lightsaber.plugin
 
 import com.joom.lightsaber.processor.LightsaberParameters
-import com.joom.lightsaber.processor.LightsaberParameters.Companion.RT_PATH
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.watermark.WatermarkChecker
 import java.io.File
@@ -60,7 +59,7 @@ open class LightsaberTask : DefaultTask() {
       inputs = backupDirs.map { it.toPath() },
       outputs = classesDirs.map { it.toPath() },
       classpath = classpath.map { it.toPath() },
-      bootClasspath = bootClasspath.map { it.toPath() } + RT_PATH,
+      bootClasspath = bootClasspath.map { it.toPath() },
       gen = classesDirs[0].toPath(),
       projectName = name.orEmpty().replace(":lightsaberProcess", ":").replace(':', '$')
     )

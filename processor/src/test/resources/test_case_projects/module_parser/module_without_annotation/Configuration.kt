@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.module_parser.module_without_annotation
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Import
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Contract
+interface AppContract
+
+class AppContractConfiguration : ContractConfiguration<AppContract>() {
+
+  @Import
+  private fun importAppModule(): NonAnnotatedModule {
+    return NonAnnotatedModule()
+  }
+}
+
+class NonAnnotatedModule

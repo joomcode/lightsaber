@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.import_parser.import_method_with_parameters
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Import
+import com.joom.lightsaber.Module
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Contract
+interface AppContract
+
+class AppContractConfiguration : ContractConfiguration<AppContract>() {
+  @Import
+  fun importAppModule(parameter: String): AppModule {
+    return AppModule()
+  }
+}
+
+@Module
+class AppModule

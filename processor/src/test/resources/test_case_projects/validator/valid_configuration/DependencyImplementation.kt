@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.validator.valid_configuration
 
-import java.nio.file.Path
+import com.joom.lightsaber.ProvidedAs
+import com.joom.lightsaber.ProvidedBy
+import javax.inject.Inject
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@ProvidedBy(AppContractConfiguration::class)
+@ProvidedAs(DependencyInterface::class)
+internal class DependencyImplementation @Inject constructor() : DependencyInterface {
+  override fun foo() {
+    print("bar")
+  }
+}

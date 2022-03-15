@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.analyzer_helper.eager_without_scope
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Eager
+import com.joom.lightsaber.ProvidedBy
+import javax.inject.Inject
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Eager
+@ProvidedBy(AppContractConfiguration::class)
+class Instance @Inject constructor()
+
+@Contract
+interface AppContract
+
+class AppContractConfiguration : ContractConfiguration<AppContract>()

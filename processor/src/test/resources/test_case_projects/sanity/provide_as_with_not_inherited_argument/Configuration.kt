@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.sanity.provide_as_with_not_inherited_argument
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.ProvidedAs
+import com.joom.lightsaber.ProvidedBy
+import javax.inject.Inject
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Contract
+interface AppContract
+
+class AppContractConfiguration : ContractConfiguration<AppContract>()
+
+@ProvidedAs(InterfaceThatHostClassDoesNotInherit::class)
+@ProvidedBy(AppContractConfiguration::class)
+class Dependency @Inject constructor()
+
+interface InterfaceThatHostClassDoesNotInherit

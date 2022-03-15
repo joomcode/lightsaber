@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.external_setup_analyzer.imported_by_with_empty_list_of_arguments
 
-import java.nio.file.Path
+import com.joom.lightsaber.ImportedBy
+import com.joom.lightsaber.Module
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@ImportedBy()
+@Module
+class AppModule

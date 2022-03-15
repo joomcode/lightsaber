@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.factory_parser.factory_creating_instance_with_without_factory_parameter
 
-import java.nio.file.Path
+import com.joom.lightsaber.Factory
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+class Instance @Factory.Inject constructor(@Factory.Parameter val param: String)
+
+@Factory
+interface FactoryInterface {
+  fun buildInstance(): Instance
+}

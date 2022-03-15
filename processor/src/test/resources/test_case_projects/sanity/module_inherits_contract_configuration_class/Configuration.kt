@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.sanity.module_inherits_contract_configuration_class
 
-import java.nio.file.Path
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Module
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+@Contract
+interface AppContract
+
+@Module
+class AppContractConfiguration : ContractConfiguration<AppContract>()

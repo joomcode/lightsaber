@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor
+package test_case_projects.injection_target_analyzer.class_with_multiple_injectable_constructors
 
-import java.nio.file.Path
+import javax.inject.Inject
 
-data class LightsaberParameters(
-  val inputs: List<Path>,
-  val outputs: List<Path>,
-  val classpath: List<Path>,
-  val bootClasspath: List<Path>,
-  val gen: Path,
-  val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
-)
+class Instance @Inject constructor() {
+
+  @Inject
+  constructor(parameter: String) : this()
+}

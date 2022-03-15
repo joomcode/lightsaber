@@ -18,8 +18,8 @@ package com.joom.lightsaber.processor.integration
 
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.ErrorReporterImpl
+import com.joom.lightsaber.processor.JvmRuntimeUtil
 import com.joom.lightsaber.processor.LightsaberParameters
-import com.joom.lightsaber.processor.LightsaberParameters.Companion.RT_PATH
 import com.joom.lightsaber.processor.LightsaberProcessor
 import java.io.File
 import java.nio.file.Files
@@ -27,9 +27,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-import kotlin.io.path.extension
-import kotlin.io.path.isDirectory
-import kotlin.streams.toList
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.junit.rules.TestRule
@@ -45,9 +42,7 @@ class IntegrationTestRule(
 
   private val compiledFilesDirectory = testCaseProjectsDir.resolve("_generated")
   private val processedDirectory = testCaseProjectsDir.resolve("_processed")
-  private val classpath = System.getProperty("java.class.path")
-  private val classpathWithRuntime = computeClasspath(classpath)
-  private val classpathWithAllChildJars = filterDirectoriesAndJars(classpathWithRuntime)
+  private val classpath = JvmRuntimeUtil.computeRuntimeClasses()
 
   fun assertValidProject(sourceCodeDir: String) {
     processProject(sourceCodeDir)
@@ -69,8 +64,8 @@ class IntegrationTestRule(
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
       outputs = listOf(processedDirectory),
-      bootClasspath = RT_PATH,
-      classpath = classpathWithAllChildJars,
+      bootClasspath = emptyList(),
+      classpath = classpath,
       projectName = sourceCodeDir,
       gen = processedDirectory,
       errorReporter = errorReporter
@@ -102,45 +97,13 @@ class IntegrationTestRule(
       System.err,
       input.toString(),
       "-d", compiledFilesDirectory.absolutePathString(),
-      "-cp", classpath,
+      "-cp", JvmRuntimeUtil.JAVA_CLASS_PATH,
       "-nowarn"
     )
     if (exitCode != ExitCode.OK) {
       throw RuntimeException("Error $exitCode. See stderr for more details")
     }
     return compiledFilesDirectory
-  }
-
-  private fun computeClasspath(classpath: String): List<Path> {
-    return classpath.split(File.pathSeparator)
-      .map(Paths::get)
-      .toMutableList()
-  }
-
-  private fun filterDirectoriesAndJars(files: List<Path>): List<Path> {
-    val result = mutableListOf<Path>()
-    for (f in files) {
-      if (!f.exists()) continue
-      result.add(f)
-      if (f.isDirectory()) {
-        result.addAll(f.endsWithJar())
-      }
-    }
-    return result
-  }
-
-  private fun Path.endsWithJar(): List<Path> {
-    return getFilesThat(this) {
-      it.extension.endsWith("jar", ignoreCase = true)
-    }
-  }
-
-  private fun getFilesThat(path: Path, filter: (Path) -> Boolean): List<Path> {
-    Files.walk(path).use { paths ->
-      return paths
-        .filter(filter)
-        .toList()
-    }
   }
 
   private fun cleanDir(dir: Path) {
