@@ -33,7 +33,7 @@ jobs:
         run: ./gradlew publishToMavenLocal -Pbootstrap=true ${{ env.PABLO_OPTS }}
 
       - name: Run unit tests
-        run: ./gradlew check
+        run: ./gradlew check --stacktrace
 
   test:
     name: Test

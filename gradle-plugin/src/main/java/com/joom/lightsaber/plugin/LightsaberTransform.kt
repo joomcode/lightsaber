@@ -24,6 +24,7 @@ import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.api.transform.TransformOutputProvider
 import com.joom.lightsaber.processor.LightsaberParameters
+import com.joom.lightsaber.processor.LightsaberParameters.Companion.RT_PATH
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.logging.getLogger
 import java.io.File
@@ -52,18 +53,18 @@ class LightsaberTransform(
     }
 
     val parameters = LightsaberParameters(
-      inputs = inputs.map { it.file },
-      outputs = outputs,
+      inputs = inputs.map { it.file.toPath() },
+      outputs = outputs.map { it.toPath() },
       gen = invocation.outputProvider.getContentLocation(
         "gen-lightsaber",
         QualifiedContent.DefaultContentType.CLASSES,
         QualifiedContent.Scope.PROJECT,
         Format.DIRECTORY
-      ),
+      ).toPath(),
       classpath = invocation.referencedInputs.flatMap {
-        it.jarInputs.map { it.file } + it.directoryInputs.map { it.file }
+        it.jarInputs.map { it.file.toPath() } + it.directoryInputs.map { it.file.toPath() }
       },
-      bootClasspath = extension.bootClasspath,
+      bootClasspath = extension.bootClasspath.map { it.toPath() } + RT_PATH,
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$')
     )
     logger.info("Starting Lightsaber processor: {}", parameters)

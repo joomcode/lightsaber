@@ -18,13 +18,18 @@ package com.joom.lightsaber.processor
 
 import com.joom.lightsaber.processor.logging.getLogger
 
-class ErrorReporter {
+interface ErrorReporter {
+  val hasErrors: Boolean
+  fun reportError(errorMessage: String, exception: Throwable? = null)
+}
+
+class ErrorReporterImpl : ErrorReporter {
   private val logger = getLogger()
 
-  var hasErrors: Boolean = false
+  override var hasErrors: Boolean = false
     private set
 
-  fun reportError(errorMessage: String, exception: Throwable? = null) {
+  override fun reportError(errorMessage: String, exception: Throwable?) {
     hasErrors = true
     logger.error(errorMessage, exception)
   }

@@ -31,3 +31,5 @@ proguard/
 
 # Gradle Wrapper
 !gradle/wrapper/gradle-wrapper.jar
+
+!processor/src/test/resources/

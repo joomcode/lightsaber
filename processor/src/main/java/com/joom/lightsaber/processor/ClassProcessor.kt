@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.joom.lightsaber.processor
 
 import com.joom.grip.Grip
 import com.joom.grip.GripFactory
+import com.joom.grip.io.DirectoryFileSink
+import com.joom.grip.io.FileSource
+import com.joom.grip.io.IoFactory
 import com.joom.lightsaber.processor.analysis.Analyzer
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.closeQuietly
@@ -27,9 +30,6 @@ import com.joom.lightsaber.processor.generation.Generator
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.ProviderFactoryImpl
 import com.joom.lightsaber.processor.injection.Patcher
-import com.joom.lightsaber.processor.io.DirectoryFileSink
-import com.joom.lightsaber.processor.io.FileSource
-import com.joom.lightsaber.processor.io.IoFactory
 import com.joom.lightsaber.processor.logging.getLogger
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.Contract
@@ -44,7 +44,7 @@ import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.HintsBuilder
 import com.joom.lightsaber.processor.validation.Validator
 import java.io.Closeable
-import java.io.File
+import java.nio.file.Path
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 
@@ -55,7 +55,7 @@ class ClassProcessor(
   private val logger = getLogger()
 
   private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.bootClasspath)
-  private val errorReporter = ErrorReporter()
+  private val errorReporter = parameters.errorReporter
 
   private val fileSourcesAndSinks = parameters.inputs.zip(parameters.outputs) { input, output ->
     val source = IoFactory.createFileSource(input)
@@ -127,8 +127,8 @@ class ClassProcessor(
     checkErrors()
   }
 
-  private fun warmUpGripCaches(grip: Grip, inputs: List<File>) {
-    inputs.flatMap { grip.fileRegistry.findTypesForFile(it) }
+  private fun warmUpGripCaches(grip: Grip, inputs: List<Path>) {
+    inputs.flatMap { grip.fileRegistry.findTypesForPath(it) }
       .parallelStream()
       .forEach {
         grip.classRegistry.getClassMirror(it)

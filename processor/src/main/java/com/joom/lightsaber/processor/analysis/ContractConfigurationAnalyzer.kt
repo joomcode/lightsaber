@@ -23,10 +23,10 @@ import com.joom.grip.superType
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractConfiguration
-import java.io.File
+import java.nio.file.Path
 
 interface ContractConfigurationAnalyzer {
-  fun analyze(files: Collection<File>): Collection<ContractConfiguration>
+  fun analyze(paths: Collection<Path>): Collection<ContractConfiguration>
 }
 
 class ContractConfigurationAnalyzerImpl(
@@ -36,8 +36,8 @@ class ContractConfigurationAnalyzerImpl(
   private val contractParser: ContractParser
 ) : ContractConfigurationAnalyzer {
 
-  override fun analyze(files: Collection<File>): Collection<ContractConfiguration> {
-    val configurationsQuery = grip select classes from files where superType { _, type -> type == Types.CONTRACT_CONFIGURATION_TYPE }
+  override fun analyze(paths: Collection<Path>): Collection<ContractConfiguration> {
+    val configurationsQuery = grip select classes from paths where superType { _, type -> type == Types.CONTRACT_CONFIGURATION_TYPE }
     return configurationsQuery.execute().classes.mapNotNull { mirror ->
       val contract = extractConfigurationContract(mirror) ?: return@mapNotNull null
       val module = moduleParser.parseModule(mirror.type, isImported = false)

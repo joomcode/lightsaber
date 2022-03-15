@@ -21,6 +21,7 @@ dependencies {
 
   testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion"
   testImplementation "junit:junit:$junitVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

@@ -17,8 +17,10 @@
 package com.joom.lightsaber.plugin
 
 import com.joom.lightsaber.processor.LightsaberParameters
+import com.joom.lightsaber.processor.LightsaberParameters.Companion.RT_PATH
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.watermark.WatermarkChecker
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleScriptException
 import org.gradle.api.logging.LogLevel
@@ -27,7 +29,6 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 open class LightsaberTask : DefaultTask() {
   @InputFiles
@@ -56,11 +57,11 @@ open class LightsaberTask : DefaultTask() {
     validate()
 
     val parameters = LightsaberParameters(
-      inputs = backupDirs,
-      outputs = classesDirs,
-      classpath = classpath,
-      bootClasspath = bootClasspath,
-      gen = classesDirs[0],
+      inputs = backupDirs.map { it.toPath() },
+      outputs = classesDirs.map { it.toPath() },
+      classpath = classpath.map { it.toPath() },
+      bootClasspath = bootClasspath.map { it.toPath() } + RT_PATH,
+      gen = classesDirs[0].toPath(),
       projectName = name.orEmpty().replace(":lightsaberProcess", ":").replace(':', '$')
     )
 

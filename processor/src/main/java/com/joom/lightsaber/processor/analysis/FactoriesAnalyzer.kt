@@ -21,10 +21,10 @@ import com.joom.grip.annotatedWith
 import com.joom.grip.classes
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Factory
-import java.io.File
+import java.nio.file.Path
 
 interface FactoriesAnalyzer {
-  fun analyze(files: Collection<File>): Collection<Factory>
+  fun analyze(paths: Collection<Path>): Collection<Factory>
 }
 
 class FactoriesAnalyzerImpl(
@@ -32,8 +32,8 @@ class FactoriesAnalyzerImpl(
   private val factoryParser: FactoryParser
 ) : FactoriesAnalyzer {
 
-  override fun analyze(files: Collection<File>): Collection<Factory> {
-    val factoriesQuery = grip select classes from files where annotatedWith(Types.FACTORY_TYPE)
+  override fun analyze(paths: Collection<Path>): Collection<Factory> {
+    val factoriesQuery = grip select classes from paths where annotatedWith(Types.FACTORY_TYPE)
     return factoriesQuery.execute().types.map { type ->
       factoryParser.parseFactory(type)
     }
