@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.api.transform.TransformOutputProvider
 import com.joom.lightsaber.processor.LightsaberParameters
-import com.joom.lightsaber.processor.LightsaberParameters.Companion.RT_PATH
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.logging.getLogger
 import java.io.File
@@ -64,7 +63,7 @@ class LightsaberTransform(
       classpath = invocation.referencedInputs.flatMap {
         it.jarInputs.map { it.file.toPath() } + it.directoryInputs.map { it.file.toPath() }
       },
-      bootClasspath = extension.bootClasspath.map { it.toPath() } + RT_PATH,
+      bootClasspath = extension.bootClasspath.map { it.toPath() },
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$')
     )
     logger.info("Starting Lightsaber processor: {}", parameters)

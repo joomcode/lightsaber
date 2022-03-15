@@ -16,10 +16,7 @@
 
 package com.joom.lightsaber.processor
 
-import java.net.URI
 import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.spi.FileSystemProvider
 
 data class LightsaberParameters(
   val inputs: List<Path>,
@@ -29,15 +26,4 @@ data class LightsaberParameters(
   val gen: Path,
   val projectName: String,
   val errorReporter: ErrorReporter = ErrorReporterImpl()
-) {
-  companion object {
-    val RT_PATH by lazy {
-      val installedFilesystemSets = FileSystemProvider.installedProviders().map { it.scheme }.toSet()
-      if (installedFilesystemSets.contains("jrt")) {
-        listOf(Paths.get(URI.create("jrt:/")).resolve("/modules/java.base"))
-      } else {
-        emptyList<Path>()
-      }
-    }
-  }
-}
+)
