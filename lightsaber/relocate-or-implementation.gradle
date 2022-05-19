@@ -1,7 +1,0 @@
-configurations.register("relocateOrImplementation") { relocateOrImplementation ->
-  if (rootProject.properties['publishing'].toBoolean()) {
-    configurations.getByName("relocate").extendsFrom(relocateOrImplementation)
-  } else {
-    configurations.getByName("implementation").extendsFrom(relocateOrImplementation)
-  }
-}

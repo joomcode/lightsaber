@@ -2,13 +2,12 @@ apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'idea'
 apply from: "$rootDir/pablo.gradle"
-apply from: "$rootDir/relocate-or-implementation.gradle"
 
 targetCompatibility = javaVersion
 sourceCompatibility = javaVersion
 
 dependencies {
-  relocateOrImplementation project(':processor')
+  relocate project(':processor')
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
   compileOnly gradleApi()
