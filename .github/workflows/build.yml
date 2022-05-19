@@ -57,7 +57,7 @@ jobs:
           java-version: 8
 
       - name: Publish bootstrap artifacts
-        run: ./gradlew publishToMavenLocal -Pbootstrap=true ${{ env.PABLO_OPTS }}
+        run: ./gradlew -p lightsaber publishToMavenLocal -Pbootstrap=true ${{ env.PABLO_OPTS }}
 
       - name: Run integration tests
         uses: reactivecircus/android-emulator-runner@v2
