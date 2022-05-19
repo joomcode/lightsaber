@@ -30,10 +30,10 @@ jobs:
           java-version: 8
 
       - name: Publish bootstrap artifacts
-        run: ./gradlew -p lightsaber publishToMavenLocal -Ppublishing=true ${{ env.PABLO_OPTS }}
+        run: ./gradlew -p lightsaber check publishToMavenLocal -Ppublishing=true ${{ env.PABLO_OPTS }}
 
       - name: Run unit tests
-        run: ./gradlew -p lightsaber check --stacktrace
+        run: ./gradlew check -Pdevelopment=false --stacktrace
 
   test:
     name: Test
@@ -56,13 +56,16 @@ jobs:
         with:
           java-version: 8
 
+      - name: Publish bootstrap artifacts
+        run: ./gradlew publishToMavenLocal -Pbootstrap=true ${{ env.PABLO_OPTS }}
+
       - name: Run integration tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
-          script: ./gradlew connectedCheck
+          script: ./gradlew connectedCheck -Pdevelopment=false
 
   publish:
     name: Publish
