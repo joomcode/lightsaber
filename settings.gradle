@@ -1,5 +1,4 @@
 def isDevelopment = properties['development'].toBoolean()
-def isPublishing = properties['publishing'].toBoolean()
 
 includeBuild('lightsaber') {
   if (isDevelopment) {
@@ -13,10 +12,9 @@ includeBuild('lightsaber') {
   }
 }
 
-if (!isPublishing) {
-  include ':samples:injection-test'
-  include ':samples:sample-java'
-  include ':samples:sample-kotlin'
-  include ':samples:sample-android-kotlin'
-  include ':samples:sample-android-library'
-}
+
+include ':samples:injection-test'
+include ':samples:sample-java'
+include ':samples:sample-kotlin'
+include ':samples:sample-android-kotlin'
+include ':samples:sample-android-library'
