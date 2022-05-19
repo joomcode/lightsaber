@@ -1,14 +1,19 @@
+def isDevelopment = properties['development'].toBoolean()
+def isPublishing = properties['publishing'].toBoolean()
+
 includeBuild('lightsaber') {
-  dependencySubstitution {
-    substitute module('com.joom.lightsaber:lightsaber-core') using project(':core')
-    substitute module('com.joom.lightsaber:lightsaber-core-kotlin') using project(':core-kotlin')
-    substitute module('com.joom.lightsaber:lightsaber-test') using project(':core-test')
-    substitute module('com.joom.lightsaber:lightsaber-processor') using project(':processor')
-    substitute module('com.joom.lightsaber:lightsaber-gradle-plugin') using project(':gradle-plugin')
+  if (isDevelopment) {
+    dependencySubstitution {
+      substitute module('com.joom.lightsaber:lightsaber-core') using project(':core')
+      substitute module('com.joom.lightsaber:lightsaber-core-kotlin') using project(':core-kotlin')
+      substitute module('com.joom.lightsaber:lightsaber-test') using project(':core-test')
+      substitute module('com.joom.lightsaber:lightsaber-processor') using project(':processor')
+      substitute module('com.joom.lightsaber:lightsaber-gradle-plugin') using project(':gradle-plugin')
+    }
   }
 }
 
-if (!properties['publishing'].toBoolean()) {
+if (!isPublishing) {
   include ':samples:injection-test'
   include ':samples:sample-java'
   include ':samples:sample-kotlin'
