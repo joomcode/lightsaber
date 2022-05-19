@@ -17,6 +17,10 @@ android {
     sourceCompatibility javaVersion
     targetCompatibility javaVersion
   }
+
+  lintOptions {
+    checkReleaseBuilds false
+  }
 }
 
 dependencies {
