@@ -8,7 +8,6 @@ sourceCompatibility = javaVersion
 
 dependencies {
   relocate project(':processor')
-
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
   compileOnly gradleApi()
