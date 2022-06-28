@@ -106,6 +106,10 @@ class ImportParserImpl(
       val contract = contractParser.parseContract(type)
       Import.Contract(isLazyWrapped, contract, importPoint)
     } else {
+      if (isLazyWrapped) {
+        errorReporter.reportError("Imported module cannot be wrapped in com.joom.lightsaber.Lazy: ${type.className}")
+      }
+
       val module = moduleParser.parseModule(type, isImported = true)
       Import.Module(module, importPoint)
     }
