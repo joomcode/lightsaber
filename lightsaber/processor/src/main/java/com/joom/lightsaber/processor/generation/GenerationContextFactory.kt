@@ -49,7 +49,8 @@ class GenerationContextFactory(
 
   fun createGenerationContext(injectionContext: InjectionContext): GenerationContext {
     val modules = injectionContext.getModulesWithDescendants()
-    val contracts = injectionContext.getImportsWithDescendants().filterIsInstance<Import.Contract>().map { it.contract }
+    val contracts = injectionContext.getImportsWithDescendants().filterIsInstance<Import.Contract>()
+
     val dependencies = findAllDependencies(modules)
     return GenerationContext(
       groupProvidersByModuleType(modules),
@@ -87,12 +88,12 @@ class GenerationContextFactory(
       )
   }
 
-  private fun groupProvidersByContractType(contracts: Sequence<Contract>): Map<Type.Object, Collection<Provider>> {
+  private fun groupProvidersByContractType(contracts: Sequence<Import.Contract>): Map<Type.Object, Collection<Provider>> {
     return contracts
-      .distinctBy { it.type }
+      .distinctBy { it.contract.type }
       .associateBy(
-        keySelector = { it.type },
-        valueTransform = { providerFactory.createProvidersForContract(it) }
+        keySelector = { it.contract.type },
+        valueTransform = { providerFactory.createProvidersForContract(it.contract, it.isLazy) }
       )
   }
 

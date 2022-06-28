@@ -89,18 +89,22 @@ class ImportParserImpl(
     }
 
     val type = getImportTypeOrNull(method.signature.returnType, "${mirror.type.className}.${method.name}") ?: return null
-    return tryParseImport(method, type, ImportPoint.Method(method), moduleParser)
+    val isLazyWrapped = isLazyWrapped(method.signature.returnType, "${mirror.type.className}.${method.name}")
+
+    return tryParseImport(method, type, isLazyWrapped, ImportPoint.Method(method), moduleParser)
   }
 
   private fun tryParseFieldImport(mirror: ClassMirror, field: FieldMirror, moduleParser: ModuleParser): Import? {
     val type = getImportTypeOrNull(field.signature.type, "${mirror.type.className}.${field.name}") ?: return null
-    return tryParseImport(field, type, ImportPoint.Field(field), moduleParser)
+    val isLazyWrapped = isLazyWrapped(field.signature.type, "${mirror.type.className}.${field.name}")
+
+    return tryParseImport(field, type, isLazyWrapped, ImportPoint.Field(field), moduleParser)
   }
 
-  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleParser: ModuleParser): Import {
+  private fun tryParseImport(element: Annotated, type: Type.Object, isLazyWrapped: Boolean, importPoint: ImportPoint, moduleParser: ModuleParser): Import {
     return if (Types.CONTRACT_TYPE in element.annotations) {
       val contract = contractParser.parseContract(type)
-      Import.Contract(contract, importPoint)
+      Import.Contract(isLazyWrapped, contract, importPoint)
     } else {
       val module = moduleParser.parseModule(type, isImported = true)
       Import.Module(module, importPoint)
@@ -108,18 +112,29 @@ class ImportParserImpl(
   }
 
   private fun getImportTypeOrNull(importType: GenericType, source: String): Type.Object? {
-    if (importType !is GenericType.Raw) {
+    val isLazyWrapped = isLazyWrapped(importType, source)
+
+    if (!isLazyWrapped && importType !is GenericType.Raw) {
       errorReporter.reportError("Import cannot have a generic type: $importType from $source")
       return null
     }
 
-    val type = importType.type
+    val type = if (isLazyWrapped) {
+      ((importType as GenericType.Parameterized).typeArguments.firstOrNull() as? GenericType.Raw)?.type
+    } else {
+      (importType as GenericType.Raw).type
+    }
+
     if (type !is Type.Object) {
       errorReporter.reportError("Import must be a class: $importType from $source")
       return null
     }
 
     return type
+  }
+
+  private fun isLazyWrapped(importType: GenericType, source: String): Boolean {
+    return importType is GenericType.Parameterized && importType.type == Types.LAZY_TYPE
   }
 }
 

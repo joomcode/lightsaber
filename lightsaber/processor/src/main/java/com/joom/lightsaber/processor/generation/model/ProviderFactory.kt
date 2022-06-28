@@ -29,7 +29,7 @@ import com.joom.lightsaber.processor.model.ProvisionPoint
 
 interface ProviderFactory {
   fun createProvidersForModule(module: Module): Collection<Provider>
-  fun createProvidersForContract(contract: Contract): Collection<Provider>
+  fun createProvidersForContract(contract: Contract, isLazy: Boolean): Collection<Provider>
 }
 
 class ProviderFactoryImpl(
@@ -57,10 +57,10 @@ class ProviderFactoryImpl(
     }
   }
 
-  override fun createProvidersForContract(contract: Contract): Collection<Provider> {
+  override fun createProvidersForContract(contract: Contract, isLazy: Boolean): Collection<Provider> {
     return providersByImportedContractType.getOrPut(contract.type) {
       contract.provisionPoints.map { provisionPoint ->
-        newContractProvisionPointProvider(contract, provisionPoint)
+        newContractProvisionPointProvider(contract, provisionPoint, isLazy)
       }
     }
   }
@@ -115,9 +115,13 @@ class ProviderFactoryImpl(
     }
   }
 
-  private fun newContractProvisionPointProvider(contract: Contract, contractProvisionPoint: ContractProvisionPoint): Provider {
+  private fun newContractProvisionPointProvider(
+    contract: Contract,
+    contractProvisionPoint: ContractProvisionPoint,
+    isLazy: Boolean
+  ): Provider {
     val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$MethodProvider%d\$$projectName")
-    return Provider(providerType, ProviderMedium.ContractProvisionPoint(contract.type, contractProvisionPoint))
+    return Provider(providerType, ProviderMedium.ContractProvisionPoint(contract.type, isLazy, contractProvisionPoint))
   }
 
   private fun getObjectTypeByUniqueInternalName(pattern: String): Type.Object {

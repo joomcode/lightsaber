@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package test_case_projects.import_parser.import_lazy_module
 
-import com.joom.grip.mirrors.Type
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Import
+import com.joom.lightsaber.Module
+import com.joom.lightsaber.Lazy
 
-sealed class Import {
-  abstract val importPoint: ImportPoint
+@Contract
+interface AppContract
 
-  data class Module(
-    val module: com.joom.lightsaber.processor.model.Module,
-    override val importPoint: ImportPoint
-  ) : Import()
+class AppContractConfiguration : ContractConfiguration<AppContract>() {
 
-  data class Contract(
-    val isLazy: Boolean,
-    val contract: com.joom.lightsaber.processor.model.Contract,
-    override val importPoint: ImportPoint
-  ) : Import()
+  @Import
+  private fun importAppModule(): Lazy<AppModule> {
+    return Lazy { AppModule() }
+  }
 }
+
+@Module
+class AppModule

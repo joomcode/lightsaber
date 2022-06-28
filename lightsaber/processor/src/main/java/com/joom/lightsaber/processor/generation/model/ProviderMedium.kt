@@ -52,6 +52,7 @@ sealed class ProviderMedium {
 
   data class ContractProvisionPoint(
     val contractType: Type.Object,
+    val isLazy: Boolean,
     val contractProvisionPoint: com.joom.lightsaber.processor.model.ContractProvisionPoint
   ) : ProviderMedium() {
 

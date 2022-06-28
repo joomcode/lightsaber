@@ -42,6 +42,15 @@ val Provider.moduleType: Type.Object?
     is ProviderMedium.ContractProvisionPoint -> medium.contractType
   }
 
+val Provider.lazyModule: Boolean
+  get() = when (medium) {
+    is ProviderMedium.ProvisionPoint,
+    is ProviderMedium.Binding,
+    is ProviderMedium.Factory,
+    is ProviderMedium.Contract -> false
+    is ProviderMedium.ContractProvisionPoint -> medium.isLazy
+  }
+
 val Provider.scope: Scope
   get() = when (medium) {
     is ProviderMedium.ProvisionPoint -> medium.provisionPoint.scope

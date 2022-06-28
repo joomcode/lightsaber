@@ -31,10 +31,7 @@ import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import com.joom.lightsaber.processor.generation.model.KeyRegistry
-import com.joom.lightsaber.processor.generation.model.Provider
-import com.joom.lightsaber.processor.generation.model.ProviderMedium
-import com.joom.lightsaber.processor.generation.model.moduleType
+import com.joom.lightsaber.processor.generation.model.*
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
@@ -57,7 +54,7 @@ class ProviderClassGenerator(
   private val provider: Provider
 ) {
 
-  private val moduleType = provider.moduleType
+  private val moduleType = if (provider.lazyModule) Types.LAZY_TYPE else provider.moduleType
 
   private val providerConstructor: MethodDescriptor
     get() = if (moduleType == null) CONSTRUCTOR_WITH_INJECTOR else MethodDescriptor.forConstructor(moduleType, Types.INJECTOR_TYPE)
@@ -141,7 +138,7 @@ class ProviderClassGenerator(
           is ProviderMedium.Binding -> provideFromBinding(medium.binding)
           is ProviderMedium.Factory -> provideFactory(medium.factory)
           is ProviderMedium.Contract -> provideContract(medium.contract)
-          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.contractProvisionPoint)
+          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.isLazy, medium.contractProvisionPoint)
         }
       )
 
@@ -244,9 +241,17 @@ class ProviderClassGenerator(
     invokeConstructor(type, CONSTRUCTOR_WITH_INJECTOR)
   }
 
-  private fun GeneratorAdapter.provideFromContractProvisionPoint(contractType: Type.Object, contractProvisionPoint: ContractProvisionPoint) {
+  private fun GeneratorAdapter.provideFromContractProvisionPoint(
+    contractType: Type.Object,
+    isLazy: Boolean,
+    contractProvisionPoint: ContractProvisionPoint) {
     loadThis()
-    getField(provider.type, MODULE_FIELD_NAME, contractType)
+    getField(provider.type, MODULE_FIELD_NAME, if (isLazy) Types.LAZY_TYPE else contractType)
+
+    if (isLazy) {
+      invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+    }
+
     invokeInterface(contractProvisionPoint.container, contractProvisionPoint.method.toMethodDescriptor())
 
     if (provider.dependency.type.rawType.isPrimitive) {

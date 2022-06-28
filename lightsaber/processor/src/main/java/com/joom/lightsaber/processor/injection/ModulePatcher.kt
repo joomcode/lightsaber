@@ -16,10 +16,8 @@
 
 package com.joom.lightsaber.processor.injection
 
-import com.joom.grip.mirrors.FieldMirror
-import com.joom.grip.mirrors.MethodMirror
-import com.joom.grip.mirrors.Type
-import com.joom.grip.mirrors.isStatic
+import com.joom.grip.mirrors.*
+import com.joom.lightsaber.Lazy
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Types
@@ -174,7 +172,13 @@ class ModulePatcher(
     dup()
     loadModule(import.importPoint)
     loadArg(0)
-    val constructor = MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+
+    val constructor = if (import.isLazy) {
+      MethodDescriptor.forConstructor(Types.LAZY_TYPE, Types.INJECTOR_TYPE)
+    } else {
+      MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+    }
+
     invokeConstructor(provider.type, constructor)
   }
 
@@ -232,6 +236,7 @@ class ModulePatcher(
   private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
     generationContext.findProvidersByContractType(import.contract.type).forEach { provider ->
       loadArg(0)
+
       registerProvider(keyRegistry, provider) {
         newContractImportProvider(provider, import)
       }
