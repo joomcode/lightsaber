@@ -35,6 +35,7 @@ import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderMedium
 import com.joom.lightsaber.processor.generation.model.moduleType
+import com.joom.lightsaber.processor.generation.model.lazyModule
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
