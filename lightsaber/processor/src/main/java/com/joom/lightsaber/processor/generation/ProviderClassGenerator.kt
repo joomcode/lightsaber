@@ -31,7 +31,10 @@ import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import com.joom.lightsaber.processor.generation.model.*
+import com.joom.lightsaber.processor.generation.model.KeyRegistry
+import com.joom.lightsaber.processor.generation.model.Provider
+import com.joom.lightsaber.processor.generation.model.ProviderMedium
+import com.joom.lightsaber.processor.generation.model.moduleType
 import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
