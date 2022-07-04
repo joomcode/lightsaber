@@ -50,7 +50,7 @@ class ImportParserTest {
   fun test_parsing_failed_when_import_with_lazy_module() {
     integrationTestRule.assertInvalidProject(
       sourceCodeDir = "import_lazy_module",
-      message = "Imported module with type: test_case_projects.import_parser.import_lazy_module.AppModule cannot be wrapped in: com.joom.lightsaber.LazyAdapter"
+      message = "Imported module with type: test_case_projects.import_parser.import_lazy_module.AppModule cannot be wrapped in: com.joom.lightsaber.Lazy"
     )
   }
 }
