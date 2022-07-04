@@ -249,11 +249,11 @@ class ProviderClassGenerator(
         getField(provider.type, MODULE_FIELD_NAME, converter.adapterType)
 
         when (converter.adapterType) {
-            LightsaberTypes.LAZY_ADAPTER_TYPE -> {
+            Types.LAZY_TYPE -> {
               invokeInterface(Types.LAZY_TYPE, GET_METHOD)
             }
             Types.KOTLIN_LAZY_TYPE -> {
-              invokeInterface(Types.KOTLIN_LAZY_TYPE, GET_METHOD)
+              invokeInterface(Types.KOTLIN_LAZY_TYPE, GET_VALUE_METHOD)
             }
             else -> {
               error("Cannot import contract with adapter ${converter.adapterType.className}")
@@ -279,14 +279,14 @@ class ProviderClassGenerator(
     visitLabel(resultIsNullLabel)
 
     exhaustive(
-      when (val converter = contractProvisionPoint.injectee.converter) {
+      when (val provisionPointConverter = contractProvisionPoint.injectee.converter) {
         is Converter.Identity -> invokeInterface(Types.PROVIDER_TYPE, GET_METHOD)
         is Converter.Instance -> Unit
         is Converter.Adapter ->
-          if (converter.adapterType == LightsaberTypes.LAZY_ADAPTER_TYPE) {
+          if (provisionPointConverter.adapterType == LightsaberTypes.LAZY_ADAPTER_TYPE) {
             invokeInterface(Types.LAZY_TYPE, GET_METHOD)
           } else {
-            error("Cannot import contract's dependency with adapter ${converter.adapterType.className}")
+            error("Cannot import contract's dependency with adapter ${provisionPointConverter.adapterType.className}")
           }
       }
     )
@@ -301,6 +301,8 @@ class ProviderClassGenerator(
 
     private val CONSTRUCTOR_WITH_INJECTOR = MethodDescriptor.forConstructor(Types.INJECTOR_TYPE)
 
+    private val GET_VALUE_METHOD =
+      MethodDescriptor.forMethod("getValue", Types.OBJECT_TYPE)
     private val GET_METHOD =
       MethodDescriptor.forMethod("get", Types.OBJECT_TYPE)
     private val INJECT_MEMBERS_METHOD =

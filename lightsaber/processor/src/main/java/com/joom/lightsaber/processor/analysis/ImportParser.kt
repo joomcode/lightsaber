@@ -104,7 +104,7 @@ class ImportParserImpl(
 
   private fun calculateImportPointConverter(importType: GenericType): ImportPoint.Converter {
     return when {
-      isLazyWrapped(importType) -> ImportPoint.Converter.Adapter(LightsaberTypes.LAZY_ADAPTER_TYPE)
+      isLazyWrapped(importType) -> ImportPoint.Converter.Adapter(Types.LAZY_TYPE)
       isKotlinLazyWrapped(importType) -> ImportPoint.Converter.Adapter(Types.KOTLIN_LAZY_TYPE)
       else -> ImportPoint.Converter.Instance
     }
