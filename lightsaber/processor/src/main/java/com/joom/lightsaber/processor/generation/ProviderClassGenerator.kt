@@ -244,26 +244,7 @@ class ProviderClassGenerator(
     contractProvisionPoint: ContractProvisionPoint) {
     loadThis()
 
-    when (converter) {
-      is ImportPoint.Converter.Adapter -> {
-        getField(provider.type, MODULE_FIELD_NAME, converter.adapterType)
-
-        when (converter.adapterType) {
-            Types.LAZY_TYPE -> {
-              invokeInterface(Types.LAZY_TYPE, GET_METHOD)
-            }
-            Types.KOTLIN_LAZY_TYPE -> {
-              invokeInterface(Types.KOTLIN_LAZY_TYPE, GET_VALUE_METHOD)
-            }
-            else -> {
-              error("Cannot import contract with adapter ${converter.adapterType.className}")
-            }
-        }
-      }
-      ImportPoint.Converter.Instance -> {
-        getField(provider.type, MODULE_FIELD_NAME, contractType)
-      }
-    }
+    getContractInstance(converter, contractType)
 
     invokeInterface(contractProvisionPoint.container, contractProvisionPoint.method.toMethodDescriptor())
 
@@ -290,6 +271,32 @@ class ProviderClassGenerator(
           }
       }
     )
+  }
+
+  private fun GeneratorAdapter.getContractInstance(
+    converter: ImportPoint.Converter,
+    contractType: Type.Object,
+  ) {
+    when (converter) {
+      is ImportPoint.Converter.Adapter -> {
+        getField(provider.type, MODULE_FIELD_NAME, converter.adapterType)
+
+        when (converter.adapterType) {
+          Types.LAZY_TYPE -> {
+            invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+          }
+          Types.KOTLIN_LAZY_TYPE -> {
+            invokeInterface(Types.KOTLIN_LAZY_TYPE, GET_VALUE_METHOD)
+          }
+          else -> {
+            error("Cannot import contract with adapter ${converter.adapterType.className}")
+          }
+        }
+      }
+      ImportPoint.Converter.Instance -> {
+        getField(provider.type, MODULE_FIELD_NAME, contractType)
+      }
+    }
   }
 
   companion object {
