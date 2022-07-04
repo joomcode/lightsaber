@@ -19,7 +19,6 @@ package test_case_projects.validator.valid_configuration_with_lazy_imports
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
 import com.joom.lightsaber.Import
-import com.joom.lightsaber.Lazy
 
 @Contract
 interface AppContract {
@@ -30,10 +29,17 @@ interface LazyContract {
   val anotherDependency: AnotherDependencyInterface
 }
 
+interface KotlinLazyContract {
+  val yetAnotherDependencyInterface2: YetAnotherDependencyInterface2
+}
+
 class LazyContractConfiguration : ContractConfiguration<LazyContract>()
 
+class KotlinLazyContractConfiguration : ContractConfiguration<KotlinLazyContract>()
+
 class AppContractConfiguration(
-  @Import @Contract val lazyContract: Lazy<LazyContract>
+  @Import @Contract val lazyContract: com.joom.lightsaber.Lazy<LazyContract>,
+  @Import @Contract val kotlinLazyContract: Lazy<KotlinLazyContract>
 ) : ContractConfiguration<AppContract>() {
 
   @Import

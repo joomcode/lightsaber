@@ -16,25 +16,14 @@
 
 package test_case_projects.validator.valid_configuration_with_lazy_imports
 
-import com.joom.lightsaber.Lightsaber
+import com.joom.lightsaber.ProvidedAs
+import com.joom.lightsaber.ProvidedBy
+import javax.inject.Inject
 
-class AppMain {
-  companion object {
-    @JvmStatic
-    fun main(args: Array<String>) {
-      AppMain().run()
-    }
-  }
-
-  fun run() {
-    val injector = Lightsaber.Builder().build()
-    val contract = injector.createContract(
-      AppContractConfiguration(
-        lazyContract = { injector.createContract(LazyContractConfiguration()) },
-        kotlinLazyContract = lazy { injector.createContract(KotlinLazyContractConfiguration()) }
-      )
-    )
-
-    contract.dependency.foo()
+@ProvidedBy(KotlinLazyContractConfiguration::class)
+@ProvidedAs(YetAnotherDependencyInterface2::class)
+internal class YetAnotherDependencyImplementation2 @Inject constructor() : YetAnotherDependencyInterface2 {
+  override fun foobar2() {
+    print("foobar2")
   }
 }

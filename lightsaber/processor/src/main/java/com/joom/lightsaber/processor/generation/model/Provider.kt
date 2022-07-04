@@ -18,6 +18,7 @@ package com.joom.lightsaber.processor.generation.model
 
 import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.model.Scope
 
@@ -39,16 +40,10 @@ val Provider.moduleType: Type.Object?
     is ProviderMedium.Binding,
     is ProviderMedium.Factory,
     is ProviderMedium.Contract -> null
-    is ProviderMedium.ContractProvisionPoint -> medium.contractType
-  }
-
-val Provider.lazyModule: Boolean
-  get() = when (medium) {
-    is ProviderMedium.ProvisionPoint,
-    is ProviderMedium.Binding,
-    is ProviderMedium.Factory,
-    is ProviderMedium.Contract -> false
-    is ProviderMedium.ContractProvisionPoint -> medium.isLazy
+    is ProviderMedium.ContractProvisionPoint -> when (val converter = medium.converter) {
+      is ImportPoint.Converter.Adapter -> converter.adapterType
+      ImportPoint.Converter.Instance -> medium.contractType
+    }
   }
 
 val Provider.scope: Scope

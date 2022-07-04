@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package test_case_projects.import_parser.import_kotlin_lazy_contract
 
-sealed class Import {
-  abstract val importPoint: ImportPoint
+import com.joom.lightsaber.Contract
+import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Import
+import com.joom.lightsaber.Module
 
-  data class Module(
-    val module: com.joom.lightsaber.processor.model.Module,
-    override val importPoint: ImportPoint
-  ) : Import()
+@Contract
+interface AppContract
 
-  data class Contract(
-    val contract: com.joom.lightsaber.processor.model.Contract,
-    override val importPoint: ImportPoint
-  ) : Import()
-}
+interface LazyContract
+
+@Module
+class AppContractConfiguration(
+  @Import @Contract val lazyContract: Lazy<LazyContract> = lazy { object : LazyContract {} }
+) : ContractConfiguration<AppContract>()

@@ -24,11 +24,13 @@ import javax.inject.Inject
 @ProvidedAs(DependencyInterface::class)
 internal class DependencyImplementation @Inject constructor(
   val anotherDependency: AnotherDependencyInterface,
-  val yetAnotherDependency: YetAnotherDependencyInterface
+  val yetAnotherDependency: YetAnotherDependencyInterface,
+  val yetAnotherDependencyInterface2: YetAnotherDependencyInterface2
 ) : DependencyInterface {
   override fun foo() {
     print("bar")
     anotherDependency.bar()
     yetAnotherDependency.foobar()
+    yetAnotherDependencyInterface2.foobar2()
   }
 }

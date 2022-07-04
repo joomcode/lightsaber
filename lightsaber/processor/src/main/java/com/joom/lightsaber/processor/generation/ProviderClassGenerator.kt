@@ -35,14 +35,7 @@ import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderMedium
 import com.joom.lightsaber.processor.generation.model.moduleType
-import com.joom.lightsaber.processor.generation.model.lazyModule
-import com.joom.lightsaber.processor.model.Binding
-import com.joom.lightsaber.processor.model.Contract
-import com.joom.lightsaber.processor.model.ContractProvisionPoint
-import com.joom.lightsaber.processor.model.Converter
-import com.joom.lightsaber.processor.model.Factory
-import com.joom.lightsaber.processor.model.Injectee
-import com.joom.lightsaber.processor.model.ProvisionPoint
+import com.joom.lightsaber.processor.model.*
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
@@ -58,7 +51,7 @@ class ProviderClassGenerator(
   private val provider: Provider
 ) {
 
-  private val moduleType = if (provider.lazyModule) Types.LAZY_TYPE else provider.moduleType
+  private val moduleType = provider.moduleType
 
   private val providerConstructor: MethodDescriptor
     get() = if (moduleType == null) CONSTRUCTOR_WITH_INJECTOR else MethodDescriptor.forConstructor(moduleType, Types.INJECTOR_TYPE)
@@ -142,7 +135,7 @@ class ProviderClassGenerator(
           is ProviderMedium.Binding -> provideFromBinding(medium.binding)
           is ProviderMedium.Factory -> provideFactory(medium.factory)
           is ProviderMedium.Contract -> provideContract(medium.contract)
-          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.isLazy, medium.contractProvisionPoint)
+          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.converter, medium.contractProvisionPoint)
         }
       )
 
@@ -247,13 +240,29 @@ class ProviderClassGenerator(
 
   private fun GeneratorAdapter.provideFromContractProvisionPoint(
     contractType: Type.Object,
-    isLazy: Boolean,
+    converter: ImportPoint.Converter,
     contractProvisionPoint: ContractProvisionPoint) {
     loadThis()
-    getField(provider.type, MODULE_FIELD_NAME, if (isLazy) Types.LAZY_TYPE else contractType)
 
-    if (isLazy) {
-      invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+    when (converter) {
+      is ImportPoint.Converter.Adapter -> {
+        getField(provider.type, MODULE_FIELD_NAME, converter.adapterType)
+
+        when (converter.adapterType) {
+            LightsaberTypes.LAZY_ADAPTER_TYPE -> {
+              invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+            }
+            Types.KOTLIN_LAZY_TYPE -> {
+              invokeInterface(Types.KOTLIN_LAZY_TYPE, GET_METHOD)
+            }
+            else -> {
+              error("Cannot import contract with adapter ${converter.adapterType.className}")
+            }
+        }
+      }
+      ImportPoint.Converter.Instance -> {
+        getField(provider.type, MODULE_FIELD_NAME, contractType)
+      }
     }
 
     invokeInterface(contractProvisionPoint.container, contractProvisionPoint.method.toMethodDescriptor())

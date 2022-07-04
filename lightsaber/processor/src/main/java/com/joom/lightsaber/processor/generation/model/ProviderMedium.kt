@@ -18,6 +18,7 @@ package com.joom.lightsaber.processor.generation.model
 
 import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.ImportPoint
 
 sealed class ProviderMedium {
   abstract val dependency: Dependency
@@ -52,7 +53,7 @@ sealed class ProviderMedium {
 
   data class ContractProvisionPoint(
     val contractType: Type.Object,
-    val isLazy: Boolean,
+    val converter: ImportPoint.Converter,
     val contractProvisionPoint: com.joom.lightsaber.processor.model.ContractProvisionPoint
   ) : ProviderMedium() {
 

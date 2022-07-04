@@ -173,10 +173,9 @@ class ModulePatcher(
     loadModule(import.importPoint)
     loadArg(0)
 
-    val constructor = if (import.isLazy) {
-      MethodDescriptor.forConstructor(Types.LAZY_TYPE, Types.INJECTOR_TYPE)
-    } else {
-      MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+    val constructor = when (val converter = import.importPoint.converter) {
+      is ImportPoint.Converter.Adapter -> MethodDescriptor.forConstructor(converter.adapterType, Types.INJECTOR_TYPE)
+      ImportPoint.Converter.Instance -> MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
     }
 
     invokeConstructor(provider.type, constructor)

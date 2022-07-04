@@ -93,7 +93,12 @@ class GenerationContextFactory(
       .distinctBy { it.contract.type }
       .associateBy(
         keySelector = { it.contract.type },
-        valueTransform = { providerFactory.createProvidersForContract(it.contract, it.isLazy) }
+        valueTransform = {
+          providerFactory.createProvidersForContract(
+            it.contract,
+            it.importPoint.converter
+          )
+        }
       )
   }
 

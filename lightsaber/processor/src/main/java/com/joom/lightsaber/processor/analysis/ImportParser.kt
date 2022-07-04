@@ -31,6 +31,7 @@ import com.joom.grip.mirrors.Type
 import com.joom.grip.mirrors.signature.GenericType
 import com.joom.grip.not
 import com.joom.grip.returns
+import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.logging.getLogger
@@ -89,25 +90,34 @@ class ImportParserImpl(
     }
 
     val type = getImportTypeOrNull(method.signature.returnType, "${mirror.type.className}.${method.name}") ?: return null
-    val isLazyWrapped = isLazyWrapped(method.signature.returnType, "${mirror.type.className}.${method.name}")
+    val converter = calculateImportPointConverter(method.signature.returnType)
 
-    return tryParseImport(method, type, isLazyWrapped, ImportPoint.Method(method), moduleParser)
+    return tryParseImport(method, type, ImportPoint.Method(method, converter), moduleParser)
   }
 
   private fun tryParseFieldImport(mirror: ClassMirror, field: FieldMirror, moduleParser: ModuleParser): Import? {
     val type = getImportTypeOrNull(field.signature.type, "${mirror.type.className}.${field.name}") ?: return null
-    val isLazyWrapped = isLazyWrapped(field.signature.type, "${mirror.type.className}.${field.name}")
+    val converter = calculateImportPointConverter(field.signature.type)
 
-    return tryParseImport(field, type, isLazyWrapped, ImportPoint.Field(field), moduleParser)
+    return tryParseImport(field, type, ImportPoint.Field(field, converter), moduleParser)
   }
 
-  private fun tryParseImport(element: Annotated, type: Type.Object, isLazyWrapped: Boolean, importPoint: ImportPoint, moduleParser: ModuleParser): Import {
+  private fun calculateImportPointConverter(importType: GenericType): ImportPoint.Converter {
+    return when {
+      isLazyWrapped(importType) -> ImportPoint.Converter.Adapter(LightsaberTypes.LAZY_ADAPTER_TYPE)
+      isKotlinLazyWrapped(importType) -> ImportPoint.Converter.Adapter(Types.KOTLIN_LAZY_TYPE)
+      else -> ImportPoint.Converter.Instance
+    }
+  }
+
+  private fun tryParseImport(element: Annotated, type: Type.Object, importPoint: ImportPoint, moduleParser: ModuleParser): Import {
     return if (Types.CONTRACT_TYPE in element.annotations) {
       val contract = contractParser.parseContract(type)
-      Import.Contract(isLazyWrapped, contract, importPoint)
+      Import.Contract(contract, importPoint)
     } else {
-      if (isLazyWrapped) {
-        errorReporter.reportError("Imported module cannot be wrapped in com.joom.lightsaber.Lazy: ${type.className}")
+      val converter = importPoint.converter
+      if (converter is ImportPoint.Converter.Adapter) {
+        errorReporter.reportError("Imported module with type: ${type.className} cannot be wrapped in: ${converter.adapterType.className}")
       }
 
       val module = moduleParser.parseModule(type, isImported = true)
@@ -116,7 +126,7 @@ class ImportParserImpl(
   }
 
   private fun getImportTypeOrNull(importType: GenericType, source: String): Type.Object? {
-    val isLazyWrapped = isLazyWrapped(importType, source)
+    val isLazyWrapped = isLazyWrapped(importType) || isKotlinLazyWrapped(importType)
 
     if (!isLazyWrapped && importType !is GenericType.Raw) {
       errorReporter.reportError("Import cannot have a generic type: $importType from $source")
@@ -137,8 +147,12 @@ class ImportParserImpl(
     return type
   }
 
-  private fun isLazyWrapped(importType: GenericType, source: String): Boolean {
+  private fun isLazyWrapped(importType: GenericType): Boolean {
     return importType is GenericType.Parameterized && importType.type == Types.LAZY_TYPE
+  }
+
+  private fun isKotlinLazyWrapped(importType: GenericType): Boolean {
+    return importType is GenericType.Parameterized && importType.type == Types.KOTLIN_LAZY_TYPE
   }
 }
 
