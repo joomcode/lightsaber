@@ -175,7 +175,7 @@ class ModulePatcher(
 
     val constructor = when (val converter = import.importPoint.converter) {
       is ImportPoint.Converter.Adapter -> MethodDescriptor.forConstructor(converter.adapterType, Types.INJECTOR_TYPE)
-      ImportPoint.Converter.Instance -> MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+      is ImportPoint.Converter.Instance -> MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
     }
 
     invokeConstructor(provider.type, constructor)
