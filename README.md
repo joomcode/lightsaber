@@ -203,7 +203,7 @@ public class DroidContractConfiguration extends ContractConfiguration<DroidContr
 }
 ``` 
 
-Also, imported contracts can be wrapped with `com.joom.lightsaber.Lazy` or `kotlin.Lazy`. In this case contract will be instantiated only when some of its dependencies would need. It can reduce `ContractConfiguration` creation time, especially for contracts with large amount of dependencies. 
+Also, imported contracts can be wrapped with `com.joom.lightsaber.Lazy` or `kotlin.Lazy`. In this case, the contract will be instantiated only when some of its dependencies would need. It can reduce `ContractConfiguration` creation time, especially for contracts with many dependencies. 
 
 ```java
 public class DroidContractConfiguration extends ContractConfiguration<DroidContract> {
