@@ -86,7 +86,7 @@ class ClassProcessor(
 
   private fun performAnalysisAndValidation(): InjectionContext {
     val analyzer = Analyzer(grip, errorReporter, parameters.projectName)
-    val context = analyzer.analyze(parameters.inputs)
+    val context = analyzer.analyze(parameters.inputs + parameters.classpath)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
