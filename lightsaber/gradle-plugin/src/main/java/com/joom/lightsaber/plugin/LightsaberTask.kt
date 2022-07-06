@@ -61,6 +61,7 @@ open class LightsaberTask : DefaultTask() {
       inputs = backupDirs.map { it.toPath() },
       outputs = classesDirs.map { it.toPath() },
       classpath = classpath.map { it.toPath() },
+      modulesClasspath = classpath.map { it.toPath() },
       bootClasspath = bootClasspath.map { it.toPath() }.ifEmpty {
         listOfNotNull(FileSystems.getFileSystem(URI.create("jrt:/"))?.getPath("modules", "java.base"))
       },

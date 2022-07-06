@@ -64,8 +64,9 @@ class IntegrationTestRule(
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
       outputs = listOf(processedDirectory),
-      bootClasspath = emptyList(),
-      classpath = classpath,
+      bootClasspath = classpath,
+      modulesClasspath = emptyList(),
+      classpath = emptyList(),
       projectName = sourceCodeDir,
       gen = processedDirectory,
       errorReporter = errorReporter

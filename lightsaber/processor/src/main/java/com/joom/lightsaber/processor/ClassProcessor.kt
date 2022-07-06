@@ -54,7 +54,7 @@ class ClassProcessor(
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.bootClasspath)
+  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
   private val errorReporter = parameters.errorReporter
 
   private val fileSourcesAndSinks = parameters.inputs.zip(parameters.outputs) { input, output ->
@@ -86,7 +86,7 @@ class ClassProcessor(
 
   private fun performAnalysisAndValidation(): InjectionContext {
     val analyzer = Analyzer(grip, errorReporter, parameters.projectName)
-    val context = analyzer.analyze(parameters.inputs + parameters.classpath)
+    val context = analyzer.analyze(parameters.inputs + parameters.modulesClasspath)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
