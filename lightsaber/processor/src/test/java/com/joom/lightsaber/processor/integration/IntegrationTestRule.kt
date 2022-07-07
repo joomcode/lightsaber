@@ -50,7 +50,11 @@ class IntegrationTestRule(
 
   fun assertInvalidProject(sourceCodeDir: String, message: String) {
     val reporter = TestErrorReporter()
-    processProject(sourceCodeDir, reporter)
+    try {
+      processProject(sourceCodeDir, reporter)
+    } catch (e: Throwable) {
+      // ignore
+    }
 
     reporter.assertErrorReported(message)
   }
