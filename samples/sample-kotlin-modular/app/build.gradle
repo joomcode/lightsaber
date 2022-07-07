@@ -1,0 +1,31 @@
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'application'
+
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
+
+mainClassName = 'com.joom.lightsaber.modular.ModularSample'
+
+dependencies {
+  implementation "com.joom.lightsaber:lightsaber-core:$version"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
+  implementation project(":samples:sample-kotlin-modular:library-contract")
+
+  testImplementation "junit:junit:$junitVersion"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+  kotlinOptions {
+    jvmTarget = javaVersion
+  }
+}
+
+jar {
+  destinationDirectory.set(file('build/jar'))
+  duplicatesStrategy DuplicatesStrategy.EXCLUDE
+
+  from {
+    configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
