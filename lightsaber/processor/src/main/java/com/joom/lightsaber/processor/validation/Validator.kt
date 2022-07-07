@@ -177,7 +177,11 @@ class Validator(
         dependencyResolverFactory.getOrCreate(contractConfiguration).isResolved(binding.dependency)
       }
 
-      if (!isResolvedByComponent && !isResolvedByContractConfiguration) {
+      val isResolvedByModule = context.modules.any { module ->
+        dependencyResolverFactory.getOrCreate(module).isResolved(binding.dependency)
+      }
+
+      if (!isResolvedByComponent && !isResolvedByContractConfiguration && !isResolvedByModule) {
         errorReporter.reportError {
           append("Invalid configuration for dependency: ${binding.ancestor.type}. ")
           hintsBuilder.buildHint(binding.dependency)?.let(::append)

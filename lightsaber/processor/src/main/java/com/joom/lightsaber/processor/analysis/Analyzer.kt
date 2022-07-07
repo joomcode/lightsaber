@@ -41,8 +41,9 @@ class Analyzer(
     val provisionPointFactory = ProvisionPointFactoryImpl(grip, analyzerHelper, bridgeRegistry)
     val moduleParser =
       ModuleParserImpl(grip, analyzerHelper, provisionPointFactory, importParser, contractParser, bindingRegistry, externalSetup, errorReporter)
+    val modules = ModuleAnalyzerImpl(grip, moduleParser).analyze(paths)
     val components = ComponentsAnalyzerImpl(grip, moduleParser, errorReporter).analyze(paths)
     val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleParser, contractParser).analyze(paths)
-    return InjectionContext(components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
+    return InjectionContext(modules, components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
   }
 }
