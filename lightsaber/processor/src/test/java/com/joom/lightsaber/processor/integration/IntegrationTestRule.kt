@@ -17,23 +17,20 @@
 package com.joom.lightsaber.processor.integration
 
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.ErrorReporterImpl
 import com.joom.lightsaber.processor.JvmRuntimeUtil
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
+import org.jetbrains.kotlin.cli.common.ExitCode
+import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import org.junit.rules.TestRule
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-import org.jetbrains.kotlin.cli.common.ExitCode
-import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
-import org.junit.rules.TestRule
-import org.junit.runner.Description
-import org.junit.runners.model.Statement
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 
 class IntegrationTestRule(
   private val root: String,
@@ -45,41 +42,40 @@ class IntegrationTestRule(
   private val classpath = JvmRuntimeUtil.computeRuntimeClasses()
 
   fun assertValidProject(sourceCodeDir: String) {
-    processProject(sourceCodeDir)
+    val reporter = TestErrorReporter()
+    processProject(sourceCodeDir, reporter)
+
+    reporter.assertNoErrorsReported()
   }
 
   fun assertInvalidProject(sourceCodeDir: String, message: String) {
-    val reporterMock = mock<ErrorReporter>()
-    processProject(sourceCodeDir, reporterMock, ignoreErrors = false)
+    val reporter = TestErrorReporter()
+    processProject(sourceCodeDir, reporter)
 
-    verify(reporterMock).reportError(message)
+    reporter.assertErrorReported(message)
   }
 
-  private fun processProject(
+  fun processProject(
     sourceCodeDir: String,
-    errorReporter: ErrorReporter = ErrorReporterImpl(),
-    ignoreErrors: Boolean = false
-  ) {
+    errorReporter: ErrorReporter,
+    modules: List<Path> = emptyList(),
+  ): Path {
     val compiled = compile(root + File.separator + sourceCodeDir)
+
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
       outputs = listOf(processedDirectory),
       bootClasspath = classpath,
-      modulesClasspath = emptyList(),
+      modulesClasspath = modules,
       classpath = emptyList(),
       projectName = sourceCodeDir,
       gen = processedDirectory,
       errorReporter = errorReporter
     )
 
-    try {
-      LightsaberProcessor(parameters).process()
-    } catch (e: Throwable) {
-      if (!ignoreErrors) throw e
-    } finally {
-      cleanDir(compiledFilesDirectory)
-      cleanDir(processedDirectory)
-    }
+    LightsaberProcessor(parameters).process()
+
+    return processedDirectory
   }
 
   private fun compile(sourceCodeDir: String): Path {
@@ -121,9 +117,19 @@ class IntegrationTestRule(
   override fun apply(base: Statement, description: Description): Statement {
     return object : Statement() {
       override fun evaluate() {
-        base.evaluate()
+
+        try {
+          base.evaluate()
+        } finally {
+          after()
+        }
       }
     }
+  }
+
+  private fun after() {
+    cleanDir(compiledFilesDirectory)
+    cleanDir(processedDirectory)
   }
 
   companion object {
