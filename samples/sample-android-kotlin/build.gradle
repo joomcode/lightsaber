@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'com.joom.lightsaber.android'
 
 android {
-  compileSdkVersion androidCompileSdkVersion
+  compileSdk androidCompileSdkVersion
   buildToolsVersion androidBuildToolsVersion
 
   defaultConfig {

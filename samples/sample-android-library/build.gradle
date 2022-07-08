@@ -1,7 +1,8 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.joom.lightsaber.android'
 
 android {
-  compileSdkVersion androidCompileSdkVersion
+  compileSdk androidCompileSdkVersion
   buildToolsVersion androidBuildToolsVersion
 
   defaultConfig {
