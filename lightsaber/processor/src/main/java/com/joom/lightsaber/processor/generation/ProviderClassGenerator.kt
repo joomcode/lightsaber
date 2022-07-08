@@ -35,7 +35,14 @@ import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderMedium
 import com.joom.lightsaber.processor.generation.model.moduleType
-import com.joom.lightsaber.processor.model.*
+import com.joom.lightsaber.processor.model.Binding
+import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.ContractProvisionPoint
+import com.joom.lightsaber.processor.model.Converter
+import com.joom.lightsaber.processor.model.Factory
+import com.joom.lightsaber.processor.model.ImportPoint
+import com.joom.lightsaber.processor.model.Injectee
+import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.watermark.WatermarkClassVisitor
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
