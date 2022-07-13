@@ -16,8 +16,10 @@
 
 package com.joom.lightsaber.processor.injection
 
-import com.joom.grip.mirrors.*
-import com.joom.lightsaber.Lazy
+import com.joom.grip.mirrors.FieldMirror
+import com.joom.grip.mirrors.MethodMirror
+import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isStatic
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Types
