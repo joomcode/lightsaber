@@ -248,7 +248,8 @@ class ProviderClassGenerator(
   private fun GeneratorAdapter.provideFromContractProvisionPoint(
     contractType: Type.Object,
     converter: ImportPoint.Converter,
-    contractProvisionPoint: ContractProvisionPoint) {
+    contractProvisionPoint: ContractProvisionPoint
+  ) {
     loadThis()
 
     getContractInstance(converter, contractType)
