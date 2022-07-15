@@ -24,12 +24,13 @@ import com.joom.lightsaber.processor.model.Binding
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.ContractProvisionPoint
 import com.joom.lightsaber.processor.model.Factory
+import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 
 interface ProviderFactory {
   fun createProvidersForModule(module: Module): Collection<Provider>
-  fun createProvidersForContract(contract: Contract): Collection<Provider>
+  fun createProvidersForContract(contract: Contract, converter: ImportPoint.Converter): Collection<Provider>
 }
 
 class ProviderFactoryImpl(
@@ -57,10 +58,10 @@ class ProviderFactoryImpl(
     }
   }
 
-  override fun createProvidersForContract(contract: Contract): Collection<Provider> {
+  override fun createProvidersForContract(contract: Contract, converter: ImportPoint.Converter): Collection<Provider> {
     return providersByImportedContractType.getOrPut(contract.type) {
       contract.provisionPoints.map { provisionPoint ->
-        newContractProvisionPointProvider(contract, provisionPoint)
+        newContractProvisionPointProvider(contract, provisionPoint, converter)
       }
     }
   }
@@ -115,9 +116,13 @@ class ProviderFactoryImpl(
     }
   }
 
-  private fun newContractProvisionPointProvider(contract: Contract, contractProvisionPoint: ContractProvisionPoint): Provider {
+  private fun newContractProvisionPointProvider(
+    contract: Contract,
+    contractProvisionPoint: ContractProvisionPoint,
+    converter: ImportPoint.Converter
+  ): Provider {
     val providerType = getObjectTypeByUniqueInternalName("${contract.type.internalName}\$MethodProvider%d\$$projectName")
-    return Provider(providerType, ProviderMedium.ContractProvisionPoint(contract.type, contractProvisionPoint))
+    return Provider(providerType, ProviderMedium.ContractProvisionPoint(contract.type, converter, contractProvisionPoint))
   }
 
   private fun getObjectTypeByUniqueInternalName(pattern: String): Type.Object {

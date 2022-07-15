@@ -30,6 +30,11 @@ class ValidatorTest {
   }
 
   @Test
+  fun test_processed_without_any_problems_with_lazy_imports() {
+    integrationTestRule.assertValidProject("valid_configuration_with_lazy_imports")
+  }
+
+  @Test
   fun test_validation_fails_if_provided_as_is_used_without_provided_by() {
     integrationTestRule.assertInvalidProject(
       sourceCodeDir = "provided_as_without_provided_by",
@@ -103,6 +108,20 @@ class ValidatorTest {
           "2.\n" +
           "  ContractConfiguration: test_case_projects.validator.module_duplicates.AppContractConfiguration\n" +
           "  Method: test_case_projects.validator.module_duplicates.AppModule importAppModule2()"
+    )
+  }
+
+  @Test
+  fun validation_fails_if_contract_imported_multiple_times() {
+    integrationTestRule.assertInvalidProject(
+      "contract_duplicates",
+      "Class test_case_projects.validator.contract_duplicates.LazyContract imported multiple times in a contract:\n" +
+          "1.\n" +
+          "  ContractConfiguration: test_case_projects.validator.contract_duplicates.AppContractConfiguration\n" +
+          "  Field: test_case_projects.validator.contract_duplicates.LazyContract lazyContract1\n" +
+          "2.\n" +
+          "  ContractConfiguration: test_case_projects.validator.contract_duplicates.AppContractConfiguration\n" +
+          "  Field: com.joom.lightsaber.Lazy<test_case_projects.validator.contract_duplicates.LazyContract> lazyContract2"
     )
   }
 }

@@ -31,4 +31,26 @@ class ImportParserTest {
       message = "Import method cannot have parameters: test_case_projects.import_parser.import_method_with_parameters.AppContractConfiguration.importAppModule"
     )
   }
+
+  @Test
+  fun test_parsing_import_with_lazy_contract() {
+    integrationTestRule.assertValidProject(
+      sourceCodeDir = "import_lazy_contract"
+    )
+  }
+
+  @Test
+  fun test_parsing_import_with_kotlin_lazy_contract() {
+    integrationTestRule.assertValidProject(
+      sourceCodeDir = "import_kotlin_lazy_contract"
+    )
+  }
+
+  @Test
+  fun test_parsing_failed_when_import_with_lazy_module() {
+    integrationTestRule.assertInvalidProject(
+      sourceCodeDir = "import_lazy_module",
+      message = "Imported module with type: test_case_projects.import_parser.import_lazy_module.AppModule cannot be wrapped in: com.joom.lightsaber.Lazy"
+    )
+  }
 }

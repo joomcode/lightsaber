@@ -27,7 +27,6 @@ import com.joom.lightsaber.Import
 import com.joom.lightsaber.ImportedBy
 import com.joom.lightsaber.Injector
 import com.joom.lightsaber.Key
-import com.joom.lightsaber.Lazy
 import com.joom.lightsaber.Module
 import com.joom.lightsaber.Provide
 import com.joom.lightsaber.ProvidedAs
@@ -63,11 +62,12 @@ object Types {
   val CONTRACT_CONFIGURATION_TYPE = getObjectType<ContractConfiguration<*>>()
   val INJECTOR_TYPE = getObjectType<Injector>()
   val PROVIDER_TYPE = getObjectType<Provider<*>>()
-  val LAZY_TYPE = getObjectType<Lazy<*>>()
+  val LAZY_TYPE = getObjectType<com.joom.lightsaber.Lazy<*>>()
   val KEY_TYPE = getObjectType<Key<*>>()
   val CLASS_TYPE = getObjectType<Class<*>>()
   val TYPE_TYPE = getObjectType<JavaType>()
   val ANNOTATION_TYPE = getObjectType<Annotation>()
+  val KOTLIN_LAZY_TYPE = getObjectType<Lazy<*>>()
 
   val BOXED_VOID_TYPE = getObjectType<Void>()
   val BOXED_BOOLEAN_TYPE = getObjectType<Boolean>()

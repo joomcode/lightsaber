@@ -174,7 +174,12 @@ class ModulePatcher(
     dup()
     loadModule(import.importPoint)
     loadArg(0)
-    val constructor = MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+
+    val constructor = when (val converter = import.importPoint.converter) {
+      is ImportPoint.Converter.Adapter -> MethodDescriptor.forConstructor(converter.adapterType, Types.INJECTOR_TYPE)
+      is ImportPoint.Converter.Instance -> MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
+    }
+
     invokeConstructor(provider.type, constructor)
   }
 
@@ -232,6 +237,7 @@ class ModulePatcher(
   private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
     generationContext.findProvidersByContractType(import.contract.type).forEach { provider ->
       loadArg(0)
+
       registerProvider(keyRegistry, provider) {
         newContractImportProvider(provider, import)
       }

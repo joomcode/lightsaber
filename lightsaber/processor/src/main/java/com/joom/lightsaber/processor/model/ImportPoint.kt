@@ -22,12 +22,30 @@ import com.joom.grip.mirrors.MethodMirror
 import com.joom.grip.mirrors.Type
 
 sealed class ImportPoint {
-  data class Method(val method: MethodMirror) : ImportPoint()
-  data class Field(val field: FieldMirror) : ImportPoint()
+  abstract val converter: Converter
+
+  data class Method(
+    val method: MethodMirror,
+    override val converter: Converter
+  ) : ImportPoint()
+
+  data class Field(
+    val field: FieldMirror,
+    override val converter: Converter
+  ) : ImportPoint()
 
   data class Annotation(
     val annotation: AnnotationMirror,
     val importerType: Type.Object,
     val importeeType: Type.Object
-  ) : ImportPoint()
+  ) : ImportPoint() {
+    override val converter: Converter
+      get() = Converter.Instance
+  }
+
+  sealed class Converter {
+    object Instance : Converter()
+    data class Adapter(val adapterType: Type.Object) : Converter()
+  }
+
 }
