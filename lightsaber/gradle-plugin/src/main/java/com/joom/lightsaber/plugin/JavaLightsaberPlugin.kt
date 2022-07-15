@@ -156,6 +156,10 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     }
   }
 
+  private fun String.capitalize(): String {
+    return replaceFirstChar { if (it.isLowerCase()) it.uppercase() else it.toString() }
+  }
+
   companion object {
     private const val LIGHTSABER_PATH = "lightsaber"
   }
