@@ -52,15 +52,15 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
 
   private fun setupLightsaberForJava() {
     logger.info("Setting up Lightsaber task for Java project {}...", project.name)
-    createTasks(project.sourceSets.main, project.tasks.compileJava)
+    createTasks(project.sourceSets.main, project.tasks.compileJava, project.tasks.classes)
   }
 
   private fun setupLightsaberForJavaTest() {
     logger.info("Setting up Lightsaber task for Java test project {}...", project.name)
-    createTasks(project.sourceSets.test, project.tasks.compileTestJava, "test")
+    createTasks(project.sourceSets.test, project.tasks.compileTestJava, project.tasks.testClasses, "test")
   }
 
-  private fun createTasks(sourceSet: SourceSet, compileTask: JavaCompile, nameSuffix: String = "") {
+  private fun createTasks(sourceSet: SourceSet, compileTask: JavaCompile, classesTask: Task, nameSuffix: String = "") {
     val suffix = nameSuffix.capitalize()
     val lightsaberDir = File(project.buildDir, getLightsaberRelativePath(nameSuffix))
     val classesDirs = getClassesDirs(sourceSet.output)
@@ -82,7 +82,7 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
       )
     val backupTask =
       createBackupClassFilesTask("lightsaberBackupClasses$suffix", classesDirs, backupDirs)
-    configureTasks(lightsaberTask, backupTask, compileTask)
+    configureTasks(lightsaberTask, backupTask, compileTask, classesTask)
   }
 
   private fun getLightsaberRelativePath(suffix: String): String {
@@ -101,11 +101,12 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     }
   }
 
-  private fun configureTasks(lightsaberTask: LightsaberTask, backupTask: BackupClassesTask, compileTask: Task) {
+  private fun configureTasks(lightsaberTask: LightsaberTask, backupTask: BackupClassesTask, compileTask: Task, classesTask: Task) {
+    backupTask.dependsOn(compileTask)
     lightsaberTask.mustRunAfter(compileTask)
     lightsaberTask.dependsOn(compileTask)
     lightsaberTask.dependsOn(backupTask)
-    compileTask.finalizedBy(lightsaberTask)
+    classesTask.dependsOn(lightsaberTask)
 
     val cleanBackupTask = project.tasks["clean${backupTask.name.capitalize()}"]!!
     val cleanLightsaberTask = project.tasks["clean${lightsaberTask.name.capitalize()}"]!!

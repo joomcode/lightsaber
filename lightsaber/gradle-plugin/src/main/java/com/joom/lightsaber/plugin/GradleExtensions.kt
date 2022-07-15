@@ -43,8 +43,12 @@ val SourceSetContainer.test: SourceSet
 
 val TaskContainer.compileJava: JavaCompile
   get() = getByName("compileJava") as JavaCompile
+val TaskContainer.classes: Task
+  get() = getByName("classes")
 val TaskContainer.compileTestJava: JavaCompile
   get() = getByName("compileTestJava") as JavaCompile
+val TaskContainer.testClasses: Task
+  get() = getByName("testClasses")
 
 operator fun TaskContainer.get(name: String): Task? {
   return findByName(name)
