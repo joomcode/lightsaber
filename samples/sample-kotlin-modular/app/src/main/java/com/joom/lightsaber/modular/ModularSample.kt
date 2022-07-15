@@ -34,6 +34,7 @@ class ModularSample {
     injector.injectMembers(injectee)
 
     contract.moduleDependency.printInfo()
+    contract.factoryDependency.printInfo()
     injectee.componentDependency.printInfo()
   }
 

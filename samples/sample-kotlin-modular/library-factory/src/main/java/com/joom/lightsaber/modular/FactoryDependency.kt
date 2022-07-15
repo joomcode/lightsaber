@@ -16,28 +16,14 @@
 
 package com.joom.lightsaber.modular
 
-import com.joom.lightsaber.ContractConfiguration
-import com.joom.lightsaber.Import
-import com.joom.lightsaber.Provide
+import com.joom.lightsaber.Factory
 
-interface ModularContract {
-  val moduleDependency: ModuleDependency
-  val factoryDependency: FactoryDependency
+interface FactoryDependency {
+  fun printInfo()
 }
 
-class ModularContractConfiguration : ContractConfiguration<ModularContract>() {
-  @Import
-  fun importModule(): LibraryModule {
-    return LibraryModule()
-  }
-
-  @Import
-  fun importFactoryModule(): LibraryFactoryModule {
-    return LibraryFactoryModule()
-  }
-
-  @Provide
-  fun provideFactoryDependency(factory: LibraryFactory): FactoryDependency {
-    return factory.create()
+internal class FactoryDependencyImpl @Factory.Inject constructor() : FactoryDependency {
+  override fun printInfo() {
+    println("FactoryDependencyImpl")
   }
 }
