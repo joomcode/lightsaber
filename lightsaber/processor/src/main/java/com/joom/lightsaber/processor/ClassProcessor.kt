@@ -43,10 +43,10 @@ import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.HintsBuilder
 import com.joom.lightsaber.processor.validation.Validator
-import java.io.Closeable
-import java.nio.file.Path
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
+import java.io.Closeable
+import java.nio.file.Path
 
 class ClassProcessor(
   private val parameters: LightsaberParameters
@@ -65,8 +65,9 @@ class ClassProcessor(
   private val classSink = DirectoryFileSink(parameters.gen)
 
   fun processClasses() {
-    warmUpGripCaches(grip, parameters.inputs)
-    val injectionContext = performAnalysisAndValidation()
+    warmUpGripCaches(grip, parameters.inputs + parameters.modulesClasspath)
+    performAnalysisAndValidation()
+    val injectionContext = generateInjectionContextForGeneration()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
     val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
@@ -84,14 +85,20 @@ class ClassProcessor(
     }
   }
 
-  private fun performAnalysisAndValidation(): InjectionContext {
-    val analyzer = Analyzer(grip, errorReporter, parameters.projectName)
-    val context = analyzer.analyze(parameters.inputs + parameters.modulesClasspath)
+  private fun performAnalysisAndValidation() {
+    val context = createAnalyzer().analyze(parameters.inputs + parameters.modulesClasspath)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
     checkErrors()
-    return context
+  }
+
+  private fun generateInjectionContextForGeneration(): InjectionContext {
+    return createAnalyzer().analyze(parameters.inputs)
+  }
+
+  private fun createAnalyzer(): Analyzer {
+    return Analyzer(grip, errorReporter, parameters.projectName)
   }
 
   private fun copyAndPatchClasses(injectionContext: InjectionContext, generationContext: GenerationContext) {
