@@ -27,7 +27,7 @@ class ModularSample {
     }
   }
 
-  private fun run() {
+  internal fun run() {
     val contract = Lightsaber.Builder().build().createContract(ModularContractConfiguration())
     val injector = Lightsaber.Builder().build().createInjector(LibraryComponent())
     val injectee = ComponentInjectee()
