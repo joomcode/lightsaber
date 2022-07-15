@@ -20,13 +20,19 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.JvmRuntimeUtil
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
+import com.joom.lightsaber.processor.ProcessingException
 import org.jetbrains.kotlin.cli.common.ExitCode
+import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import org.jetbrains.kotlin.config.Services
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.file.Files
+import java.io.PrintStream
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
@@ -59,31 +65,55 @@ class IntegrationTestRule(
     reporter.assertErrorReported(message)
   }
 
+  fun compileProject(sourceCodeDir: String, classpath: List<Path> = emptyList()): Path {
+    return compile(projectName = sourceCodeDir, sourceCodeDir = root + File.separator + sourceCodeDir, classpath)
+  }
+
   fun processProject(
     sourceCodeDir: String,
     errorReporter: ErrorReporter,
     modules: List<Path> = emptyList(),
   ): Path {
-    val compiled = compile(root + File.separator + sourceCodeDir)
+    return processProject(
+      compiled = compileProject(sourceCodeDir),
+      projectName = sourceCodeDir,
+      errorReporter = errorReporter,
+      modules = modules
+    )
+  }
 
+  fun processProject(
+    compiled: Path,
+    projectName: String,
+    errorReporter: ErrorReporter,
+    modules: List<Path> = emptyList(),
+    ignoreErrors: Boolean = false,
+  ): Path {
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
       outputs = listOf(processedDirectory),
       bootClasspath = classpath,
       modulesClasspath = modules,
       classpath = emptyList(),
-      projectName = sourceCodeDir,
+      projectName = projectName,
       gen = processedDirectory,
       errorReporter = errorReporter
     )
 
-    LightsaberProcessor(parameters).process()
+    try {
+      LightsaberProcessor(parameters).process()
+    } catch (exception: ProcessingException) {
+      if (!ignoreErrors) {
+        throw exception
+      }
+    }
 
     return processedDirectory
   }
 
-  private fun compile(sourceCodeDir: String): Path {
-    cleanDir(compiledFilesDirectory)
+  private fun compile(projectName: String, sourceCodeDir: String, classpath: List<Path> = emptyList()): Path {
+    val outputDirectory = compiledFilesDirectory.resolve(projectName)
+    cleanDir(outputDirectory)
 
     val input = testCaseProjectsDir.resolve(sourceCodeDir).toAbsolutePath()
 
@@ -94,28 +124,29 @@ class IntegrationTestRule(
     val compiler = K2JVMCompiler()
     // https://kotlinlang.org/docs/compiler-reference.html#common-options
 
+    val errorStream = ByteArrayOutputStream()
+    val messageCollector = PrintingMessageCollector(PrintStream(errorStream), MessageRenderer.PLAIN_RELATIVE_PATHS, /* verbose = */false)
+
     val exitCode = compiler.exec(
-      System.err,
-      input.toString(),
-      "-d", compiledFilesDirectory.absolutePathString(),
-      "-cp", JvmRuntimeUtil.JAVA_CLASS_PATH,
-      "-nowarn"
+      messageCollector,
+      Services.EMPTY,
+      K2JVMCompilerArguments().apply {
+        freeArgs = listOf(input.toString())
+        destination = outputDirectory.absolutePathString()
+        suppressWarnings = true
+        this.classpath = (listOf(JvmRuntimeUtil.JAVA_CLASS_PATH) + classpath.map { it.absolutePathString() }).joinToString(File.pathSeparator)
+      }
     )
     if (exitCode != ExitCode.OK) {
-      throw RuntimeException("Error $exitCode. See stderr for more details")
+      val error = errorStream.toString(Charsets.UTF_8.name())
+      throw RuntimeException("Error $exitCode:\n${error}")
     }
-    return compiledFilesDirectory
+    return outputDirectory
   }
 
   private fun cleanDir(dir: Path) {
     if (!dir.exists()) return
-    Files.walk(dir).use { paths ->
-      paths
-        .sorted(Comparator.reverseOrder())
-        .map { it.toFile() }
-        .forEach(File::delete)
-
-    }
+    dir.toFile().deleteRecursively()
   }
 
   override fun apply(base: Statement, description: Description): Statement {

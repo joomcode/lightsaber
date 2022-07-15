@@ -14,7 +14,7 @@ class TestErrorReporter : ErrorReporter {
     get() = errors.isNotEmpty()
 
   fun assertErrorReported(message: String) {
-    Assert.assertTrue(errors.any { it.message == message })
+    Assert.assertTrue("Expected '${message}', got:\n${errors.joinToString("\n") { it.message }}", errors.any { it.message == message })
   }
 
   fun assertNoErrorsReported() {
