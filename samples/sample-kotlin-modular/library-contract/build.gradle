@@ -9,15 +9,10 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
   api project(":samples:sample-kotlin-modular:library-module")
-  api project(":samples:sample-kotlin-modular:library-component")
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
   kotlinOptions {
     jvmTarget = javaVersion
   }
-}
-
-lightsaber {
-  processTest false
 }

@@ -20,7 +20,6 @@ import com.joom.lightsaber.ContractConfiguration
 import com.joom.lightsaber.Import
 
 interface ModularContract {
-  val componentDependency: ComponentDependency
   val moduleDependency: ModuleDependency
 }
 
@@ -28,10 +27,5 @@ class ModularContractConfiguration : ContractConfiguration<ModularContract>() {
   @Import
   fun importModule(): LibraryModule {
     return LibraryModule()
-  }
-
-  @Import
-  fun importComponent(): LibraryComponent {
-    return LibraryComponent()
   }
 }

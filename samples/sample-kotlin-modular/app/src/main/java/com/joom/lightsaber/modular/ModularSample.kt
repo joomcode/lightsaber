@@ -17,6 +17,7 @@
 package com.joom.lightsaber.modular
 
 import com.joom.lightsaber.Lightsaber
+import javax.inject.Inject
 
 class ModularSample {
   companion object {
@@ -28,8 +29,17 @@ class ModularSample {
 
   private fun run() {
     val contract = Lightsaber.Builder().build().createContract(ModularContractConfiguration())
+    val injector = Lightsaber.Builder().build().createInjector(LibraryComponent())
+    val injectee = ComponentInjectee()
+    injector.injectMembers(injectee)
 
     contract.moduleDependency.printInfo()
-    contract.componentDependency.printInfo()
+    injectee.componentDependency.printInfo()
+  }
+
+
+  private class ComponentInjectee {
+    @Inject
+    lateinit var componentDependency: ComponentDependency
   }
 }

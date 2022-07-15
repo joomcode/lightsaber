@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'application'
+apply plugin: 'com.joom.lightsaber'
 
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
@@ -11,6 +12,7 @@ dependencies {
   implementation "com.joom.lightsaber:lightsaber-core:$version"
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
   implementation project(":samples:sample-kotlin-modular:library-contract")
+  implementation project(":samples:sample-kotlin-modular:library-component")
 
   testImplementation "junit:junit:$junitVersion"
 }
