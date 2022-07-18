@@ -73,12 +73,14 @@ class IntegrationTestRule(
     sourceCodeDir: String,
     errorReporter: ErrorReporter,
     modules: List<Path> = emptyList(),
+    ignoreErrors: Boolean = false,
   ): Path {
     return processProject(
-      compiled = compileProject(sourceCodeDir),
+      compiled = compileProject(sourceCodeDir, classpath = modules),
       projectName = sourceCodeDir,
       errorReporter = errorReporter,
-      modules = modules
+      modules = modules,
+      ignoreErrors = ignoreErrors,
     )
   }
 
@@ -89,14 +91,15 @@ class IntegrationTestRule(
     modules: List<Path> = emptyList(),
     ignoreErrors: Boolean = false,
   ): Path {
+    val outputDirectory = processedDirectory.resolve(projectName)
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
-      outputs = listOf(processedDirectory),
+      outputs = listOf(outputDirectory),
       bootClasspath = classpath,
       modulesClasspath = modules,
       classpath = emptyList(),
       projectName = projectName,
-      gen = processedDirectory,
+      gen = outputDirectory,
       errorReporter = errorReporter
     )
 
@@ -108,7 +111,7 @@ class IntegrationTestRule(
       }
     }
 
-    return processedDirectory
+    return outputDirectory
   }
 
   private fun compile(projectName: String, sourceCodeDir: String, classpath: List<Path> = emptyList()): Path {
