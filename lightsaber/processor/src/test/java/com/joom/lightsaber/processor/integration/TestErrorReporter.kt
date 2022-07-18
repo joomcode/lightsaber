@@ -14,11 +14,15 @@ class TestErrorReporter : ErrorReporter {
     get() = errors.isNotEmpty()
 
   fun assertErrorReported(message: String) {
-    Assert.assertTrue("Expected '${message}', got:\n${errors.joinToString("\n") { it.message }}", errors.any { it.message == message })
+    Assert.assertTrue("Expected '${message}', got:\n${errorsToString()}", errors.any { it.message == message })
   }
 
   fun assertNoErrorsReported() {
-    Assert.assertFalse(hasErrors)
+    Assert.assertFalse("Expected no errors, got\n${errorsToString()}", hasErrors)
+  }
+
+  private fun errorsToString(): String {
+    return errors.joinToString("\n") { it.message }
   }
 
   private data class LoggedError(
