@@ -36,14 +36,14 @@ class GeneratorTest {
   fun `generates constructor provider`() {
     val path = integrationTestRule.processProject("first_project", reporter)
 
-    path.shouldContain(computeConstructorProviderPath("first_project", className = "FirstDependencyImpl"))
+    path.shouldContain(computeConstructorProviderPath("first_project", projectName = "first_project", className = "FirstDependencyImpl"))
   }
 
   @Test
   fun `generates binding provider`() {
     val path = integrationTestRule.processProject("first_project", reporter)
 
-    path.shouldContain(computeBindingProviderPath("first_project", className = "FirstDependencyImpl"))
+    path.shouldContain(computeBindingProviderPath("first_project", projectName = "first_project", className = "FirstDependencyImpl"))
   }
 
   @Test
@@ -51,8 +51,8 @@ class GeneratorTest {
     val firstProjectPath = integrationTestRule.processProject("first_project", reporter)
     val secondProjectPath = integrationTestRule.processProject("second_project", reporter, modules = listOf(firstProjectPath))
 
-    secondProjectPath.shouldNotContain(computeConstructorProviderPath("second_project", className = "FirstDependencyImpl"))
-    secondProjectPath.shouldNotContain(computeBindingProviderPath("second_project", className = "FirstDependencyImpl"))
+    secondProjectPath.shouldNotContain(computeConstructorProviderPath("first_project", projectName = "second_project", className = "FirstDependencyImpl"))
+    secondProjectPath.shouldNotContain(computeBindingProviderPath("first_project", projectName = "second_project", className = "FirstDependencyImpl"))
   }
 
   private fun Path.shouldContain(path: Path) {
@@ -63,12 +63,12 @@ class GeneratorTest {
     Assert.assertFalse(resolve(path).exists())
   }
 
-  private fun computeConstructorProviderPath(sourceCodeDir: String, className: String): Path {
-    return Paths.get(ROOT, sourceCodeDir, "${className}\$ConstructorProvider0\$${sourceCodeDir}.class")
+  private fun computeConstructorProviderPath(sourceCodeDir: String, projectName: String, className: String): Path {
+    return Paths.get(ROOT, sourceCodeDir, "${className}\$ConstructorProvider0\$${projectName}.class")
   }
 
-  private fun computeBindingProviderPath(sourceCodeDir: String, className: String): Path {
-    return Paths.get(ROOT, sourceCodeDir, "${className}\$BindingProvider0\$${sourceCodeDir}.class")
+  private fun computeBindingProviderPath(sourceCodeDir: String, projectName: String, className: String): Path {
+    return Paths.get(ROOT, sourceCodeDir, "${className}\$BindingProvider0\$${projectName}.class")
   }
 
   private companion object {
