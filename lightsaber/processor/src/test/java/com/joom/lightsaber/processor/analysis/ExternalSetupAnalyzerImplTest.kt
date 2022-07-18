@@ -17,12 +17,14 @@
 package com.joom.lightsaber.processor.analysis
 
 import com.joom.lightsaber.processor.integration.IntegrationTestRule
+import com.joom.lightsaber.processor.integration.TestErrorReporter
 import org.junit.Rule
 import org.junit.Test
 
 class ExternalSetupAnalyzerImplTest {
 
-  @get:Rule val integrationTestRule = IntegrationTestRule("test_case_projects/external_setup_analyzer")
+  @get:Rule
+  val integrationTestRule = IntegrationTestRule("test_case_projects/external_setup_analyzer")
 
   @Test
   fun test_analysis_failed_if_imported_by_used_without_arguments() {
@@ -41,10 +43,19 @@ class ExternalSetupAnalyzerImplTest {
   }
 
   @Test
-  fun test_analysis_failed_when_imported_by_have_non_container_argument() {
+  fun test_analysis_failed_when_module_imported_by_have_non_container_argument() {
     integrationTestRule.assertInvalidProject(
       sourceCodeDir = "imported_by_with_non_container_argument",
       message = "Module test_case_projects.external_setup_analyzer.imported_by_with_non_container_argument.AppModule is imported " +
+          "by java.lang.Object, which isn't a container"
+    )
+  }
+
+  @Test
+  fun test_analysis_failed_when_provided_by_have_non_container_argument() {
+    integrationTestRule.assertInvalidProject(
+      sourceCodeDir = "provided_by_with_non_container_argument",
+      message = "test_case_projects.external_setup_analyzer.provided_by_with_non_container_argument.AppDependency is provided " +
           "by java.lang.Object, which isn't a container"
     )
   }
@@ -54,6 +65,40 @@ class ExternalSetupAnalyzerImplTest {
     integrationTestRule.assertInvalidProject(
       sourceCodeDir = "imported_by_with_empty_list_of_arguments",
       message = "Module test_case_projects.external_setup_analyzer.imported_by_with_empty_list_of_arguments.AppModule should be imported by at least one container"
+    )
+  }
+
+  @Test
+  fun test_analysis_failed_when_imported_by_dependency_project() {
+    val reporter = TestErrorReporter()
+    val dependencyProjectProcessed = integrationTestRule.processProject("dependency_project", reporter)
+    integrationTestRule.processProject(
+      "imported_by_dependency_project",
+      reporter,
+      modules = listOf(dependencyProjectProcessed),
+      ignoreErrors = true,
+    )
+
+    reporter.assertErrorReported(
+      "Module test_case_projects.external_setup_analyzer.imported_by_dependency_project.ImportedModule is imported by" +
+          " test_case_projects.external_setup_analyzer.dependency_project.DependencyProjectModule, which doesn't belong to current inputs"
+    )
+  }
+
+  @Test
+  fun test_analysis_failed_when_provided_by_dependency_project() {
+    val reporter = TestErrorReporter()
+    val dependencyProjectProcessed = integrationTestRule.processProject("dependency_project", reporter)
+    integrationTestRule.processProject(
+      "provided_by_dependency_project",
+      reporter,
+      modules = listOf(dependencyProjectProcessed),
+      ignoreErrors = true,
+    )
+
+    reporter.assertErrorReported(
+      "test_case_projects.external_setup_analyzer.provided_by_dependency_project.ProvidedDependency is provided by" +
+          " test_case_projects.external_setup_analyzer.dependency_project.DependencyProjectModule, which doesn't belong to current inputs"
     )
   }
 }

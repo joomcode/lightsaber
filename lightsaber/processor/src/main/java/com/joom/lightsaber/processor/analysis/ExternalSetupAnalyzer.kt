@@ -40,6 +40,7 @@ interface ExternalSetupAnalyzer {
 class ExternalSetupAnalyzerImpl(
   private val grip: Grip,
   private val analyzerHelper: AnalyzerHelper,
+  private val sourceResolver: SourceResolver,
   private val providableTargets: Collection<InjectionTarget>,
   private val factories: Collection<Factory>,
   private val contracts: Collection<Contract>,
@@ -88,6 +89,11 @@ class ExternalSetupAnalyzerImpl(
           return@mapNotNull null
         }
 
+        if (isEntityImportedByForeignModule(module.type, importerType)) {
+          errorReporter.reportError("Module ${module.type.className} is imported by ${importerType.className}, which doesn't belong to current inputs")
+          return@mapNotNull null
+        }
+
         ImportPoint.Annotation(annotation, importerType, module.type)
       }
     }
@@ -113,14 +119,30 @@ class ExternalSetupAnalyzerImpl(
           errorReporter.reportError("@ProvidedBy should contain at least one container: ${mirror.getDescription()}")
         } else {
           moduleTypes.forEach { moduleType ->
-            if (moduleType is Type.Object) {
-              entitiesByModule.getOrPut(moduleType, ::ArrayList).add(entity)
-            } else {
-              errorReporter.reportError("A non-class type is specified in @ProvidedBy annotation for ${mirror.type.className}")
+            when {
+              moduleType !is Type.Object -> {
+                errorReporter.reportError("A non-class type is specified in @ProvidedBy annotation for ${mirror.type.className}")
+              }
+
+              !checkTypeCanBeModule(moduleType) -> {
+                errorReporter.reportError("${mirror.type.className} is provided by ${moduleType.className}, which isn't a container")
+              }
+
+              isEntityImportedByForeignModule(mirror.type, moduleType) -> {
+                errorReporter.reportError("${mirror.type.className} is provided by ${moduleType.className}, which doesn't belong to current inputs")
+              }
+
+              else -> {
+                entitiesByModule.getOrPut(moduleType, ::ArrayList).add(entity)
+              }
             }
           }
         }
       }
     }
+  }
+
+  private fun isEntityImportedByForeignModule(entity: Type.Object, module: Type.Object): Boolean {
+    return sourceResolver.belongsToCurrentInput(entity) && !sourceResolver.belongsToCurrentInput(module)
   }
 }

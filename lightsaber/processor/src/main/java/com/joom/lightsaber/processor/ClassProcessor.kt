@@ -87,7 +87,7 @@ class ClassProcessor(
   }
 
   private fun performAnalysisAndValidation() {
-    val context = createAnalyzer().analyze(parameters.inputs + parameters.modulesClasspath)
+    val context = createAnalyzer().analyze(parameters.inputs, parameters.inputs + parameters.modulesClasspath)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
@@ -96,7 +96,7 @@ class ClassProcessor(
   }
 
   private fun generateInjectionContextForGeneration(): InjectionContext {
-    return createAnalyzer().analyze(parameters.inputs)
+    return createAnalyzer().analyze(parameters.inputs, parameters.inputs)
   }
 
   private fun createAnalyzer(): Analyzer {
