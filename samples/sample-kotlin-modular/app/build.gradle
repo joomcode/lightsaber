@@ -25,7 +25,9 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 
 jar {
   destinationDirectory.set(file('build/jar'))
-  duplicatesStrategy DuplicatesStrategy.EXCLUDE
+  duplicatesStrategy DuplicatesStrategy.FAIL
+
+  exclude 'META-INF', 'META-INF/**'
 
   from {
     configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
