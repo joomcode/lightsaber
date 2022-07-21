@@ -22,6 +22,7 @@ import com.joom.grip.io.DirectoryFileSink
 import com.joom.grip.io.FileSource
 import com.joom.grip.io.IoFactory
 import com.joom.lightsaber.processor.analysis.Analyzer
+import com.joom.lightsaber.processor.analysis.SourceResolverImpl
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.closeQuietly
 import com.joom.lightsaber.processor.commons.exhaustive
@@ -67,10 +68,10 @@ class ClassProcessor(
 
   fun processClasses() {
     warmUpGripCaches(grip, parameters.inputs + parameters.modulesClasspath)
-    performAnalysisAndValidation()
-    val injectionContext = generateInjectionContextForGeneration()
+    val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
-    val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
+    val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
+    val generationContextFactory = GenerationContextFactory(sourceResolver, grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
     copyAndPatchClasses(injectionContext, generationContext)
@@ -86,17 +87,14 @@ class ClassProcessor(
     }
   }
 
-  private fun performAnalysisAndValidation() {
+  private fun performAnalysisAndValidation(): InjectionContext {
     val context = createAnalyzer().analyze(parameters.inputs, parameters.inputs + parameters.modulesClasspath)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
     UsageValidator(grip, errorReporter).validateUsage(parameters.modulesClasspath)
     checkErrors()
-  }
-
-  private fun generateInjectionContextForGeneration(): InjectionContext {
-    return createAnalyzer().analyze(parameters.inputs, parameters.inputs)
+    return context
   }
 
   private fun createAnalyzer(): Analyzer {

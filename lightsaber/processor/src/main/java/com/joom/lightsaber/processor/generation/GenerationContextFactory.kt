@@ -23,10 +23,12 @@ import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.grip.mirrors.isPublic
 import com.joom.grip.mirrors.packageName
 import com.joom.grip.mirrors.signature.GenericType
+import com.joom.lightsaber.processor.analysis.SourceResolver
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.associateByIndexedNotNullTo
 import com.joom.lightsaber.processor.commons.associateByIndexedTo
 import com.joom.lightsaber.processor.commons.boxed
+import com.joom.lightsaber.processor.commons.getInjectees
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Key
@@ -36,11 +38,13 @@ import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderFactory
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 
 class GenerationContextFactory(
+  private val sourceResolver: SourceResolver,
   private val fileRegistry: FileRegistry,
   private val classRegistry: ClassRegistry,
   private val providerFactory: ProviderFactory,
@@ -50,13 +54,17 @@ class GenerationContextFactory(
   fun createGenerationContext(injectionContext: InjectionContext): GenerationContext {
     val modules = injectionContext.getModulesWithDescendants()
     val contractImports = injectionContext.getImportsWithDescendants().filterIsInstance<Import.Contract>()
+    val currentInputModules = modules.filter { sourceResolver.belongsToCurrentInput(it.type) }
+    val currentInputFactories = injectionContext.factories.filter { sourceResolver.belongsToCurrentInput(it.type) }
 
     val dependencies = findAllDependencies(modules)
     return GenerationContext(
-      groupProvidersByModuleType(modules),
-      groupProvidersByContractType(contractImports),
-      composePackageInvaders(dependencies),
-      composeKeyRegistry(dependencies)
+      providersByModuleType = groupProvidersByModuleType(currentInputModules),
+      providersByContractType = groupProvidersByContractType(contractImports),
+      packageInvaders = composePackageInvaders(dependencies),
+      contracts = groupContracts(currentInputModules),
+      factories = currentInputFactories,
+      keyRegistry = composeKeyRegistry(dependencies)
     )
   }
 
@@ -105,6 +113,13 @@ class GenerationContextFactory(
           )
         }
       )
+  }
+
+  private fun groupContracts(modules: Sequence<Module>): Collection<Contract> {
+    return modules
+      .flatMap { it.contracts.asSequence() }
+      .distinctBy { it.type }
+      .toList()
   }
 
   private fun composePackageInvaders(dependencies: Collection<Dependency>): Collection<PackageInvader> {

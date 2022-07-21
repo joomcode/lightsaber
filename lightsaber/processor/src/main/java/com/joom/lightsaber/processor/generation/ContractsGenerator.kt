@@ -28,8 +28,8 @@ class ContractsGenerator(
 
   private val logger = getLogger()
 
-  fun generate(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    injectionContext.contracts.forEach { contract ->
+  fun generate(generationContext: GenerationContext) {
+    generationContext.contracts.forEach { contract ->
       logger.debug("Generating contract {}", contract.implementationType.className)
       val generator = ContractClassGenerator(classRegistry, generationContext.keyRegistry, contract)
       val contractClassData = generator.generate()

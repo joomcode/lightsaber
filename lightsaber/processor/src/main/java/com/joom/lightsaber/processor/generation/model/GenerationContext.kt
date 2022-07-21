@@ -18,11 +18,15 @@ package com.joom.lightsaber.processor.generation.model
 
 import com.joom.grip.mirrors.Type
 import com.joom.grip.mirrors.packageName
+import com.joom.lightsaber.processor.model.Contract
+import com.joom.lightsaber.processor.model.Factory
 
 data class GenerationContext(
   private val providersByModuleType: Map<Type.Object, Collection<Provider>>,
   private val providersByContractType: Map<Type.Object, Collection<Provider>>,
   val packageInvaders: Collection<PackageInvader>,
+  val contracts: Collection<Contract>,
+  val factories: Collection<Factory>,
   val keyRegistry: KeyRegistry
 ) {
 

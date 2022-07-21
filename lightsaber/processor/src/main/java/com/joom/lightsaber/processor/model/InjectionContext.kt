@@ -28,11 +28,6 @@ data class InjectionContext(
   val bindings: Collection<Binding>
 ) {
 
-  val contracts: Collection<Contract> = getModulesWithDescendants().asSequence()
-    .flatMap { it.contracts.asSequence() }
-    .distinctBy { it.type }
-    .toList()
-
   private val componentsByType = components.associateBy { it.type }
   private val contractConfigurationsByType = contractConfigurations.associateBy { it.type }
   private val modulesByType = getModulesWithDescendants().associateBy { it.type }

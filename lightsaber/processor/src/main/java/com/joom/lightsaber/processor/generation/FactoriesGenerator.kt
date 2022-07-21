@@ -29,7 +29,7 @@ class FactoriesGenerator(
   private val logger = getLogger()
 
   fun generate(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    injectionContext.factories.forEach { factory ->
+    generationContext.factories.forEach { factory ->
       logger.debug("Generating factory {}", factory.implementationType.className)
       val generator = FactoryClassGenerator(classRegistry, generationContext.keyRegistry, injectionContext, factory)
       val factoryClassData = generator.generate()
