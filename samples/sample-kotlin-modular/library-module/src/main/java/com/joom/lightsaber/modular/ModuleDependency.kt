@@ -19,10 +19,18 @@ package com.joom.lightsaber.modular
 import com.joom.lightsaber.ProvidedAs
 import com.joom.lightsaber.ProvidedBy
 import javax.inject.Inject
+import javax.inject.Qualifier
 
 interface ModuleDependency {
   fun printInfo()
 }
+
+interface TypedModuleDependency<T> : ModuleDependency
+
+@Qualifier
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ModuleQualifier
 
 @ProvidedBy(LibraryModule::class)
 @ProvidedAs(ModuleDependency::class)

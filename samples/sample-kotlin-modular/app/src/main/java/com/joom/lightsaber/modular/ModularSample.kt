@@ -28,12 +28,17 @@ class ModularSample {
   }
 
   internal fun run() {
-    val contract = Lightsaber.Builder().build().createContract(ModularContractConfiguration())
-    val injector = Lightsaber.Builder().build().createInjector(LibraryComponent())
+    val lightsaber = Lightsaber.Builder().build()
+    val libraryContract = lightsaber.createContract(LibraryContractConfiguration())
+    val contract = lightsaber.createContract(ModularContractConfiguration(libraryContract))
+    val injector = lightsaber.createInjector(LibraryComponent())
     val injectee = ComponentInjectee()
     injector.injectMembers(injectee)
 
     contract.moduleDependency.printInfo()
+    contract.qualifiedModuleDependency.printInfo()
+    contract.qualifiedContractDependency.printInfo()
+    contract.typedDependency.printInfo()
     contract.factoryDependency.printInfo()
     injectee.componentDependency.printInfo()
   }

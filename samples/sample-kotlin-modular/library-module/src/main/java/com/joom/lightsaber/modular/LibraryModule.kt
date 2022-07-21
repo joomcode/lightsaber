@@ -17,6 +17,27 @@
 package com.joom.lightsaber.modular
 
 import com.joom.lightsaber.Module
+import com.joom.lightsaber.Provide
 
 @Module
-class LibraryModule
+class LibraryModule {
+
+  @Provide
+  @ModuleQualifier
+  fun provideQualifiedDependency(): ModuleDependency {
+    return object : ModuleDependency {
+      override fun printInfo() {
+        println("QualifiedModuleDependencyImpl")
+      }
+    }
+  }
+
+  @Provide
+  fun provideTypedModuleDependency(): TypedModuleDependency<String> {
+    return object : TypedModuleDependency<String> {
+      override fun printInfo() {
+        println("TypedModuleDependencyImpl<String>")
+      }
+    }
+  }
+}

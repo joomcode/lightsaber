@@ -43,6 +43,9 @@ class ModularSampleTest {
     Assert.assertEquals(
       listOf(
         "ModuleDependencyImpl",
+        "QualifiedModuleDependencyImpl",
+        "QualifiedContractDependencyImpl",
+        "TypedModuleDependencyImpl<String>",
         "FactoryDependencyImpl",
         "ComponentDependencyImpl",
         ""

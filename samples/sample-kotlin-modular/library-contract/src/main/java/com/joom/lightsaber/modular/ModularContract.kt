@@ -16,16 +16,26 @@
 
 package com.joom.lightsaber.modular
 
+import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
 import com.joom.lightsaber.Import
 import com.joom.lightsaber.Provide
 
 interface ModularContract {
   val moduleDependency: ModuleDependency
+
+  @get:ModuleQualifier
+  val qualifiedModuleDependency: ModuleDependency
+
+  @get:ContractQualifier
+  val qualifiedContractDependency: ModuleDependency
+  val typedDependency: TypedModuleDependency<String>
   val factoryDependency: FactoryDependency
 }
 
-class ModularContractConfiguration : ContractConfiguration<ModularContract>() {
+class ModularContractConfiguration(
+  @Import @Contract private val libraryContract: LibraryContract,
+) : ContractConfiguration<ModularContract>() {
   @Import
   fun importModule(): LibraryModule {
     return LibraryModule()
