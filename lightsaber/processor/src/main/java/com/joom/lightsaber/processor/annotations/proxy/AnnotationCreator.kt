@@ -22,6 +22,7 @@ import com.joom.grip.mirrors.ClassMirror
 import com.joom.grip.mirrors.EnumMirror
 import com.joom.grip.mirrors.Type
 import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.lightsaber.processor.analysis.SourceResolver
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.ClassProducer
@@ -29,7 +30,8 @@ import java.lang.reflect.Array
 
 class AnnotationCreator(
   private val classProducer: ClassProducer,
-  private val classRegistry: ClassRegistry
+  private val classRegistry: ClassRegistry,
+  private val projectName: String,
 ) {
 
   private val generatedAnnotationProxies = HashSet<Type.Object>()
@@ -43,7 +45,7 @@ class AnnotationCreator(
   }
 
   private fun composeAnnotationProxyType(annotationType: Type.Object): Type.Object =
-    getObjectTypeByInternalName(annotationType.internalName + "\$Lightsaber\$Proxy")
+    getObjectTypeByInternalName(annotationType.internalName + "\$Lightsaber\$Proxy\$" + projectName)
 
   private fun generateAnnotationProxyClassIfNecessary(annotation: ClassMirror, annotationProxyType: Type.Object) {
     if (generatedAnnotationProxies.add(annotationProxyType)) {

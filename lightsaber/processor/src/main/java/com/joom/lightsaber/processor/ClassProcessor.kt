@@ -131,7 +131,7 @@ class ClassProcessor(
   }
 
   private fun performGeneration(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    val generator = Generator(grip.classRegistry, errorReporter, classSink)
+    val generator = Generator(grip.classRegistry, errorReporter, classSink, parameters.projectName)
     generator.generate(injectionContext, generationContext)
     checkErrors()
   }

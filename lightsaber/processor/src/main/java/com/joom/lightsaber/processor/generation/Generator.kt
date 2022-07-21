@@ -26,11 +26,12 @@ import com.joom.lightsaber.processor.model.InjectionContext
 class Generator(
   private val classRegistry: ClassRegistry,
   private val errorReporter: ErrorReporter,
-  private val fileSink: FileSink
+  private val fileSink: FileSink,
+  private val projectName: String,
 ) {
 
   private val classProducer = ProcessorClassProducer(fileSink, errorReporter)
-  private val annotationCreator = AnnotationCreator(classProducer, classRegistry)
+  private val annotationCreator = AnnotationCreator(classProducer, classRegistry, projectName)
 
   fun generate(injectionContext: InjectionContext, generationContext: GenerationContext) {
     generateProviders(generationContext)
