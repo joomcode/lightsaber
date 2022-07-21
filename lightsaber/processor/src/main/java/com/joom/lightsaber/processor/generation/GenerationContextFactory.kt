@@ -66,7 +66,12 @@ class GenerationContextFactory(
 
   private fun getModuleDependencies(module: Module): Sequence<Dependency> {
     return sequence {
-      module.provisionPoints.forEach { yield(it.dependency) }
+      module.provisionPoints.forEach { provisionPoint ->
+        yield(provisionPoint.dependency)
+        provisionPoint.getInjectees().forEach {
+          yield(it.dependency)
+        }
+      }
       module.bindings.forEach { yield(it.ancestor) }
       module.factories.forEach { yield(it.dependency) }
       module.contracts.forEach { yield(it.dependency) }

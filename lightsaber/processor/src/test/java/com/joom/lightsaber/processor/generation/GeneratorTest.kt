@@ -55,6 +55,11 @@ class GeneratorTest {
     secondProjectPath.shouldNotContain(computeBindingProviderPath("first_project", projectName = "second_project", className = "FirstDependencyImpl"))
   }
 
+  @Test
+  fun `generates provider for constructor with parameterized type`() {
+    integrationTestRule.assertValidProject("parameterized_type")
+  }
+
   private fun Path.shouldContain(path: Path) {
     Assert.assertTrue(resolve(path).exists())
   }
