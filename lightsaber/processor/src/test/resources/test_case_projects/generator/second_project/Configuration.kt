@@ -18,8 +18,18 @@ package test_case_projects.generator.second_project
 
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Import
+import com.joom.lightsaber.Provide
 import com.joom.lightsaber.ProvidedAs
 import com.joom.lightsaber.ProvidedBy
+import test_case_projects.generator.first_project.FirstContractDependency
+import test_case_projects.generator.first_project.FirstDependencyContract
+import test_case_projects.generator.first_project.FirstDependencyModule
+import test_case_projects.generator.first_project.FirstDependencyQualifier
+import test_case_projects.generator.first_project.FirstFactoryCreatedDependency
+import test_case_projects.generator.first_project.FirstFactoryCreatedDependencyFactory
+import test_case_projects.generator.first_project.FirstFactoryCreatedDependencyFactoryModule
+import test_case_projects.generator.first_project.FirstModuleDependency
 import javax.inject.Inject
 
 interface SecondDependency
@@ -31,6 +41,31 @@ internal class SecondDependencyImpl @Inject constructor() : SecondDependency
 @Contract
 interface SecondDependencyContract {
   val dependency: SecondDependency
+
+  @get:FirstDependencyQualifier
+  val firstContractDependency: FirstContractDependency
+
+  val firstModuleDependency: FirstModuleDependency
+
+  val firstFactoryCreatedDependency: FirstFactoryCreatedDependency
 }
 
-class SecondDependencyContractConfiguration : ContractConfiguration<SecondDependencyContract>()
+class SecondDependencyContractConfiguration(
+  @Import @Contract private val firstDependencyContract: FirstDependencyContract
+) : ContractConfiguration<SecondDependencyContract>() {
+
+  @Import
+  fun importFirstDependencyModule(): FirstDependencyModule {
+    return FirstDependencyModule()
+  }
+
+  @Import
+  fun importFirstFactoryCreatedDependencyFactoryModule(): FirstFactoryCreatedDependencyFactoryModule {
+    return FirstFactoryCreatedDependencyFactoryModule()
+  }
+
+  @Provide
+  fun provideFirstFactoryCreatedDependency(factory: FirstFactoryCreatedDependencyFactory): FirstFactoryCreatedDependency {
+    return factory.create()
+  }
+}

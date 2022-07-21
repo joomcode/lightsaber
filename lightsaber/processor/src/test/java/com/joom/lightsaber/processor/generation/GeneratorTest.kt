@@ -36,23 +36,65 @@ class GeneratorTest {
   fun `generates constructor provider`() {
     val path = integrationTestRule.processProject("first_project", reporter)
 
-    path.shouldContain(computeConstructorProviderPath("first_project", projectName = "first_project", className = "FirstDependencyImpl"))
+    path.shouldContain(computeConstructorProviderPath("first_project", projectName = "first_project", className = "FirstModuleDependencyImpl"))
   }
 
   @Test
   fun `generates binding provider`() {
     val path = integrationTestRule.processProject("first_project", reporter)
 
-    path.shouldContain(computeBindingProviderPath("first_project", projectName = "first_project", className = "FirstDependencyImpl"))
+    path.shouldContain(computeBindingProviderPath("first_project", projectName = "first_project", className = "UnqualifiedFirstContractDependencyImpl"))
+  }
+
+  @Test
+  fun `generates module method provider`() {
+    val path = integrationTestRule.processProject("first_project", reporter)
+
+    path.shouldContain(computeMethodProviderPath("first_project", projectName = "first_project", className = "FirstDependencyModule"))
+  }
+
+  @Test
+  fun `generates contract configuration method provider`() {
+    val path = integrationTestRule.processProject("first_project", reporter)
+
+    path.shouldContain(computeMethodProviderPath("first_project", projectName = "first_project", className = "FirstDependencyContractConfiguration"))
+  }
+
+  @Test
+  fun `generates factory provider`() {
+    val path = integrationTestRule.processProject("first_project", reporter)
+
+    path.shouldContain(computeFactoryProviderPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
+  }
+
+  @Test
+  fun `generates factory`() {
+    val path = integrationTestRule.processProject("first_project", reporter)
+
+    path.shouldContain(computeFactoryPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
+  }
+
+  @Test
+  fun `generates imported contract provider`() {
+    val firstProjectPath = integrationTestRule.processProject("first_project", reporter)
+
+    val path = integrationTestRule.processProject("second_project", reporter, modules = listOf(firstProjectPath))
+
+    path.shouldContain(computeMethodProviderPath("first_project", projectName = "second_project", "FirstDependencyContract"))
   }
 
   @Test
   fun `does not generate providers for already processed modules`() {
     val firstProjectPath = integrationTestRule.processProject("first_project", reporter)
-    val secondProjectPath = integrationTestRule.processProject("second_project", reporter, modules = listOf(firstProjectPath))
 
-    secondProjectPath.shouldNotContain(computeConstructorProviderPath("first_project", projectName = "second_project", className = "FirstDependencyImpl"))
-    secondProjectPath.shouldNotContain(computeBindingProviderPath("first_project", projectName = "second_project", className = "FirstDependencyImpl"))
+    val path = integrationTestRule.processProject("second_project", reporter, modules = listOf(firstProjectPath))
+
+    path.shouldNotContain(computeConstructorProviderPath("first_project", projectName = "first_project", className = "FirstModuleDependencyImpl"))
+    path.shouldNotContain(computeBindingProviderPath("first_project", projectName = "first_project", className = "UnqualifiedFirstContractDependencyImpl"))
+    path.shouldNotContain(computeMethodProviderPath("first_project", projectName = "first_project", className = "FirstDependencyModule"))
+    path.shouldNotContain(computeMethodProviderPath("first_project", projectName = "first_project", className = "FirstDependencyContractConfiguration"))
+    path.shouldNotContain(computeFactoryProviderPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
+    path.shouldNotContain(computeFactoryPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
   }
 
   @Test
@@ -69,11 +111,27 @@ class GeneratorTest {
   }
 
   private fun computeConstructorProviderPath(sourceCodeDir: String, projectName: String, className: String): Path {
-    return Paths.get(ROOT, sourceCodeDir, "${className}\$ConstructorProvider0\$${projectName}.class")
+    return computeProviderPath(sourceCodeDir, projectName, "ConstructorProvider0", className)
   }
 
   private fun computeBindingProviderPath(sourceCodeDir: String, projectName: String, className: String): Path {
-    return Paths.get(ROOT, sourceCodeDir, "${className}\$BindingProvider0\$${projectName}.class")
+    return computeProviderPath(sourceCodeDir, projectName, "BindingProvider0", className)
+  }
+
+  private fun computeMethodProviderPath(sourceCodeDir: String, projectName: String, className: String): Path {
+    return computeProviderPath(sourceCodeDir, projectName, "MethodProvider0", className)
+  }
+
+  private fun computeFactoryProviderPath(sourceCodeDir: String, projectName: String, className: String): Path {
+    return computeProviderPath(sourceCodeDir, projectName, "FactoryProvider0", className)
+  }
+
+  private fun computeFactoryPath(sourceCodeDir: String, projectName: String, className: String): Path {
+    return computeProviderPath(sourceCodeDir, projectName, "Lightsaber\$Factory", className)
+  }
+
+  private fun computeProviderPath(sourceCodeDir: String, projectName: String, providerName: String, className: String): Path {
+    return Paths.get(ROOT, sourceCodeDir, "${className}\$${providerName}\$${projectName}.class")
   }
 
   private companion object {
