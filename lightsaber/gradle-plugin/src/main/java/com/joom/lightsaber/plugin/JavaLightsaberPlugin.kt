@@ -73,7 +73,7 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
         ?: emptyList()
     val lightsaberTask =
       createLightsaberProcessTask(
-        "lightsaberProcess$suffix",
+        "${LightsaberTask.TASK_PREFIX}$suffix",
         classesDirs,
         backupDirs,
         sourceDir,
