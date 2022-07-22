@@ -23,7 +23,6 @@ import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.TypePath
-import java.util.ArrayList
 
 class CompositeMethodVisitor : MethodVisitor(Opcodes.ASM9), CompositeVisitor<MethodVisitor> {
   override val visitors = ArrayList<MethodVisitor>()

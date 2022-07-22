@@ -16,8 +16,6 @@
 
 package com.joom.lightsaber.processor.graph
 
-import java.util.HashSet
-
 interface Traversal<T, D : Traversal.Delegate<T>> {
   fun traverse(graph: DirectedGraph<T>, delegate: D)
   fun traverse(graph: DirectedGraph<T>, delegate: D, fromVertex: T)

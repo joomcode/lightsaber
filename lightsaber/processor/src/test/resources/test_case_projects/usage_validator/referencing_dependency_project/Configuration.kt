@@ -19,8 +19,8 @@ package test_case_projects.usage_validator.referencing_dependency_project
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
 import com.joom.lightsaber.Import
-import test_case_projects.usage_validator.dependency_project.DependencyProjectDependency
 import test_case_projects.usage_validator.dependency_project.DependencyProjectContract
+import test_case_projects.usage_validator.dependency_project.DependencyProjectDependency
 
 @Contract
 interface ReferencingDependencyProjectContract {

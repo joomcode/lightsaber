@@ -16,6 +16,14 @@
 
 package com.joom.lightsaber;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import com.joom.lightsaber.internal.InjectorConfigurator;
 import com.joom.lightsaber.internal.LightsaberInjector;
 import com.joom.lightsaber.internal.ParameterizedTypeImpl;
@@ -30,14 +38,6 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.inject.Provider;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class LightsaberGenericTest {
   @Test

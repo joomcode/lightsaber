@@ -23,7 +23,6 @@ import org.mockito.Mockito.RETURNS_DEFAULTS
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.only
 import org.mockito.Mockito.verify
-import java.util.ArrayList
 import kotlin.reflect.KClass
 
 private val MAX_VISITOR_COUNT = 3

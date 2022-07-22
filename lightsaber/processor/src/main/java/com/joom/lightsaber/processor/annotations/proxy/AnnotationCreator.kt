@@ -22,7 +22,6 @@ import com.joom.grip.mirrors.ClassMirror
 import com.joom.grip.mirrors.EnumMirror
 import com.joom.grip.mirrors.Type
 import com.joom.grip.mirrors.getObjectTypeByInternalName
-import com.joom.lightsaber.processor.analysis.SourceResolver
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.ClassProducer

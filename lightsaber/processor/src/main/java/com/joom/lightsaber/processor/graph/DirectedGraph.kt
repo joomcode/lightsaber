@@ -16,8 +16,6 @@
 
 package com.joom.lightsaber.processor.graph
 
-import java.util.HashMap
-
 interface DirectedGraph<T> {
   val size: Int
     get() = vertices.size

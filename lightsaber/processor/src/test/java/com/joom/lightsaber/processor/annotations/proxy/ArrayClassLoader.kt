@@ -16,9 +16,6 @@
 
 package com.joom.lightsaber.processor.annotations.proxy
 
-import java.util.HashMap
-import java.util.HashSet
-
 class ArrayClassLoader : ClassLoader {
   private val loadedClasses = HashSet<String>()
   private val pendingClasses = HashMap<String, ByteArray>()

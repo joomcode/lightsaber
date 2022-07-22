@@ -19,7 +19,6 @@ package com.joom.lightsaber.processor.generation
 import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.logging.getLogger
-import com.joom.lightsaber.processor.model.InjectionContext
 
 class ContractsGenerator(
   private val classProducer: ClassProducer,

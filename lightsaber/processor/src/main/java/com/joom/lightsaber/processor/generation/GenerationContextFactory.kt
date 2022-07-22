@@ -38,7 +38,6 @@ import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.ProviderFactory
 import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Dependency
-import com.joom.lightsaber.processor.model.Factory
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module

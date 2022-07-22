@@ -16,10 +16,6 @@
 
 package com.joom.lightsaber.processor.graph
 
-import java.util.ArrayList
-import java.util.HashMap
-import java.util.HashSet
-
 fun <T> DirectedGraph<T>.findCycles(): Collection<List<T>> {
   val cycles = HashSet<List<T>>()
   val delegate = object : CycleSearcherTraversal.Delegate<T>() {

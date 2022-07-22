@@ -22,7 +22,13 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.commons.getInjectees
 import com.joom.lightsaber.processor.graph.findCycles
-import com.joom.lightsaber.processor.model.*
+import com.joom.lightsaber.processor.model.Component
+import com.joom.lightsaber.processor.model.ContractConfiguration
+import com.joom.lightsaber.processor.model.Converter
+import com.joom.lightsaber.processor.model.Dependency
+import com.joom.lightsaber.processor.model.Import
+import com.joom.lightsaber.processor.model.InjectionContext
+import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.reportError
 
 class Validator(

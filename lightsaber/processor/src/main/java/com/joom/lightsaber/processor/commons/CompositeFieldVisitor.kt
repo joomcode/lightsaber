@@ -21,7 +21,6 @@ import org.objectweb.asm.Attribute
 import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.TypePath
-import java.util.ArrayList
 
 class CompositeFieldVisitor : FieldVisitor(Opcodes.ASM9), CompositeVisitor<FieldVisitor> {
   override val visitors = ArrayList<FieldVisitor>()
