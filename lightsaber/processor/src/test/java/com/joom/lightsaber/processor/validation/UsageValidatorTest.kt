@@ -49,5 +49,19 @@ class UsageValidatorTest {
       "Class test_case_projects.usage_validator.dependency_project.DependencyProjectContractConfiguration is not processed by" +
           " lightsaber, is plugin applied to module?"
     )
+    reporter.assertErrorReported(
+      "Class test_case_projects.usage_validator.dependency_project.DependencyProjectFactory is not processed by lightsaber," +
+          " is plugin applied to module?"
+    )
+  }
+
+  @Test
+  fun test_check_successful_for_processed_classes_on_modules_classpath() {
+    val dependencyProjectCompiled = integrationTestRule.compileProject("dependency_project")
+    val dependencyProjectProcessed = integrationTestRule.processProject(dependencyProjectCompiled, "dependency_project", reporter)
+    val referencingProjectCompiled = integrationTestRule.compileProject("referencing_dependency_project", classpath = listOf(dependencyProjectProcessed))
+    integrationTestRule.processProject(referencingProjectCompiled, "referencing_dependency_project", reporter, modules = listOf(dependencyProjectProcessed))
+
+    reporter.assertNoErrorsReported()
   }
 }

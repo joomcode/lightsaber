@@ -19,6 +19,7 @@ package test_case_projects.usage_validator.dependency_project
 import com.joom.lightsaber.Component
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
+import com.joom.lightsaber.Factory
 import com.joom.lightsaber.Import
 import com.joom.lightsaber.Module
 import com.joom.lightsaber.ProvidedAs
@@ -49,3 +50,10 @@ interface DependencyProjectContract {
 }
 
 class DependencyProjectContractConfiguration : ContractConfiguration<DependencyProjectContract>()
+
+@Factory
+interface DependencyProjectFactory {
+  fun create(): FactoryDependency
+}
+
+class FactoryDependency @Factory.Inject constructor()

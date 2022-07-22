@@ -58,6 +58,7 @@ class ClassProcessor(
 
   private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
   private val errorReporter = parameters.errorReporter
+  private val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
 
   private val fileSourcesAndSinks = parameters.inputs.zip(parameters.outputs) { input, output ->
     val source = IoFactory.createFileSource(input)
@@ -70,7 +71,6 @@ class ClassProcessor(
     warmUpGripCaches(grip, parameters.inputs + parameters.modulesClasspath)
     val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
-    val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
     val generationContextFactory = GenerationContextFactory(sourceResolver, grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
@@ -92,7 +92,7 @@ class ClassProcessor(
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
-    UsageValidator(grip, errorReporter).validateUsage(parameters.modulesClasspath)
+    UsageValidator(grip, errorReporter, sourceResolver).validateUsage(context, parameters.modulesClasspath)
     checkErrors()
     return context
   }
