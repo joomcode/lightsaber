@@ -48,7 +48,6 @@ class FactoryParserImpl(
   private val grip: Grip,
   private val analyzerHelper: AnalyzerHelper,
   private val errorReporter: ErrorReporter,
-  private val projectName: String
 ) : FactoryParser {
 
   private val factoriesByType = mutableMapOf<Type.Object, Factory>()
@@ -61,7 +60,7 @@ class FactoryParserImpl(
   }
 
   private fun parseFactory(mirror: ClassMirror): Factory {
-    val implementationType = getObjectTypeByInternalName("${mirror.type.internalName}\$Lightsaber\$Factory\$$projectName")
+    val implementationType = getObjectTypeByInternalName("${mirror.type.internalName}\$Lightsaber\$Factory")
     val qualifier = analyzerHelper.findQualifier(mirror)
     val dependency = Dependency(GenericType.Raw(mirror.type), qualifier)
     val provisionPoints = mirror.methods.mapNotNull { maybeCreateFactoryProvisionPoint(mirror, it) }

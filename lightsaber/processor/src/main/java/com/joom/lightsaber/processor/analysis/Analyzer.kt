@@ -32,7 +32,7 @@ class Analyzer(
     val analyzerHelper = AnalyzerHelperImpl(grip.classRegistry, ScopeRegistry(), errorReporter)
     val (injectableTargets, providableTargets) = InjectionTargetsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(paths)
     val bindingRegistry = BindingsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(paths)
-    val factoryParser = FactoryParserImpl(grip, analyzerHelper, errorReporter, projectName)
+    val factoryParser = FactoryParserImpl(grip, analyzerHelper, errorReporter)
     val factories = FactoriesAnalyzerImpl(grip, factoryParser).analyze(paths)
     val contractParser = ContractParserImpl(grip, analyzerHelper, errorReporter, projectName)
     val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(paths)

@@ -71,7 +71,7 @@ class GeneratorTest {
   fun `generates factory`() {
     val path = integrationTestRule.processProject("first_project", reporter)
 
-    path.shouldContain(computeFactoryPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
+    path.shouldContain(computeFactoryPath("first_project", className = "FirstFactoryCreatedDependencyFactory"))
   }
 
   @Test
@@ -94,7 +94,7 @@ class GeneratorTest {
     path.shouldNotContain(computeMethodProviderPath("first_project", projectName = "first_project", className = "FirstDependencyModule"))
     path.shouldNotContain(computeMethodProviderPath("first_project", projectName = "first_project", className = "FirstDependencyContractConfiguration"))
     path.shouldNotContain(computeFactoryProviderPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
-    path.shouldNotContain(computeFactoryPath("first_project", projectName = "first_project", className = "FirstFactoryCreatedDependencyFactory"))
+    path.shouldNotContain(computeFactoryPath("first_project", className = "FirstFactoryCreatedDependencyFactory"))
   }
 
   @Test
@@ -126,8 +126,8 @@ class GeneratorTest {
     return computeProviderPath(sourceCodeDir, projectName, "FactoryProvider0", className)
   }
 
-  private fun computeFactoryPath(sourceCodeDir: String, projectName: String, className: String): Path {
-    return computeProviderPath(sourceCodeDir, projectName, "Lightsaber\$Factory", className)
+  private fun computeFactoryPath(sourceCodeDir: String, className: String): Path {
+    return Paths.get(ROOT, sourceCodeDir, "${className}\$Lightsaber\$Factory.class")
   }
 
   private fun computeProviderPath(sourceCodeDir: String, projectName: String, providerName: String, className: String): Path {
