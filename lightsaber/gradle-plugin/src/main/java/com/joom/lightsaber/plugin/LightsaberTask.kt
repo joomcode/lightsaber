@@ -66,7 +66,7 @@ open class LightsaberTask : DefaultTask() {
         listOfNotNull(FileSystems.getFileSystem(URI.create("jrt:/"))?.getPath("modules", "java.base"))
       },
       gen = classesDirs[0].toPath(),
-      projectName = (project.path + name.replace(TASK_PREFIX, ":")).replace(':', '$')
+      projectName = formatProjectName(),
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)

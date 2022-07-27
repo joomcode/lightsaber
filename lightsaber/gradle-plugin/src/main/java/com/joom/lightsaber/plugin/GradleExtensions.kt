@@ -89,3 +89,6 @@ fun Configuration.incomingJarArtifacts(componentFilter: ((ComponentIdentifier) -
     .artifacts
 }
 
+fun Task.formatProjectName(): String {
+  return (project.path + name.replace(LightsaberTask.TASK_PREFIX, ":")).replace(':', '$')
+}

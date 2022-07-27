@@ -67,7 +67,7 @@ abstract class LightsaberTransformTask : DefaultTask() {
       bootClasspath = bootClasspath.map { it.toPath() },
       modulesClasspath = modulesClasspath.map { it.toPath() },
       gen = output,
-      projectName = (project.path + name.replace(TASK_PREFIX, ":")).replace(':', '$'),
+      projectName = formatProjectName(),
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
