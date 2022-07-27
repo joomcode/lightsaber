@@ -64,11 +64,11 @@ operator fun TaskContainer.get(name: String): Task? {
 }
 
 val Project.androidComponents: AndroidComponentsExtension<*, *, *>?
-  get() = applicationAndroidComponents ?: libraryAndroidComponents
+  get() = extensions.findByName("androidComponents") as? AndroidComponentsExtension<*, *, *>
 val Project.applicationAndroidComponents: ApplicationAndroidComponentsExtension?
-  get() = extensions.findByName("androidComponents") as? ApplicationAndroidComponentsExtension
+  get() = androidComponents as? ApplicationAndroidComponentsExtension
 val Project.libraryAndroidComponents: LibraryAndroidComponentsExtension?
-  get() = extensions.findByName("androidComponents") as? LibraryAndroidComponentsExtension
+  get() = androidComponents as? LibraryAndroidComponentsExtension
 
 inline fun <reified T : Task> Project.registerTask(name: String): TaskProvider<T> {
   return tasks.register(name, T::class.java)
