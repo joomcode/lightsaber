@@ -22,6 +22,7 @@ import com.joom.grip.io.DirectoryFileSink
 import com.joom.grip.io.FileSource
 import com.joom.grip.io.IoFactory
 import com.joom.lightsaber.processor.analysis.Analyzer
+import com.joom.lightsaber.processor.analysis.SourceResolverImpl
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.closeQuietly
 import com.joom.lightsaber.processor.commons.exhaustive
@@ -42,11 +43,12 @@ import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.HintsBuilder
+import com.joom.lightsaber.processor.validation.UsageValidator
 import com.joom.lightsaber.processor.validation.Validator
-import java.io.Closeable
-import java.nio.file.Path
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
+import java.io.Closeable
+import java.nio.file.Path
 
 class ClassProcessor(
   private val parameters: LightsaberParameters
@@ -54,8 +56,9 @@ class ClassProcessor(
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.bootClasspath)
+  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
   private val errorReporter = parameters.errorReporter
+  private val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
 
   private val fileSourcesAndSinks = parameters.inputs.zip(parameters.outputs) { input, output ->
     val source = IoFactory.createFileSource(input)
@@ -65,10 +68,10 @@ class ClassProcessor(
   private val classSink = DirectoryFileSink(parameters.gen)
 
   fun processClasses() {
-    warmUpGripCaches(grip, parameters.inputs)
+    warmUpGripCaches(grip, parameters.inputs + parameters.modulesClasspath)
     val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
-    val generationContextFactory = GenerationContextFactory(grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
+    val generationContextFactory = GenerationContextFactory(sourceResolver, grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
     injectionContext.dump()
     copyAndPatchClasses(injectionContext, generationContext)
@@ -85,13 +88,17 @@ class ClassProcessor(
   }
 
   private fun performAnalysisAndValidation(): InjectionContext {
-    val analyzer = Analyzer(grip, errorReporter, parameters.projectName)
-    val context = analyzer.analyze(parameters.inputs)
+    val context = createAnalyzer().analyze(parameters.inputs, parameters.inputs + parameters.modulesClasspath)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
+    UsageValidator(grip, errorReporter, sourceResolver).validateUsage(context, parameters.modulesClasspath)
     checkErrors()
     return context
+  }
+
+  private fun createAnalyzer(): Analyzer {
+    return Analyzer(grip, errorReporter, parameters.projectName)
   }
 
   private fun copyAndPatchClasses(injectionContext: InjectionContext, generationContext: GenerationContext) {
@@ -122,7 +129,7 @@ class ClassProcessor(
   }
 
   private fun performGeneration(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    val generator = Generator(grip.classRegistry, errorReporter, classSink)
+    val generator = Generator(grip.classRegistry, errorReporter, classSink, parameters.projectName)
     generator.generate(injectionContext, generationContext)
     checkErrors()
   }

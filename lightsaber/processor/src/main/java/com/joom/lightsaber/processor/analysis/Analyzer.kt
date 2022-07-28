@@ -27,22 +27,24 @@ class Analyzer(
   private val projectName: String
 ) {
 
-  fun analyze(paths: Collection<Path>): InjectionContext {
+  fun analyze(inputs: Collection<Path>, paths: Collection<Path>): InjectionContext {
+    val sourceResolver = SourceResolverImpl(grip.fileRegistry, inputs)
     val analyzerHelper = AnalyzerHelperImpl(grip.classRegistry, ScopeRegistry(), errorReporter)
     val (injectableTargets, providableTargets) = InjectionTargetsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(paths)
     val bindingRegistry = BindingsAnalyzerImpl(grip, analyzerHelper, errorReporter).analyze(paths)
-    val factoryParser = FactoryParserImpl(grip, analyzerHelper, errorReporter, projectName)
+    val factoryParser = FactoryParserImpl(grip, analyzerHelper, errorReporter)
     val factories = FactoriesAnalyzerImpl(grip, factoryParser).analyze(paths)
     val contractParser = ContractParserImpl(grip, analyzerHelper, errorReporter, projectName)
     val contracts = ContractAnalyzerImpl(grip, contractParser).analyze(paths)
     val importParser = ImportParserImpl(grip, contractParser, errorReporter)
-    val externalSetup = ExternalSetupAnalyzerImpl(grip, analyzerHelper, providableTargets, factories, contracts, errorReporter).analyze(paths)
+    val externalSetup = ExternalSetupAnalyzerImpl(grip, analyzerHelper, sourceResolver, providableTargets, factories, contracts, errorReporter).analyze(paths)
     val bridgeRegistry = BridgeRegistryImpl(grip.classRegistry)
     val provisionPointFactory = ProvisionPointFactoryImpl(grip, analyzerHelper, bridgeRegistry)
     val moduleParser =
       ModuleParserImpl(grip, analyzerHelper, provisionPointFactory, importParser, contractParser, bindingRegistry, externalSetup, errorReporter)
+    val modules = ModuleAnalyzerImpl(grip, moduleParser).analyze(paths)
     val components = ComponentsAnalyzerImpl(grip, moduleParser, errorReporter).analyze(paths)
     val contractConfigurations = ContractConfigurationAnalyzerImpl(grip, analyzerHelper, moduleParser, contractParser).analyze(paths)
-    return InjectionContext(components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
+    return InjectionContext(modules, components, contractConfigurations, injectableTargets, providableTargets, factories, bindingRegistry.bindings)
   }
 }

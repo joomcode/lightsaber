@@ -33,11 +33,21 @@ object PluginVersion {
   }
 
   private fun getAndroidGradlePluginVersion(): String {
+    val clazz = findClassOrNull("com.android.Version") ?: findClassOrNull("com.android.builder.model.Version")
+    if (clazz != null) {
+      return clazz.getField("ANDROID_GRADLE_PLUGIN_VERSION").get(null) as String
+    }
+
+    error(
+      "Failed to find Android Gradle Plugin version"
+    )
+  }
+
+  private fun findClassOrNull(className: String): Class<*>? {
     return try {
-      com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
-    } catch (exception: NoClassDefFoundError) {
-      @Suppress("DEPRECATION")
-      com.android.builder.model.Version.ANDROID_GRADLE_PLUGIN_VERSION
+      Class.forName(className)
+    } catch (_: ClassNotFoundException) {
+      return null
     }
   }
 }

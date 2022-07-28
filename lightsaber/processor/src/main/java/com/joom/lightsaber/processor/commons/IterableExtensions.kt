@@ -16,8 +16,6 @@
 
 package com.joom.lightsaber.processor.commons
 
-import java.util.ArrayList
-
 inline fun <T, K, V, M : MutableMap<in K, in V>> Iterable<T>.associateByIndexedTo(
   destination: M,
   keySelector: (Int, T) -> K,

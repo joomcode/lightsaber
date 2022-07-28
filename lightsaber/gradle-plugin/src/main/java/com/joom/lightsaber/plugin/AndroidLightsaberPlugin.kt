@@ -16,9 +16,19 @@
 
 package com.joom.lightsaber.plugin
 
+import com.android.build.api.AndroidPluginVersion
+import com.android.build.api.artifact.MultipleArtifact
+import com.android.build.api.variant.Component
+import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.Variant
+import com.android.build.gradle.AppExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.provider.Provider
 
 class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
@@ -28,14 +38,106 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       throw GradleException("Lightsaber plugin must be applied *AFTER* Android plugin")
     }
 
-    val extension = project.extensions.create("lightsaber", AndroidLightsaberPluginExtension::class.java)
-    val transform = LightsaberTransform(extension)
-
     addDependencies(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
+
+    val extension = project.extensions.create("lightsaber", AndroidLightsaberPluginExtension::class.java)
+    val componentsExtension = project.androidComponents
+
+    if (componentsExtension != null && componentsExtension.pluginVersion >= VARIANT_API_REQUIRED_VERSION) {
+      logger.info("Registering lightsaber with variant API")
+
+      configureTransformWithComponents()
+    } else {
+      logger.info("Registering lightsaber with transform API")
+
+      configureTransform(extension)
+    }
+  }
+
+  private fun configureTransformWithComponents() {
+    project.applicationAndroidComponents?.apply {
+      onVariants { variant ->
+        variant.registerLightsaberTask()
+      }
+    }
+
+    project.libraryAndroidComponents?.apply {
+      onVariants { variant ->
+        variant.registerLightsaberTask()
+      }
+    }
+  }
+
+  private fun <T> T.registerLightsaberTask() where T : Variant, T : HasAndroidTest {
+    val runtimeClasspath = runtimeClasspathConfiguration()
+
+    registerLightsaberTask(
+      classpathProvider = classpathProvider(runtimeClasspath),
+      modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath)
+    )
+
+    androidTest?.let { androidTest ->
+      val androidTestRuntimeClasspath = androidTest.runtimeClasspathConfiguration()
+
+      androidTest.registerLightsaberTask(
+        classpathProvider = classpathProvider(androidTestRuntimeClasspath),
+        modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath)
+      )
+    }
+  }
+
+  private fun Component.registerLightsaberTask(
+    classpathProvider: Provider<FileCollection>,
+    modulesClasspathProvider: Provider<FileCollection>
+  ) {
+    val taskProvider = project.registerTask<LightsaberTransformTask>(
+      LightsaberTransformTask.TASK_PREFIX + name.replaceFirstChar { it.uppercaseChar() }
+    )
+
+    @Suppress("UnstableApiUsage")
+    artifacts.use(taskProvider)
+      .wiredWith(LightsaberTransformTask::inputClasses, LightsaberTransformTask::outputDirectory)
+      .toTransform(MultipleArtifact.ALL_CLASSES_DIRS)
+
+    taskProvider.configure { task ->
+      task.classpath.setFrom(classpathProvider)
+      task.modulesClasspath.setFrom(modulesClasspathProvider)
+
+      @Suppress("UnstableApiUsage")
+      task.bootClasspath.from(project.androidComponents!!.sdkComponents.bootClasspath)
+    }
+  }
+
+  private fun Component.runtimeClasspathConfiguration(): Provider<Configuration> {
+    return project.configurations.named(name + "RuntimeClasspath")
+  }
+
+  private fun classpathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
+    return configuration.map { it.incomingJarArtifacts().artifactFiles }
+  }
+
+  private fun modulesClasspathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
+    return configuration.map { it.incomingJarArtifacts { it is ProjectComponentIdentifier }.artifactFiles }
+  }
+
+  private operator fun Provider<FileCollection>.minus(other: Provider<FileCollection>): Provider<FileCollection> {
+    return zip(other) { first, second -> first - second }
+  }
+
+  private fun configureTransform(extension: AndroidLightsaberPluginExtension) {
+    if (project.android !is AppExtension) {
+      return
+    }
+
+    val transform = LightsaberTransform(extension)
     project.android.registerTransform(transform)
 
     project.afterEvaluate {
       extension.bootClasspath = project.android.bootClasspath
     }
+  }
+
+  private companion object {
+    private val VARIANT_API_REQUIRED_VERSION = AndroidPluginVersion(major = 7, minor = 1, micro = 0)
   }
 }

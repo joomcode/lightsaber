@@ -16,6 +16,15 @@
 
 package com.joom.lightsaber;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import com.joom.lightsaber.internal.InjectorConfigurator;
 import com.joom.lightsaber.internal.LightsaberInjector;
 
@@ -26,15 +35,6 @@ import org.mockito.stubbing.Answer;
 import javax.annotation.Nonnull;
 import javax.inject.Named;
 import javax.inject.Provider;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 public class LightsaberTest {
   @Test

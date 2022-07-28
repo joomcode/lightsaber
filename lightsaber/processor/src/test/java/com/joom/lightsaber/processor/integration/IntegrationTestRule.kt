@@ -17,23 +17,26 @@
 package com.joom.lightsaber.processor.integration
 
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.ErrorReporterImpl
 import com.joom.lightsaber.processor.JvmRuntimeUtil
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
+import com.joom.lightsaber.processor.ProcessingException
+import org.jetbrains.kotlin.cli.common.ExitCode
+import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import org.jetbrains.kotlin.config.Services
+import org.junit.rules.TestRule
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.file.Files
+import java.io.PrintStream
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-import org.jetbrains.kotlin.cli.common.ExitCode
-import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
-import org.junit.rules.TestRule
-import org.junit.runner.Description
-import org.junit.runners.model.Statement
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 
 class IntegrationTestRule(
   private val root: String,
@@ -45,44 +48,75 @@ class IntegrationTestRule(
   private val classpath = JvmRuntimeUtil.computeRuntimeClasses()
 
   fun assertValidProject(sourceCodeDir: String) {
-    processProject(sourceCodeDir)
+    val reporter = TestErrorReporter()
+    processProject(sourceCodeDir, reporter)
+
+    reporter.assertNoErrorsReported()
   }
 
   fun assertInvalidProject(sourceCodeDir: String, message: String) {
-    val reporterMock = mock<ErrorReporter>()
-    processProject(sourceCodeDir, reporterMock, ignoreErrors = false)
+    val reporter = TestErrorReporter()
+    try {
+      processProject(sourceCodeDir, reporter)
+    } catch (e: Throwable) {
+      // ignore
+    }
 
-    verify(reporterMock).reportError(message)
+    reporter.assertErrorReported(message)
   }
 
-  private fun processProject(
+  fun compileProject(sourceCodeDir: String, classpath: List<Path> = emptyList()): Path {
+    return compile(projectName = sourceCodeDir, sourceCodeDir = root + File.separator + sourceCodeDir, classpath)
+  }
+
+  fun processProject(
     sourceCodeDir: String,
-    errorReporter: ErrorReporter = ErrorReporterImpl(),
-    ignoreErrors: Boolean = false
-  ) {
-    val compiled = compile(root + File.separator + sourceCodeDir)
+    errorReporter: ErrorReporter,
+    modules: List<Path> = emptyList(),
+    ignoreErrors: Boolean = false,
+  ): Path {
+    return processProject(
+      compiled = compileProject(sourceCodeDir, classpath = modules),
+      projectName = sourceCodeDir,
+      errorReporter = errorReporter,
+      modules = modules,
+      ignoreErrors = ignoreErrors,
+    )
+  }
+
+  fun processProject(
+    compiled: Path,
+    projectName: String,
+    errorReporter: ErrorReporter,
+    modules: List<Path> = emptyList(),
+    ignoreErrors: Boolean = false,
+  ): Path {
+    val outputDirectory = processedDirectory.resolve(projectName)
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
-      outputs = listOf(processedDirectory),
-      bootClasspath = emptyList(),
-      classpath = classpath,
-      projectName = sourceCodeDir,
-      gen = processedDirectory,
+      outputs = listOf(outputDirectory),
+      bootClasspath = classpath,
+      modulesClasspath = modules,
+      classpath = emptyList(),
+      projectName = projectName,
+      gen = outputDirectory,
       errorReporter = errorReporter
     )
 
     try {
       LightsaberProcessor(parameters).process()
-    } catch (e: Throwable) {
-      if (!ignoreErrors) throw e
-    } finally {
-      cleanDir(compiledFilesDirectory)
-      cleanDir(processedDirectory)
+    } catch (exception: ProcessingException) {
+      if (!ignoreErrors) {
+        throw exception
+      }
     }
+
+    return outputDirectory
   }
 
-  private fun compile(sourceCodeDir: String): Path {
-    cleanDir(compiledFilesDirectory)
+  private fun compile(projectName: String, sourceCodeDir: String, classpath: List<Path> = emptyList()): Path {
+    val outputDirectory = compiledFilesDirectory.resolve(projectName)
+    cleanDir(outputDirectory)
 
     val input = testCaseProjectsDir.resolve(sourceCodeDir).toAbsolutePath()
 
@@ -93,36 +127,47 @@ class IntegrationTestRule(
     val compiler = K2JVMCompiler()
     // https://kotlinlang.org/docs/compiler-reference.html#common-options
 
+    val errorStream = ByteArrayOutputStream()
+    val messageCollector = PrintingMessageCollector(PrintStream(errorStream), MessageRenderer.PLAIN_RELATIVE_PATHS, /* verbose = */false)
+
     val exitCode = compiler.exec(
-      System.err,
-      input.toString(),
-      "-d", compiledFilesDirectory.absolutePathString(),
-      "-cp", JvmRuntimeUtil.JAVA_CLASS_PATH,
-      "-nowarn"
+      messageCollector,
+      Services.EMPTY,
+      K2JVMCompilerArguments().apply {
+        freeArgs = listOf(input.toString())
+        destination = outputDirectory.absolutePathString()
+        suppressWarnings = true
+        this.classpath = (listOf(JvmRuntimeUtil.JAVA_CLASS_PATH) + classpath.map { it.absolutePathString() }).joinToString(File.pathSeparator)
+      }
     )
     if (exitCode != ExitCode.OK) {
-      throw RuntimeException("Error $exitCode. See stderr for more details")
+      val error = errorStream.toString(Charsets.UTF_8.name())
+      throw RuntimeException("Error $exitCode:\n${error}")
     }
-    return compiledFilesDirectory
+    return outputDirectory
   }
 
   private fun cleanDir(dir: Path) {
     if (!dir.exists()) return
-    Files.walk(dir).use { paths ->
-      paths
-        .sorted(Comparator.reverseOrder())
-        .map { it.toFile() }
-        .forEach(File::delete)
-
-    }
+    dir.toFile().deleteRecursively()
   }
 
   override fun apply(base: Statement, description: Description): Statement {
     return object : Statement() {
       override fun evaluate() {
-        base.evaluate()
+
+        try {
+          base.evaluate()
+        } finally {
+          after()
+        }
       }
     }
+  }
+
+  private fun after() {
+    cleanDir(compiledFilesDirectory)
+    cleanDir(processedDirectory)
   }
 
   companion object {

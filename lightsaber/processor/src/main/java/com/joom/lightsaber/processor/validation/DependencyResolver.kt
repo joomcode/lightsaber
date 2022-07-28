@@ -68,6 +68,7 @@ interface MutableDependencyResolver : DependencyResolver {
   fun add(dependencyResolver: DependencyResolver)
   fun add(component: Component)
   fun add(contractConfiguration: ContractConfiguration)
+  fun add(module: Module)
 }
 
 class DependencyResolverImpl(
@@ -101,6 +102,12 @@ class DependencyResolverImpl(
     val path = DependencyResolverPath.from(contractConfiguration)
     addInjectorDependency(path)
     add(contractConfiguration.defaultModule, path)
+  }
+
+  override fun add(module: Module) {
+    val path = DependencyResolverPath.from(module)
+    addInjectorDependency(path)
+    add(module, path)
   }
 
   override fun getImportsWithPaths(): Map<Type.Object, Collection<DependencyResolverPath>> {

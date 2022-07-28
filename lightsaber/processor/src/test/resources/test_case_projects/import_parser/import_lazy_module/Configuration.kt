@@ -19,8 +19,8 @@ package test_case_projects.import_parser.import_lazy_module
 import com.joom.lightsaber.Contract
 import com.joom.lightsaber.ContractConfiguration
 import com.joom.lightsaber.Import
-import com.joom.lightsaber.Module
 import com.joom.lightsaber.Lazy
+import com.joom.lightsaber.Module
 
 @Contract
 interface AppContract

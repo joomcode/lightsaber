@@ -18,7 +18,6 @@ package com.joom.lightsaber.processor.commons
 
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.Opcodes
-import java.util.ArrayList
 
 class CompositeAnnotationVisitor : AnnotationVisitor(Opcodes.ASM9), CompositeVisitor<AnnotationVisitor> {
   override val visitors = ArrayList<AnnotationVisitor>()

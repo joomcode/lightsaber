@@ -22,7 +22,8 @@ import org.junit.Test
 
 class ValidatorTest {
 
-  @get:Rule val integrationTestRule = IntegrationTestRule("test_case_projects/validator")
+  @get:Rule
+  val integrationTestRule = IntegrationTestRule("test_case_projects/validator")
 
   @Test
   fun test_processed_without_any_problems() {
@@ -32,6 +33,20 @@ class ValidatorTest {
   @Test
   fun test_processed_without_any_problems_with_lazy_imports() {
     integrationTestRule.assertValidProject("valid_configuration_with_lazy_imports")
+  }
+
+  @Test
+  fun test_validation_does_not_fail_module_provides_missing_dependency() {
+    integrationTestRule.assertValidProject(
+      "separate_module_dependency_missing"
+    )
+  }
+
+  @Test
+  fun test_validation_does_not_fail_dependency_provided_by_separate_module() {
+    integrationTestRule.assertValidProject(
+      "provided_by_separate_module"
+    )
   }
 
   @Test

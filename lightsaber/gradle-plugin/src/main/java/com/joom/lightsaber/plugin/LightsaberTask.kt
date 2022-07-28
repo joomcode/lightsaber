@@ -61,11 +61,12 @@ open class LightsaberTask : DefaultTask() {
       inputs = backupDirs.map { it.toPath() },
       outputs = classesDirs.map { it.toPath() },
       classpath = classpath.map { it.toPath() },
+      modulesClasspath = classpath.map { it.toPath() },
       bootClasspath = bootClasspath.map { it.toPath() }.ifEmpty {
         listOfNotNull(FileSystems.getFileSystem(URI.create("jrt:/"))?.getPath("modules", "java.base"))
       },
       gen = classesDirs[0].toPath(),
-      projectName = name.orEmpty().replace(":lightsaberProcess", ":").replace(':', '$')
+      projectName = formatProjectName(),
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
@@ -112,5 +113,9 @@ open class LightsaberTask : DefaultTask() {
     require(backupDirs.isNotEmpty()) { "backupDirs is not set" }
     require(classesDirs.size == backupDirs.size) { "classesDirs and backupDirs must have equal size" }
     requireNotNull(sourceDir) { "sourceDir is not set" }
+  }
+
+  companion object {
+    const val TASK_PREFIX = "lightsaberProcess"
   }
 }

@@ -66,14 +66,14 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     val classesDirs = getClassesDirs(sourceSet.output)
     val backupDirs = getBackupDirs(project.buildDir, lightsaberDir, classesDirs)
     val sourceDir = File(lightsaberDir, "src")
-    val classpath = compileTask.classpath.toList()
+    val classpath = compileTask.classpath.toList() - classesDirs.toSet()
     val bootClasspath =
       compileTask.options.bootstrapClasspath?.toList()
         ?: System.getProperty("sun.boot.class.path")?.split(File.pathSeparator)?.map { File(it) }
         ?: emptyList()
     val lightsaberTask =
       createLightsaberProcessTask(
-        "lightsaberProcess$suffix",
+        "${LightsaberTask.TASK_PREFIX}$suffix",
         classesDirs,
         backupDirs,
         sourceDir,
@@ -154,6 +154,10 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
       task.classesDirs = classesDirs
       task.backupDirs = backupDirs
     }
+  }
+
+  private fun String.capitalize(): String {
+    return replaceFirstChar { if (it.isLowerCase()) it.uppercase() else it.toString() }
   }
 
   companion object {

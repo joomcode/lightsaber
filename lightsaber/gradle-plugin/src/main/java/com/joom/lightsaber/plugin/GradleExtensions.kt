@@ -16,13 +16,22 @@
 
 package com.joom.lightsaber.plugin
 
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 
 val Project.sourceSets: SourceSetContainer
@@ -52,4 +61,34 @@ val TaskContainer.testClasses: Task
 
 operator fun TaskContainer.get(name: String): Task? {
   return findByName(name)
+}
+
+val Project.androidComponents: AndroidComponentsExtension<*, *, *>?
+  get() = extensions.findByName("androidComponents") as? AndroidComponentsExtension<*, *, *>
+val Project.applicationAndroidComponents: ApplicationAndroidComponentsExtension?
+  get() = androidComponents as? ApplicationAndroidComponentsExtension
+val Project.libraryAndroidComponents: LibraryAndroidComponentsExtension?
+  get() = androidComponents as? LibraryAndroidComponentsExtension
+
+inline fun <reified T : Task> Project.registerTask(name: String): TaskProvider<T> {
+  return tasks.register(name, T::class.java)
+}
+
+fun Configuration.incomingJarArtifacts(componentFilter: ((ComponentIdentifier) -> Boolean)? = null): ArtifactCollection {
+  return incoming
+    .artifactView { configuration ->
+      configuration.attributes { attributes ->
+        @Suppress("UnstableApiUsage")
+        attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
+      }
+
+      componentFilter?.let {
+        configuration.componentFilter(it)
+      }
+    }
+    .artifacts
+}
+
+fun Task.formatProjectName(): String {
+  return (project.path + name.replace(LightsaberTask.TASK_PREFIX, ":")).replace(':', '$')
 }

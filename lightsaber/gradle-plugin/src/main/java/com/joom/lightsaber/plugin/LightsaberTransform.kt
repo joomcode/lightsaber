@@ -63,6 +63,7 @@ class LightsaberTransform(
       classpath = invocation.referencedInputs.flatMap {
         it.jarInputs.map { it.file.toPath() } + it.directoryInputs.map { it.file.toPath() }
       },
+      modulesClasspath = emptyList(),
       bootClasspath = extension.bootClasspath.map { it.toPath() },
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$')
     )

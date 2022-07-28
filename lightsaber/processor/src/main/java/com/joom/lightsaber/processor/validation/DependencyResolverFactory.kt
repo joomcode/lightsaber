@@ -20,6 +20,7 @@ import com.joom.grip.mirrors.Type
 import com.joom.lightsaber.processor.model.Component
 import com.joom.lightsaber.processor.model.ContractConfiguration
 import com.joom.lightsaber.processor.model.InjectionContext
+import com.joom.lightsaber.processor.model.Module
 
 class DependencyResolverFactory(
   private val injectionContext: InjectionContext
@@ -27,6 +28,7 @@ class DependencyResolverFactory(
 
   private val dependencyResolversByComponentType = mutableMapOf<Type.Object, DependencyResolver>()
   private val dependencyResolversByContractConfigurationType = mutableMapOf<Type.Object, DependencyResolver>()
+  private val dependencyResolversByModuleType = mutableMapOf<Type.Object, DependencyResolver>()
 
   fun createEmpty(): MutableDependencyResolver {
     return DependencyResolverImpl(injectionContext)
@@ -51,9 +53,11 @@ class DependencyResolverFactory(
     }
   }
 
-  fun getOrCreateMutable(component: Component): MutableDependencyResolver {
-    return createEmpty().also { resolver ->
-      resolver.add(getOrCreate(component))
+  fun getOrCreate(module: Module): DependencyResolver {
+    return dependencyResolversByModuleType.getOrPut(module.type) {
+      createEmpty().also { resolver ->
+        resolver.add(module)
+      }
     }
   }
 

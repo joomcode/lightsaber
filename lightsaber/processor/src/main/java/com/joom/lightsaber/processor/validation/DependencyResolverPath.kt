@@ -109,5 +109,9 @@ data class DependencyResolverPath(
     fun from(contractConfiguration: ContractConfiguration): DependencyResolverPath {
       return DependencyResolverPath(null, DependencyResolverPathSegment.create(contractConfiguration))
     }
+
+    fun from(module: Module): DependencyResolverPath {
+      return DependencyResolverPath(null, DependencyResolverPathSegment.create(module))
+    }
   }
 }

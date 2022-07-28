@@ -29,7 +29,7 @@ import kotlin.streams.toList
 
 object JvmRuntimeUtil {
 
-  val JAVA_CLASS_PATH = "${System.getProperty("java.class.path")}:${System.getProperty("java.home")}"
+  val JAVA_CLASS_PATH = "${System.getProperty("java.class.path")}${File.pathSeparator}${System.getProperty("java.home")}"
 
   fun computeRuntimeClasses(): List<Path> {
     return JAVA_CLASS_PATH.convertToPathList().filterDirectoriesAndJars() + jrtClassesMaybe()

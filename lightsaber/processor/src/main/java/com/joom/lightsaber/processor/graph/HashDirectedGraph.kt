@@ -16,9 +16,6 @@
 
 package com.joom.lightsaber.processor.graph
 
-import java.util.ArrayList
-import java.util.HashMap
-
 fun <T> HashDirectedGraph(
   graph: DirectedGraph<T>,
   collection: () -> MutableCollection<T> = { ArrayList() }

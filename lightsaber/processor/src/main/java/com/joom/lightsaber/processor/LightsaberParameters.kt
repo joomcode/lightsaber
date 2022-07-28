@@ -22,6 +22,7 @@ data class LightsaberParameters(
   val inputs: List<Path>,
   val outputs: List<Path>,
   val classpath: List<Path>,
+  val modulesClasspath: List<Path>,
   val bootClasspath: List<Path>,
   val gen: Path,
   val projectName: String,
