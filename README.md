@@ -28,7 +28,7 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:1.0.0-alpha14'
+    classpath 'com.joom.lightsaber:lightsaber-gradle-plugin:1.0.0-alpha15'
   }
 }
 
@@ -42,9 +42,11 @@ apply plugin: 'com.joom.lightsaber'
 
 // Optional, just if you need Kotlin extension functions.
 dependencies {
-  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:1.0.0-alpha14'
+  implementation 'com.joom.lightsaber:lightsaber-core-kotlin:1.0.0-alpha15'
 }
 ```
+
+Android projects that use Android Gradle Plugin >= 7.1.0 must apply `com.joom.lightsaber.adroid` plugin to every Gradle module, that uses Lightsaber and to the `application` module as well. Android projects that use older Android Gradle Plugin versions should apply `com.joom.lightsaber.adroid` plugin to `application` module only.
 
 ### Declaring dependencies
 
