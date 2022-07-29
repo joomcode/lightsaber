@@ -1,7 +1,7 @@
 def isDevelopment = properties['development'].toBoolean()
 
-includeBuild('lightsaber') {
-  if (isDevelopment) {
+if (isDevelopment) {
+  includeBuild('lightsaber') {
     dependencySubstitution {
       substitute module('com.joom.lightsaber:lightsaber-core') using project(':core')
       substitute module('com.joom.lightsaber:lightsaber-core-kotlin') using project(':core-kotlin')
