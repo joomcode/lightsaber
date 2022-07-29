@@ -53,6 +53,8 @@ abstract class LightsaberTransformTask : DefaultTask() {
   @get:OutputDirectory
   abstract val outputDirectory: DirectoryProperty
 
+  private val projectName = formatProjectName()
+
   init {
     logging.captureStandardOutput(LogLevel.LIFECYCLE)
   }
@@ -67,7 +69,7 @@ abstract class LightsaberTransformTask : DefaultTask() {
       bootClasspath = bootClasspath.map { it.toPath() },
       modulesClasspath = modulesClasspath.map { it.toPath() },
       gen = output,
-      projectName = formatProjectName(),
+      projectName = projectName,
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
