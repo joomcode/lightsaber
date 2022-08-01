@@ -50,6 +50,12 @@ tasks.matching { it instanceof AbstractCompile }.forEach {
   it.dependsOn tasks.generateBuildClass
 }
 
+project.afterEvaluate {
+  tasks.named(sourceSets.main.getSourcesJarTaskName()).configure {
+    it.dependsOn tasks.generateBuildClass
+  }
+}
+
 clean.doFirst {
   delete generatedDir
 }

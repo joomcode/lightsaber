@@ -49,6 +49,8 @@ open class LightsaberTask : DefaultTask() {
   @Classpath
   var bootClasspath: List<File> = emptyList()
 
+  private val projectName = formatProjectName()
+
   init {
     logging.captureStandardOutput(LogLevel.INFO)
   }
@@ -66,7 +68,7 @@ open class LightsaberTask : DefaultTask() {
         listOfNotNull(FileSystems.getFileSystem(URI.create("jrt:/"))?.getPath("modules", "java.base"))
       },
       gen = classesDirs[0].toPath(),
-      projectName = formatProjectName(),
+      projectName = projectName,
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
