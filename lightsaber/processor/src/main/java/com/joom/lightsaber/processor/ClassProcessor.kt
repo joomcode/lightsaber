@@ -85,6 +85,8 @@ class ClassProcessor(
       it.first.closeQuietly()
       it.second.closeQuietly()
     }
+
+    grip.closeQuietly()
   }
 
   private fun performAnalysisAndValidation(): InjectionContext {
