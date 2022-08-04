@@ -113,11 +113,11 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private fun classpathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
-    return configuration.map { it.incomingJarArtifacts().artifactFiles }
+    return configuration.map { it.incomingAndroidJarArtifacts().artifactFiles }
   }
 
   private fun modulesClasspathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
-    return configuration.map { it.incomingJarArtifacts { it is ProjectComponentIdentifier }.artifactFiles }
+    return configuration.map { it.incomingAndroidJarArtifacts { it is ProjectComponentIdentifier }.artifactFiles }
   }
 
   private operator fun Provider<FileCollection>.minus(other: Provider<FileCollection>): Provider<FileCollection> {

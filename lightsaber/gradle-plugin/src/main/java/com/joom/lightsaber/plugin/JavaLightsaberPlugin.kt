@@ -19,7 +19,11 @@ package com.joom.lightsaber.plugin
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetOutput
 import org.gradle.api.tasks.compile.JavaCompile
@@ -67,6 +71,7 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     val backupDirs = getBackupDirs(project.buildDir, lightsaberDir, classesDirs)
     val sourceDir = File(lightsaberDir, "src")
     val classpath = compileTask.classpath.toList() - classesDirs.toSet()
+    val modulesClasspath = modulesClasspathProvider(project.configurations.named(sourceSet.runtimeClasspathConfigurationName))
     val bootClasspath =
       compileTask.options.bootstrapClasspath?.toList()
         ?: System.getProperty("sun.boot.class.path")?.split(File.pathSeparator)?.map { File(it) }
@@ -78,11 +83,15 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
         backupDirs,
         sourceDir,
         classpath,
+        modulesClasspath,
         bootClasspath
       )
-    val backupTask =
-      createBackupClassFilesTask("lightsaberBackupClasses$suffix", classesDirs, backupDirs)
+    val backupTask = createBackupClassFilesTask("lightsaberBackupClasses$suffix", classesDirs, backupDirs)
     configureTasks(lightsaberTask, backupTask, compileTask, classesTask)
+  }
+
+  private fun modulesClasspathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
+    return configuration.map { it.incomingJarArtifacts { it is ProjectComponentIdentifier }.artifactFiles }
   }
 
   private fun getLightsaberRelativePath(suffix: String): String {
@@ -124,11 +133,12 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
 
   private fun createLightsaberProcessTask(
     taskName: String,
-    classesDirs: List<File>,
-    backupDirs: List<File>,
+    classesDirs: Collection<File>,
+    backupDirs: Collection<File>,
     sourceDir: File,
-    classpath: List<File>,
-    bootClasspath: List<File>
+    classpath: Collection<File>,
+    modulesClasspath: Provider<FileCollection>,
+    bootClasspath: Collection<File>
   ): LightsaberTask {
     logger.info("Creating Lightsaber task {}...", taskName)
     logger.info("  Source classes directories: {}", backupDirs)
@@ -136,11 +146,12 @@ class JavaLightsaberPlugin : BaseLightsaberPlugin() {
 
     return project.tasks.create(taskName, LightsaberTask::class.java) { task ->
       task.description = "Processes .class files with Lightsaber Processor."
-      task.backupDirs = backupDirs
-      task.classesDirs = classesDirs
-      task.sourceDir = sourceDir
-      task.classpath = classpath
-      task.bootClasspath = bootClasspath
+      task.backupDirs.from(backupDirs)
+      task.classesDirs.from(classesDirs)
+      task.sourceDir.set(sourceDir)
+      task.classpath.from(classpath)
+      task.modulesClasspath.from(modulesClasspath)
+      task.bootClasspath.from(bootClasspath)
     }
   }
 

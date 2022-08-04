@@ -74,12 +74,12 @@ inline fun <reified T : Task> Project.registerTask(name: String): TaskProvider<T
   return tasks.register(name, T::class.java)
 }
 
-fun Configuration.incomingJarArtifacts(componentFilter: ((ComponentIdentifier) -> Boolean)? = null): ArtifactCollection {
+fun Configuration.incomingArtifacts(artifactType: String, componentFilter: ((ComponentIdentifier) -> Boolean)?): ArtifactCollection {
   return incoming
     .artifactView { configuration ->
       configuration.attributes { attributes ->
         @Suppress("UnstableApiUsage")
-        attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
+        attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, artifactType)
       }
 
       componentFilter?.let {
@@ -87,6 +87,14 @@ fun Configuration.incomingJarArtifacts(componentFilter: ((ComponentIdentifier) -
       }
     }
     .artifacts
+}
+
+fun Configuration.incomingAndroidJarArtifacts(componentFilter: ((ComponentIdentifier) -> Boolean)? = null): ArtifactCollection {
+  return incomingArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR.type, componentFilter)
+}
+
+fun Configuration.incomingJarArtifacts(componentFilter: ((ComponentIdentifier) -> Boolean)? = null): ArtifactCollection {
+  return incomingArtifacts(ArtifactTypeDefinition.JAR_TYPE, componentFilter)
 }
 
 fun Task.formatProjectName(): String {
