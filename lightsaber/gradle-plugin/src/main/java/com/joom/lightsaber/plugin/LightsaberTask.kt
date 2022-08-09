@@ -27,6 +27,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.OutputDirectory
@@ -37,6 +38,7 @@ import java.nio.file.FileSystems
 
 abstract class LightsaberTask : DefaultTask() {
   @get:InputFiles
+  @get:Classpath
   abstract val backupDirs: ConfigurableFileCollection
 
   @get:OutputDirectories
@@ -46,15 +48,15 @@ abstract class LightsaberTask : DefaultTask() {
   abstract val sourceDir: DirectoryProperty
 
   @get:InputFiles
-  @get:Classpath
+  @get:CompileClasspath
   abstract val classpath: ConfigurableFileCollection
 
   @get:InputFiles
-  @get:Classpath
+  @get:CompileClasspath
   abstract val modulesClasspath: ConfigurableFileCollection
 
   @get:InputFiles
-  @get:Classpath
+  @get:CompileClasspath
   abstract val bootClasspath: ConfigurableFileCollection
 
   private val projectName = formatProjectName()
