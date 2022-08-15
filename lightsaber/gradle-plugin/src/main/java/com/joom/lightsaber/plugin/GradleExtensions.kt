@@ -28,11 +28,16 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.provider.Provider
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.services.BuildServiceSpec
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
+import java.util.UUID
 
 val Project.sourceSets: SourceSetContainer
   get() {
@@ -100,3 +105,24 @@ fun Configuration.incomingJarArtifacts(componentFilter: ((ComponentIdentifier) -
 fun Task.formatProjectName(): String {
   return (project.path + name.replace(LightsaberTask.TASK_PREFIX, ":")).replace(':', '$')
 }
+
+@Suppress("UnstableApiUsage")
+inline fun <reified T : BuildService<BuildServiceParameters.None>> Project.buildService(): Provider<T> {
+  return buildService(T::class.java, configuration = null)
+}
+
+@Suppress("UnstableApiUsage")
+inline fun <reified T : BuildService<P>, P : BuildServiceParameters> Project.buildService(
+  noinline configuration: ((BuildServiceSpec<P>) -> Unit)
+): Provider<T> {
+  return buildService(T::class.java, configuration = configuration)
+}
+
+@Suppress("UnstableApiUsage")
+fun <T : BuildService<P>, P : BuildServiceParameters> Project.buildService(clazz: Class<T>, configuration: ((BuildServiceSpec<P>) -> Unit)?): Provider<T> {
+  return project.gradle.sharedServices.registerIfAbsent("${clazz.name}_$CONSTANT_PER_CLASS_LOADER", clazz) {
+    configuration?.invoke(it)
+  }
+}
+
+private val CONSTANT_PER_CLASS_LOADER = UUID.randomUUID().toString()
