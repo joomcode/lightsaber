@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor
 
+import com.joom.grip.CombinedGripFactory
 import com.joom.grip.Grip
 import com.joom.grip.GripFactory
 import com.joom.grip.io.DirectoryFileSink
@@ -56,7 +57,8 @@ class ClassProcessor(
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
+  private val inputsGrip = GripFactory.INSTANCE.create(parameters.inputs)
+  private val grip: Grip = createGrip()
   private val errorReporter = parameters.errorReporter
   private val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
 
@@ -68,7 +70,7 @@ class ClassProcessor(
   private val classSink = DirectoryFileSink(parameters.gen)
 
   fun processClasses() {
-    warmUpGripCaches(grip, parameters.inputs + parameters.modulesClasspath)
+    warmUpGripCaches(grip, parameters.inputs)
     val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
     val generationContextFactory = GenerationContextFactory(sourceResolver, grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
@@ -86,7 +88,7 @@ class ClassProcessor(
       it.second.closeQuietly()
     }
 
-    grip.closeQuietly()
+    inputsGrip.closeQuietly()
   }
 
   private fun performAnalysisAndValidation(): InjectionContext {
@@ -232,5 +234,11 @@ class ClassProcessor(
         is InjectionPoint.Method -> logger.debug("  Method: {}", injectionPoint.method)
       }
     }
+  }
+
+  private fun createGrip(): Grip {
+    return CombinedGripFactory.INSTANCE.create(
+      listOf(inputsGrip) + CachedGripFactory.create(parameters.sharedBuildCache, parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
+    )
   }
 }
