@@ -26,5 +26,6 @@ data class LightsaberParameters(
   val bootClasspath: List<Path>,
   val gen: Path,
   val projectName: String,
-  val errorReporter: ErrorReporter = ErrorReporterImpl()
+  val errorReporter: ErrorReporter = ErrorReporterImpl(),
+  val sharedBuildCache: LightsaberSharedBuildCache
 )

@@ -82,6 +82,7 @@ abstract class LightsaberTask : DefaultTask() {
       },
       gen = classesDirs.first().toPath(),
       projectName = projectName,
+      sharedBuildCache = sharedBuildCacheService.get().cache,
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)

@@ -76,6 +76,7 @@ abstract class LightsaberTransformTask : DefaultTask() {
       modulesClasspath = modulesClasspath.map { it.toPath() },
       gen = output,
       projectName = projectName,
+      sharedBuildCache = sharedBuildCacheService.get().cache,
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
