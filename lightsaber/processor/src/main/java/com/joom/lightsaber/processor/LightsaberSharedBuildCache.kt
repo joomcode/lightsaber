@@ -18,6 +18,6 @@ package com.joom.lightsaber.processor
 
 import java.io.Closeable
 
-interface LightsaberSharedBuildCache {
+interface LightsaberSharedBuildCache : Closeable {
   fun <K : Any, V : Closeable> getOrPut(key: K, factory: (key: K) -> V): V
 }
