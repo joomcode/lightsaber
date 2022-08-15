@@ -30,7 +30,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
 
-class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
+abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
     super.apply(project)
 
@@ -46,7 +46,7 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     if (componentsExtension != null && componentsExtension.pluginVersion >= VARIANT_API_REQUIRED_VERSION) {
       logger.info("Registering lightsaber with variant API")
 
-      configureTransformWithComponents()
+      configureTransformWithComponents(registerBuildCacheService<LightsaberTransformTask>())
     } else {
       logger.info("Registering lightsaber with transform API")
 
@@ -54,26 +54,27 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     }
   }
 
-  private fun configureTransformWithComponents() {
+  private fun configureTransformWithComponents(buildCacheService: Provider<LightsaberSharedBuildCacheService>) {
     project.applicationAndroidComponents?.apply {
       onVariants { variant ->
-        variant.registerLightsaberTask()
+        variant.registerLightsaberTask(buildCacheService)
       }
     }
 
     project.libraryAndroidComponents?.apply {
       onVariants { variant ->
-        variant.registerLightsaberTask()
+        variant.registerLightsaberTask(buildCacheService)
       }
     }
   }
 
-  private fun <T> T.registerLightsaberTask() where T : Variant, T : HasAndroidTest {
+  private fun <T> T.registerLightsaberTask(buildCacheService: Provider<LightsaberSharedBuildCacheService>) where T : Variant, T : HasAndroidTest {
     val runtimeClasspath = runtimeClasspathConfiguration()
 
     registerLightsaberTask(
       classpathProvider = classpathProvider(runtimeClasspath),
-      modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath)
+      modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath),
+      buildCacheService = buildCacheService,
     )
 
     androidTest?.let { androidTest ->
@@ -81,14 +82,16 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
 
       androidTest.registerLightsaberTask(
         classpathProvider = classpathProvider(androidTestRuntimeClasspath),
-        modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath)
+        modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath),
+        buildCacheService = buildCacheService,
       )
     }
   }
 
   private fun Component.registerLightsaberTask(
     classpathProvider: Provider<FileCollection>,
-    modulesClasspathProvider: Provider<FileCollection>
+    modulesClasspathProvider: Provider<FileCollection>,
+    buildCacheService: Provider<LightsaberSharedBuildCacheService>,
   ) {
     val taskProvider = project.registerTask<LightsaberTransformTask>(
       LightsaberTransformTask.TASK_PREFIX + name.replaceFirstChar { it.uppercaseChar() }
@@ -105,6 +108,9 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
 
       @Suppress("UnstableApiUsage")
       task.bootClasspath.from(project.androidComponents!!.sdkComponents.bootClasspath)
+      task.sharedBuildCacheService.set(buildCacheService)
+      @Suppress("UnstableApiUsage")
+      task.usesService(buildCacheService)
     }
   }
 

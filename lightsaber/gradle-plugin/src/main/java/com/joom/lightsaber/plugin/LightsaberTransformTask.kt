@@ -25,16 +25,17 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 @CacheableTask
 abstract class LightsaberTransformTask : DefaultTask() {
-
   @get:InputFiles
   @get:Classpath
   abstract val inputClasses: ListProperty<Directory>
@@ -53,6 +54,10 @@ abstract class LightsaberTransformTask : DefaultTask() {
 
   @get:OutputDirectory
   abstract val outputDirectory: DirectoryProperty
+
+  @get:Internal
+  @Suppress("UnstableApiUsage")
+  abstract val sharedBuildCacheService: Property<LightsaberSharedBuildCacheService>
 
   private val projectName = formatProjectName()
 

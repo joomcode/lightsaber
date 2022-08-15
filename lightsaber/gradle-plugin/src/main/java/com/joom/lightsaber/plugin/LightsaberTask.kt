@@ -22,17 +22,16 @@ import com.joom.lightsaber.processor.watermark.WatermarkChecker
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleScriptException
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 import java.net.URI
 import java.nio.file.FileSystems
 
@@ -58,6 +57,10 @@ abstract class LightsaberTask : DefaultTask() {
   @get:InputFiles
   @get:CompileClasspath
   abstract val bootClasspath: ConfigurableFileCollection
+
+  @get:Internal
+  @Suppress("UnstableApiUsage")
+  abstract val sharedBuildCacheService: Property<LightsaberSharedBuildCacheService>
 
   private val projectName = formatProjectName()
 
