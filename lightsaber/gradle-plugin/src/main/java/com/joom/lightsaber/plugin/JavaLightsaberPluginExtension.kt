@@ -18,4 +18,5 @@ package com.joom.lightsaber.plugin
 
 open class JavaLightsaberPluginExtension {
   var processTest: Boolean = true
+  var validateUsage: Boolean = true
 }

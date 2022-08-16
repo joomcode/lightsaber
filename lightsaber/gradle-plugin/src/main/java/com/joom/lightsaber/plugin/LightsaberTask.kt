@@ -27,6 +27,7 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectories
@@ -62,6 +63,9 @@ abstract class LightsaberTask : DefaultTask() {
   @Suppress("UnstableApiUsage")
   abstract val sharedBuildCacheService: Property<LightsaberSharedBuildCacheService>
 
+  @get:Input
+  abstract val validateUsage: Property<Boolean>
+
   private val projectName = formatProjectName()
 
   init {
@@ -83,6 +87,7 @@ abstract class LightsaberTask : DefaultTask() {
       gen = classesDirs.first().toPath(),
       projectName = projectName,
       sharedBuildCache = sharedBuildCacheService.get().cache,
+      validateUsage = validateUsage.get(),
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)

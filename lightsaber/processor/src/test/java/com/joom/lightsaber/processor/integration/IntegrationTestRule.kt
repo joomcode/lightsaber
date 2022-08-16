@@ -91,6 +91,7 @@ class IntegrationTestRule(
     errorReporter: ErrorReporter,
     modules: List<Path> = emptyList(),
     ignoreErrors: Boolean = false,
+    validateUsage: Boolean = true,
   ): Path {
     val outputDirectory = processedDirectory.resolve(projectName)
     val parameters = LightsaberParameters(
@@ -102,6 +103,7 @@ class IntegrationTestRule(
       projectName = projectName,
       gen = outputDirectory,
       errorReporter = errorReporter,
+      validateUsage = validateUsage,
       sharedBuildCache = LightsaberSharedBuildCache.create(),
     )
 

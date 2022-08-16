@@ -29,6 +29,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
@@ -59,6 +60,9 @@ abstract class LightsaberTransformTask : DefaultTask() {
   @Suppress("UnstableApiUsage")
   abstract val sharedBuildCacheService: Property<LightsaberSharedBuildCacheService>
 
+  @get:Input
+  abstract val validateUsage: Property<Boolean>
+
   private val projectName = formatProjectName()
 
   init {
@@ -76,6 +80,7 @@ abstract class LightsaberTransformTask : DefaultTask() {
       modulesClasspath = modulesClasspath.map { it.toPath() },
       gen = output,
       projectName = projectName,
+      validateUsage = validateUsage.get(),
       sharedBuildCache = sharedBuildCacheService.get().cache,
     )
 

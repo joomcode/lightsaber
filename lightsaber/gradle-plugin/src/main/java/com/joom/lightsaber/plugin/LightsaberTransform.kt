@@ -69,6 +69,7 @@ class LightsaberTransform(
       modulesClasspath = emptyList(),
       bootClasspath = extension.bootClasspath.map { it.toPath() },
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$'),
+      validateUsage = false,
       sharedBuildCache = LightsaberSharedBuildCache.create(),
     )
     logger.info("Starting Lightsaber processor: {}", parameters)
