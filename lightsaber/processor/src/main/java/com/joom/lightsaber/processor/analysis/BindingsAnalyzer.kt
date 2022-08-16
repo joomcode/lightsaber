@@ -38,10 +38,36 @@ class BindingsAnalyzerImpl(
   private val analyzerHelper: AnalyzerHelper,
   private val errorReporter: ErrorReporter
 ) : BindingsAnalyzer {
+  private val bindingsByPaths = mutableMapOf<Path, BindingRegistry>()
 
   override fun analyze(paths: Collection<Path>): BindingRegistry {
+    val registries = paths.map { path ->
+      bindingsByPaths.getOrPut(path) {
+        createBindingRegistry(path)
+      }
+    }
+
+    return combineBindingRegistries(registries)
+  }
+
+  private fun combineBindingRegistries(registries: Collection<BindingRegistry>): BindingRegistry {
+    check(registries.isNotEmpty())
+
+    if (registries.size == 1) {
+      return registries.single()
+    }
+
     val bindingRegistry = BindingRegistryImpl()
-    val bindingsQuery = grip select classes from paths where annotatedWith(Types.PROVIDED_AS_TYPE)
+    registries.asSequence().flatMap { it.bindings }.forEach { binding ->
+      bindingRegistry.registerBinding(binding)
+    }
+
+    return bindingRegistry
+  }
+
+  private fun createBindingRegistry(path: Path): BindingRegistry {
+    val bindingRegistry = BindingRegistryImpl()
+    val bindingsQuery = grip select classes from listOf(path) where annotatedWith(Types.PROVIDED_AS_TYPE)
     bindingsQuery.execute().classes.forEach { mirror ->
       createBindingsForClass(mirror).forEach { binding ->
         bindingRegistry.registerBinding(binding)

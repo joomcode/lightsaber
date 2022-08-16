@@ -25,7 +25,6 @@ import com.joom.grip.methods
 import com.joom.grip.mirrors.ClassMirror
 import com.joom.grip.mirrors.MethodMirror
 import com.joom.grip.mirrors.Type
-import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.Factory.Return
 import com.joom.lightsaber.processor.ErrorReporter

@@ -32,7 +32,6 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.logging.getLogger
-import com.joom.lightsaber.processor.model.ExternalSetup
 import com.joom.lightsaber.processor.model.InjectionTarget
 import com.joom.lightsaber.processor.model.Module
 import com.joom.lightsaber.processor.model.ProvisionPoint
@@ -48,8 +47,8 @@ class ModuleParserImpl(
   private val provisionPointFactory: ProvisionPointFactory,
   private val importParser: ImportParser,
   private val contractParser: ContractParser,
-  private val bindingRegistry: BindingRegistry,
-  private val externalSetup: ExternalSetup,
+  private val bindingsAnalyzer: BindingsAnalyzer,
+  private val externalSetupAnalyzer: ExternalSetupAnalyzer,
   private val errorReporter: ErrorReporter
 ) : ModuleParser {
 
@@ -101,10 +100,17 @@ class ModuleParserImpl(
       return null
     }
 
+    val path = grip.fileRegistry.findPathForType(mirror.type) ?: run {
+      errorReporter.reportError("Failed to find path for module ${mirror.type.className}")
+      return null
+    }
+
+    val externalSetup = externalSetupAnalyzer.analyze(listOf(path))
     val annotationImportPoints = externalSetup.annotationModuleImportPointsByImporterModules[mirror.type].orEmpty()
     val providableTargets = externalSetup.providableTargetsByModules[mirror.type].orEmpty()
     val factories = externalSetup.factoriesByModules[mirror.type].orEmpty()
     val contracts = externalSetup.contractsByModules[mirror.type].orEmpty()
+    val bindingRegistry = bindingsAnalyzer.analyze(listOf(path))
 
     val imports = importParser.parseImports(mirror, this, annotationImportPoints)
     val provisionPoints = createProvisionPoints(mirror, providableTargets)
