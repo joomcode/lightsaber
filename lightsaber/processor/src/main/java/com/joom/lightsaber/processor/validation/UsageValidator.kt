@@ -28,27 +28,30 @@ import com.joom.grip.withField
 import com.joom.grip.withMethod
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
+import com.joom.lightsaber.processor.analysis.FactoryParser
 import com.joom.lightsaber.processor.analysis.SourceResolver
 import com.joom.lightsaber.processor.commons.Types
-import com.joom.lightsaber.processor.model.InjectionContext
+import com.joom.lightsaber.processor.model.Factory
 import java.nio.file.Path
 
 class UsageValidator(
   private val grip: Grip,
   private val errorReporter: ErrorReporter,
-  private val sourceResolver: SourceResolver,
 ) {
 
-  fun validateUsage(injectionContext: InjectionContext, paths: Collection<Path>) {
+  fun validateUsage(paths: Collection<Path>) {
     val modulesQuery = grip select classes from paths where annotatedWith(Types.MODULE_TYPE)
     val componentsQuery = grip select classes from paths where annotatedWith(Types.COMPONENT_TYPE)
     val contractConfigurationsQuery = grip select classes from paths where superType { _, type -> type == Types.CONTRACT_CONFIGURATION_TYPE }
     val fieldsQuery = grip select classes from paths where withField { _, fieldMirror -> fieldMirror.annotations.contains(Types.INJECT_TYPE) }
     val methodsQuery = grip select classes from paths where withMethod { _, methodMirror -> methodMirror.annotations.contains(Types.INJECT_TYPE) }
+    val factoriesQuery = grip select classes from paths where annotatedWith(Types.FACTORY_TYPE)
 
-    injectionContext.factories.forEach { factory ->
-      if (!sourceResolver.belongsToCurrentInput(factory.type) && !grip.fileRegistry.contains(factory.implementationType)) {
-        reportError(factory.type)
+    execute(factoriesQuery).forEach { (type, _) ->
+      val implementationType = Factory.computeImplementationType(type)
+
+      if (!grip.fileRegistry.contains(implementationType)) {
+        reportError(type)
       }
     }
 

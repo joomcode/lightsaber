@@ -60,7 +60,7 @@ class FactoryParserImpl(
   }
 
   private fun parseFactory(mirror: ClassMirror): Factory {
-    val implementationType = getObjectTypeByInternalName("${mirror.type.internalName}\$Lightsaber\$Factory")
+    val implementationType = Factory.computeImplementationType(mirror.type)
     val qualifier = analyzerHelper.findQualifier(mirror)
     val dependency = Dependency(GenericType.Raw(mirror.type), qualifier)
     val provisionPoints = mirror.methods.mapNotNull { maybeCreateFactoryProvisionPoint(mirror, it) }

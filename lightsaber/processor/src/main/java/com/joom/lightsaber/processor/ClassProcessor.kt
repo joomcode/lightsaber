@@ -98,7 +98,7 @@ class ClassProcessor(
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
 
     if (parameters.validateUsage) {
-      UsageValidator(grip, errorReporter, sourceResolver).validateUsage(context, parameters.modulesClasspath)
+      UsageValidator(grip, errorReporter).validateUsage(parameters.modulesClasspath)
     }
 
     checkErrors()

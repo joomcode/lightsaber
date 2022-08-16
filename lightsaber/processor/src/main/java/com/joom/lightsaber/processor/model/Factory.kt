@@ -17,10 +17,18 @@
 package com.joom.lightsaber.processor.model
 
 import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.getObjectTypeByInternalName
 
 data class Factory(
   val type: Type.Object,
   val implementationType: Type.Object,
   val dependency: Dependency,
   val provisionPoints: List<FactoryProvisionPoint>
-)
+) {
+
+  companion object {
+    fun computeImplementationType(type: Type.Object): Type.Object {
+      return getObjectTypeByInternalName("${type.internalName}\$Lightsaber\$Factory")
+    }
+  }
+}
