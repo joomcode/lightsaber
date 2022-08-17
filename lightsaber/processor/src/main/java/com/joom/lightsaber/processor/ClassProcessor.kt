@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.processor
 
+import com.joom.grip.CombinedGripFactory
 import com.joom.grip.Grip
 import com.joom.grip.GripFactory
 import com.joom.grip.io.DirectoryFileSink
@@ -56,7 +57,8 @@ class ClassProcessor(
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.INSTANCE.create(parameters.inputs + parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
+  private val inputsGrip = GripFactory.INSTANCE.create(parameters.inputs)
+  private val grip: Grip = createGrip()
   private val errorReporter = parameters.errorReporter
   private val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
 
@@ -68,7 +70,7 @@ class ClassProcessor(
   private val classSink = DirectoryFileSink(parameters.gen)
 
   fun processClasses() {
-    warmUpGripCaches(grip, parameters.inputs + parameters.modulesClasspath)
+    warmUpGripCaches(grip, parameters.inputs)
     val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
     val generationContextFactory = GenerationContextFactory(sourceResolver, grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
@@ -85,20 +87,22 @@ class ClassProcessor(
       it.first.closeQuietly()
       it.second.closeQuietly()
     }
+
+    inputsGrip.closeQuietly()
   }
 
   private fun performAnalysisAndValidation(): InjectionContext {
-    val context = createAnalyzer().analyze(parameters.inputs, parameters.inputs + parameters.modulesClasspath)
+    val context = Analyzer(grip, errorReporter, parameters.projectName).analyze(parameters.inputs)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
     Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
-    UsageValidator(grip, errorReporter, sourceResolver).validateUsage(context, parameters.modulesClasspath)
+
+    if (parameters.validateUsage) {
+      UsageValidator(grip, errorReporter).validateUsage(parameters.modulesClasspath)
+    }
+
     checkErrors()
     return context
-  }
-
-  private fun createAnalyzer(): Analyzer {
-    return Analyzer(grip, errorReporter, parameters.projectName)
   }
 
   private fun copyAndPatchClasses(injectionContext: InjectionContext, generationContext: GenerationContext) {
@@ -230,5 +234,11 @@ class ClassProcessor(
         is InjectionPoint.Method -> logger.debug("  Method: {}", injectionPoint.method)
       }
     }
+  }
+
+  private fun createGrip(): Grip {
+    return CombinedGripFactory.INSTANCE.create(
+      listOf(inputsGrip) + CachedGripFactory.create(parameters.sharedBuildCache, parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
+    )
   }
 }

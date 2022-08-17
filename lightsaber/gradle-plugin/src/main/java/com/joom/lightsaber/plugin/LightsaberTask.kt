@@ -21,33 +21,50 @@ import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.watermark.WatermarkChecker
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleScriptException
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.CompileClasspath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 import java.net.URI
 import java.nio.file.FileSystems
 
-open class LightsaberTask : DefaultTask() {
-  @InputFiles
-  var backupDirs: List<File> = emptyList()
+abstract class LightsaberTask : DefaultTask() {
+  @get:InputFiles
+  @get:Classpath
+  abstract val backupDirs: ConfigurableFileCollection
 
-  @OutputDirectories
-  var classesDirs: List<File> = emptyList()
+  @get:OutputDirectories
+  abstract val classesDirs: ConfigurableFileCollection
 
-  @OutputDirectory
-  var sourceDir: File? = null
+  @get:OutputDirectory
+  abstract val sourceDir: DirectoryProperty
 
-  @InputFiles
-  @Classpath
-  var classpath: List<File> = emptyList()
+  @get:InputFiles
+  @get:CompileClasspath
+  abstract val classpath: ConfigurableFileCollection
 
-  @InputFiles
-  @Classpath
-  var bootClasspath: List<File> = emptyList()
+  @get:InputFiles
+  @get:CompileClasspath
+  abstract val modulesClasspath: ConfigurableFileCollection
+
+  @get:InputFiles
+  @get:CompileClasspath
+  abstract val bootClasspath: ConfigurableFileCollection
+
+  @get:Internal
+  @Suppress("UnstableApiUsage")
+  abstract val sharedBuildCacheService: Property<LightsaberSharedBuildCacheService>
+
+  @get:Input
+  abstract val validateUsage: Property<Boolean>
 
   private val projectName = formatProjectName()
 
@@ -63,12 +80,14 @@ open class LightsaberTask : DefaultTask() {
       inputs = backupDirs.map { it.toPath() },
       outputs = classesDirs.map { it.toPath() },
       classpath = classpath.map { it.toPath() },
-      modulesClasspath = classpath.map { it.toPath() },
+      modulesClasspath = modulesClasspath.map { it.toPath() },
       bootClasspath = bootClasspath.map { it.toPath() }.ifEmpty {
         listOfNotNull(FileSystems.getFileSystem(URI.create("jrt:/"))?.getPath("modules", "java.base"))
       },
-      gen = classesDirs[0].toPath(),
+      gen = classesDirs.first().toPath(),
       projectName = projectName,
+      sharedBuildCache = sharedBuildCacheService.get().cache,
+      validateUsage = validateUsage.get(),
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
@@ -104,17 +123,17 @@ open class LightsaberTask : DefaultTask() {
       }
     }
 
-    sourceDir?.let { sourceDir ->
+    if (sourceDir.isPresent) {
       logger.info("Removing a directory with generated source files: {}", sourceDir)
-      sourceDir.deleteRecursively()
+      sourceDir.get().asFile.deleteRecursively()
     }
   }
 
   private fun validate() {
-    require(classesDirs.isNotEmpty()) { "classesDirs is not set" }
-    require(backupDirs.isNotEmpty()) { "backupDirs is not set" }
-    require(classesDirs.size == backupDirs.size) { "classesDirs and backupDirs must have equal size" }
-    requireNotNull(sourceDir) { "sourceDir is not set" }
+    require(!classesDirs.isEmpty) { "classesDirs is not set" }
+    require(!backupDirs.isEmpty) { "backupDirs is not set" }
+    require(classesDirs.files.size == backupDirs.files.size) { "classesDirs and backupDirs must have equal size" }
+    require(sourceDir.isPresent) { "sourceDir is not set" }
   }
 
   companion object {

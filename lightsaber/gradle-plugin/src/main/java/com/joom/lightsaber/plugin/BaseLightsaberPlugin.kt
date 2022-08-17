@@ -18,9 +18,17 @@ package com.joom.lightsaber.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.logging.Logger
+import org.gradle.api.provider.Provider
+import org.gradle.build.event.BuildEventsListenerRegistry
+import javax.inject.Inject
 
+@Suppress("UnstableApiUsage")
 abstract class BaseLightsaberPlugin : Plugin<Project> {
+  @get:Inject
+  abstract val listenerRegistry: BuildEventsListenerRegistry
+
   lateinit var project: Project
   lateinit var logger: Logger
 
@@ -32,5 +40,15 @@ abstract class BaseLightsaberPlugin : Plugin<Project> {
   protected fun addDependencies(configurationName: String) {
     val version = Build.VERSION
     project.dependencies.add(configurationName, "com.joom.lightsaber:lightsaber-core:$version")
+  }
+
+  protected inline fun <reified T : Task> registerBuildCacheService(): Provider<LightsaberSharedBuildCacheService> {
+    return project.buildService<LightsaberSharedBuildCacheService, LightsaberSharedBuildCacheService.Parameters> { spec ->
+      spec.parameters.taskPaths.set(project.provider {
+        project.gradle.taskGraph.allTasks.filterIsInstance<T>().map { it.path }
+      })
+    }.also {
+      listenerRegistry.onTaskCompletion(it)
+    }
   }
 }

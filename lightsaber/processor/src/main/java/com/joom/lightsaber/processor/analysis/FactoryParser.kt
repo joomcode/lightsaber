@@ -25,7 +25,6 @@ import com.joom.grip.methods
 import com.joom.grip.mirrors.ClassMirror
 import com.joom.grip.mirrors.MethodMirror
 import com.joom.grip.mirrors.Type
-import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.Factory.Return
 import com.joom.lightsaber.processor.ErrorReporter
@@ -60,7 +59,7 @@ class FactoryParserImpl(
   }
 
   private fun parseFactory(mirror: ClassMirror): Factory {
-    val implementationType = getObjectTypeByInternalName("${mirror.type.internalName}\$Lightsaber\$Factory")
+    val implementationType = Factory.computeImplementationType(mirror.type)
     val qualifier = analyzerHelper.findQualifier(mirror)
     val dependency = Dependency(GenericType.Raw(mirror.type), qualifier)
     val provisionPoints = mirror.methods.mapNotNull { maybeCreateFactoryProvisionPoint(mirror, it) }

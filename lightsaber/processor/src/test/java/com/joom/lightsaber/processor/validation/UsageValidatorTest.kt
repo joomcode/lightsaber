@@ -28,13 +28,14 @@ class UsageValidatorTest {
   private val reporter = TestErrorReporter()
 
   @Test
-  fun test_check_failed_not_processed_classes_on_modules_classpath() {
+  fun test_check_failed_not_processed_classes_on_modules_classpath_validate_usage_enabled() {
     val dependencyProjectCompiled = integrationTestRule.compileProject("dependency_project")
     val referencingProjectCompiled = integrationTestRule.compileProject("referencing_dependency_project", classpath = listOf(dependencyProjectCompiled))
 
     integrationTestRule.processProject(
       referencingProjectCompiled, "referencing_dependency_project", reporter, listOf(dependencyProjectCompiled),
-      ignoreErrors = true
+      ignoreErrors = true,
+      validateUsage = true,
     )
 
     reporter.assertErrorReported(
@@ -53,6 +54,19 @@ class UsageValidatorTest {
       "Class test_case_projects.usage_validator.dependency_project.DependencyProjectFactory is not processed by lightsaber," +
           " is plugin applied to module?"
     )
+  }
+
+  @Test
+  fun test_check_successful_not_processed_classes_on_modules_classpath_validate_usage_disabled() {
+    val dependencyProjectCompiled = integrationTestRule.compileProject("dependency_project")
+    val referencingProjectCompiled = integrationTestRule.compileProject("referencing_dependency_project", classpath = listOf(dependencyProjectCompiled))
+
+    integrationTestRule.processProject(
+      referencingProjectCompiled, "referencing_dependency_project", reporter, listOf(dependencyProjectCompiled),
+      validateUsage = false,
+    )
+
+    reporter.assertNoErrorsReported()
   }
 
   @Test

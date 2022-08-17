@@ -41,19 +41,61 @@ class ExternalSetupAnalyzerImpl(
   private val grip: Grip,
   private val analyzerHelper: AnalyzerHelper,
   private val sourceResolver: SourceResolver,
-  private val providableTargets: Collection<InjectionTarget>,
-  private val factories: Collection<Factory>,
-  private val contracts: Collection<Contract>,
+  private val injectionTargetsAnalyzer: InjectionTargetsAnalyzer,
+  private val factoriesAnalyzer: FactoriesAnalyzer,
+  private val contractAnalyzer: ContractAnalyzer,
   private val errorReporter: ErrorReporter
 ) : ExternalSetupAnalyzer {
+  private val setupByPath = mutableMapOf<Path, ExternalSetup>()
 
   override fun analyze(paths: Collection<Path>): ExternalSetup {
-    val modulesQuery = grip select classes from paths where annotatedWith(Types.MODULE_TYPE)
+    val setups = paths.map { path ->
+      setupByPath.getOrPut(path) {
+        createExternalSetup(path)
+      }
+    }
+
+    return combineExternalSetup(setups)
+  }
+
+  private fun combineExternalSetup(setups: Collection<ExternalSetup>): ExternalSetup {
+    check(setups.isNotEmpty())
+
+    if (setups.size == 1) {
+      return setups.single()
+    }
+
+    val annotationModuleImportPointsByImporterModules = HashMap<Type.Object, Collection<ImportPoint.Annotation>>()
+    val providableTargetsByModules = HashMap<Type.Object, Collection<InjectionTarget>>()
+    val factoriesByModules = HashMap<Type.Object, Collection<Factory>>()
+    val contractsByModules = HashMap<Type.Object, Collection<Contract>>()
+
+    setups.forEach { setup ->
+      annotationModuleImportPointsByImporterModules.putAll(setup.annotationModuleImportPointsByImporterModules)
+      providableTargetsByModules.putAll(setup.providableTargetsByModules)
+      factoriesByModules.putAll(setup.factoriesByModules)
+      contractsByModules.putAll(setup.contractsByModules)
+    }
+
+    return ExternalSetup(
+      annotationModuleImportPointsByImporterModules = annotationModuleImportPointsByImporterModules,
+      providableTargetsByModules = providableTargetsByModules,
+      factoriesByModules = factoriesByModules,
+      contractsByModules = contractsByModules
+    )
+  }
+
+  private fun createExternalSetup(path: Path): ExternalSetup {
+    val modulesQuery = grip select classes from listOf(path) where annotatedWith(Types.MODULE_TYPE)
     val modules = modulesQuery.execute().classes
+
+    val injectionTargetsAnalyzerResult = injectionTargetsAnalyzer.analyze(listOf(path))
+    val factories = factoriesAnalyzer.analyze(listOf(path))
+    val contracts = contractAnalyzer.analyze(listOf(path))
 
     return ExternalSetup(
       annotationModuleImportPointsByImporterModules = groupAnnotationImportPointsByModules(modules),
-      providableTargetsByModules = groupEntitiesByModules(providableTargets) { it.type },
+      providableTargetsByModules = groupEntitiesByModules(injectionTargetsAnalyzerResult.providableTargets) { it.type },
       factoriesByModules = groupEntitiesByModules(factories) { it.type },
       contractsByModules = groupEntitiesByModules(contracts) { it.type }
     )

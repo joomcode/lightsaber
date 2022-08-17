@@ -20,6 +20,7 @@ import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.JvmRuntimeUtil
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
+import com.joom.lightsaber.processor.LightsaberSharedBuildCache
 import com.joom.lightsaber.processor.ProcessingException
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
@@ -90,6 +91,7 @@ class IntegrationTestRule(
     errorReporter: ErrorReporter,
     modules: List<Path> = emptyList(),
     ignoreErrors: Boolean = false,
+    validateUsage: Boolean = true,
   ): Path {
     val outputDirectory = processedDirectory.resolve(projectName)
     val parameters = LightsaberParameters(
@@ -100,7 +102,9 @@ class IntegrationTestRule(
       classpath = emptyList(),
       projectName = projectName,
       gen = outputDirectory,
-      errorReporter = errorReporter
+      errorReporter = errorReporter,
+      validateUsage = validateUsage,
+      sharedBuildCache = LightsaberSharedBuildCache.create(),
     )
 
     try {

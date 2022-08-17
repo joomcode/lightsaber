@@ -30,7 +30,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
 
-class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
+abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
     super.apply(project)
 
@@ -46,7 +46,7 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     if (componentsExtension != null && componentsExtension.pluginVersion >= VARIANT_API_REQUIRED_VERSION) {
       logger.info("Registering lightsaber with variant API")
 
-      configureTransformWithComponents()
+      configureTransformWithComponents(extension, registerBuildCacheService<LightsaberTransformTask>())
     } else {
       logger.info("Registering lightsaber with transform API")
 
@@ -54,41 +54,52 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     }
   }
 
-  private fun configureTransformWithComponents() {
+  private fun configureTransformWithComponents(extension: AndroidLightsaberPluginExtension, buildCacheService: Provider<LightsaberSharedBuildCacheService>) {
+    val validateUsage = project.provider { extension.validateUsage }
+
     project.applicationAndroidComponents?.apply {
       onVariants { variant ->
-        variant.registerLightsaberTask()
+        variant.registerLightsaberTask(validateUsage, buildCacheService)
       }
     }
 
     project.libraryAndroidComponents?.apply {
       onVariants { variant ->
-        variant.registerLightsaberTask()
+        variant.registerLightsaberTask(validateUsage, buildCacheService)
       }
     }
   }
 
-  private fun <T> T.registerLightsaberTask() where T : Variant, T : HasAndroidTest {
+  private fun <T> T.registerLightsaberTask(
+    validateUsage: Provider<Boolean>,
+    buildCacheService: Provider<LightsaberSharedBuildCacheService>
+  ) where T : Variant, T : HasAndroidTest {
     val runtimeClasspath = runtimeClasspathConfiguration()
 
     registerLightsaberTask(
+      validateUsage = validateUsage,
       classpathProvider = classpathProvider(runtimeClasspath),
-      modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath)
+      modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath),
+      buildCacheService = buildCacheService,
     )
 
     androidTest?.let { androidTest ->
       val androidTestRuntimeClasspath = androidTest.runtimeClasspathConfiguration()
 
       androidTest.registerLightsaberTask(
+        validateUsage = validateUsage,
         classpathProvider = classpathProvider(androidTestRuntimeClasspath),
-        modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath)
+        modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath),
+        buildCacheService = buildCacheService,
       )
     }
   }
 
   private fun Component.registerLightsaberTask(
+    validateUsage: Provider<Boolean>,
     classpathProvider: Provider<FileCollection>,
-    modulesClasspathProvider: Provider<FileCollection>
+    modulesClasspathProvider: Provider<FileCollection>,
+    buildCacheService: Provider<LightsaberSharedBuildCacheService>,
   ) {
     val taskProvider = project.registerTask<LightsaberTransformTask>(
       LightsaberTransformTask.TASK_PREFIX + name.replaceFirstChar { it.uppercaseChar() }
@@ -105,6 +116,11 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
 
       @Suppress("UnstableApiUsage")
       task.bootClasspath.from(project.androidComponents!!.sdkComponents.bootClasspath)
+      task.sharedBuildCacheService.set(buildCacheService)
+      task.validateUsage.set(validateUsage)
+
+      @Suppress("UnstableApiUsage")
+      task.usesService(buildCacheService)
     }
   }
 
@@ -113,11 +129,11 @@ class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private fun classpathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
-    return configuration.map { it.incomingJarArtifacts().artifactFiles }
+    return configuration.map { it.incomingAndroidJarArtifacts().artifactFiles }
   }
 
   private fun modulesClasspathProvider(configuration: Provider<Configuration>): Provider<FileCollection> {
-    return configuration.map { it.incomingJarArtifacts { it is ProjectComponentIdentifier }.artifactFiles }
+    return configuration.map { it.incomingAndroidJarArtifacts { it is ProjectComponentIdentifier }.artifactFiles }
   }
 
   private operator fun Provider<FileCollection>.minus(other: Provider<FileCollection>): Provider<FileCollection> {

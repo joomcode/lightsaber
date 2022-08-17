@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 /*
  * Copyright 2022 SIA Joom
  *
@@ -25,6 +27,7 @@ import com.android.build.api.transform.TransformInvocation
 import com.android.build.api.transform.TransformOutputProvider
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
+import com.joom.lightsaber.processor.LightsaberSharedBuildCache
 import com.joom.lightsaber.processor.logging.getLogger
 import java.io.File
 import java.io.IOException
@@ -65,7 +68,9 @@ class LightsaberTransform(
       },
       modulesClasspath = emptyList(),
       bootClasspath = extension.bootClasspath.map { it.toPath() },
-      projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$')
+      projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$'),
+      validateUsage = false,
+      sharedBuildCache = LightsaberSharedBuildCache.create(),
     )
     logger.info("Starting Lightsaber processor: {}", parameters)
     val processor = LightsaberProcessor(parameters)

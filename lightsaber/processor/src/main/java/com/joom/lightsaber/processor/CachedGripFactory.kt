@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 SIA Joom
+ * Copyright 2022 SIA Joom
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package com.joom.lightsaber.processor.model
+package com.joom.lightsaber.processor
 
-import com.joom.grip.mirrors.Type
-import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.grip.Grip
+import com.joom.grip.GripFactory
+import java.nio.file.Path
 
-data class Factory(
-  val type: Type.Object,
-  val implementationType: Type.Object,
-  val dependency: Dependency,
-  val provisionPoints: List<FactoryProvisionPoint>
-) {
+internal object CachedGripFactory {
+  fun create(cache: LightsaberSharedBuildCache, paths: Iterable<Path>): Iterable<Grip> {
+    val visited = HashSet<Path>()
 
-  companion object {
-    fun computeImplementationType(type: Type.Object): Type.Object {
-      return getObjectTypeByInternalName("${type.internalName}\$Lightsaber\$Factory")
-    }
+    return paths
+      .asSequence()
+      .filter { visited.add(it) }
+      .map {
+        cache.getOrPut(GripKey(it)) { key ->
+          GripFactory.INSTANCE.create(key.path)
+        }
+      }
+      .asIterable()
   }
+
+  private data class GripKey(val path: Path)
 }
