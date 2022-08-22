@@ -102,6 +102,11 @@ class GeneratorTest {
     integrationTestRule.assertValidProject("parameterized_type")
   }
 
+  @Test
+  fun `generates provider for bounded generics`() {
+    integrationTestRule.assertValidProject("bounded_generics")
+  }
+
   private fun Path.shouldContain(path: Path) {
     Assert.assertTrue(resolve(path).exists())
   }
