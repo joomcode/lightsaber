@@ -148,7 +148,7 @@ class ClassProcessor(
 
   private fun checkErrors() {
     if (errorReporter.hasErrors) {
-      throw ProcessingException("Errors found")
+      throw ProcessingException(errorReporter.errors.joinToString(prefix = "Errors found:\n", separator = "\n"))
     }
   }
 

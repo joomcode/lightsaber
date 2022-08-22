@@ -17,20 +17,12 @@
 package com.joom.lightsaber.processor.integration
 
 import com.joom.lightsaber.processor.ErrorReporter
+import com.joom.lightsaber.processor.ErrorReporterImpl
 import org.junit.Assert
 
-class TestErrorReporter : ErrorReporter {
-  private val errors = ArrayList<LoggedError>()
-
-  override fun reportError(errorMessage: String, exception: Throwable?) {
-    errors += LoggedError(errorMessage, exception)
-  }
-
-  override val hasErrors: Boolean
-    get() = errors.isNotEmpty()
-
+class TestErrorReporter(private val delegate: ErrorReporter = ErrorReporterImpl()) : ErrorReporter by delegate {
   fun assertErrorReported(message: String) {
-    Assert.assertTrue("Expected '${message}', got:\n${errorsToString()}", errors.any { it.message == message })
+    Assert.assertTrue("Expected '${message}', got:\n${errorsToString()}", errors.any { it == message })
   }
 
   fun assertNoErrorsReported() {
@@ -38,11 +30,6 @@ class TestErrorReporter : ErrorReporter {
   }
 
   private fun errorsToString(): String {
-    return errors.joinToString("\n") { it.message }
+    return errors.joinToString("\n") { it }
   }
-
-  private data class LoggedError(
-    val message: String,
-    val throwable: Throwable?
-  )
 }
