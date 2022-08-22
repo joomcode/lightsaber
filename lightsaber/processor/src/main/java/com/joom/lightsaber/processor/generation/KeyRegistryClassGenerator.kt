@@ -23,6 +23,7 @@ import com.joom.grip.mirrors.signature.GenericType
 import com.joom.grip.mirrors.toArrayType
 import com.joom.lightsaber.internal.GenericArrayTypeImpl
 import com.joom.lightsaber.internal.ParameterizedTypeImpl
+import com.joom.lightsaber.internal.WildcardTypeImpl
 import com.joom.lightsaber.processor.annotations.proxy.AnnotationCreator
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
@@ -48,11 +49,14 @@ private val KEY_CONSTRUCTOR = MethodDescriptor.forConstructor(Types.TYPE_TYPE, T
 
 private val PARAMETERIZED_TYPE_IMPL_TYPE = getObjectType<ParameterizedTypeImpl>()
 private val GENERIC_ARRAY_TYPE_IMPL_TYPE = getObjectType<GenericArrayTypeImpl>()
+private val WILDCARD_TYPE_IMPL_TYPE = getObjectType<WildcardTypeImpl>()
 
 private val PARAMETERIZED_TYPE_IMPL_CONSTRUCTOR =
   MethodDescriptor.forConstructor(Types.TYPE_TYPE, Types.CLASS_TYPE, Types.TYPE_TYPE.toArrayType())
 private val GENERIC_ARRAY_TYPE_IMPL_CONSTRUCTOR =
   MethodDescriptor.forConstructor(Types.TYPE_TYPE)
+private val WILDCARD_TYPE_IMPL_CONSTRUCTOR =
+  MethodDescriptor.forConstructor(Types.TYPE_TYPE, Types.TYPE_TYPE)
 
 class KeyRegistryClassGenerator(
   private val classProducer: ClassProducer,
@@ -138,6 +142,8 @@ class KeyRegistryClassGenerator(
       is GenericType.Raw -> pushType(type.type.boxed())
       is GenericType.Parameterized -> newParameterizedType(type)
       is GenericType.Array -> newGenericArrayType(type)
+      is GenericType.LowerBounded -> newWildcardType(lowerBound = type.lowerBound, upperBound = null)
+      is GenericType.UpperBounded -> newWildcardType(lowerBound = null, upperBound = type.upperBound)
       else -> error("Unsupported generic type $type")
     }
   }
@@ -162,6 +168,14 @@ class KeyRegistryClassGenerator(
     dup()
     push(type.elementType)
     invokeConstructor(GENERIC_ARRAY_TYPE_IMPL_TYPE, GENERIC_ARRAY_TYPE_IMPL_CONSTRUCTOR)
+  }
+
+  private fun GeneratorAdapter.newWildcardType(lowerBound: GenericType?, upperBound: GenericType?) {
+    newInstance(WILDCARD_TYPE_IMPL_TYPE)
+    dup()
+    if (lowerBound != null) push(lowerBound) else pushNull()
+    if (upperBound != null) push(upperBound) else pushNull()
+    invokeConstructor(WILDCARD_TYPE_IMPL_TYPE, WILDCARD_TYPE_IMPL_CONSTRUCTOR)
   }
 
   private fun GeneratorAdapter.pushType(rawType: Type) {
