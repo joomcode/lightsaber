@@ -16,21 +16,27 @@
 
 package com.joom.lightsaber.processor
 
+import com.joom.lightsaber.processor.commons.immutable
 import com.joom.lightsaber.processor.logging.getLogger
 
 interface ErrorReporter {
   val hasErrors: Boolean
+  val errors: List<String>
   fun reportError(errorMessage: String, exception: Throwable? = null)
 }
 
 class ErrorReporterImpl : ErrorReporter {
   private val logger = getLogger()
+  private val loggedErrors = ArrayList<String>()
 
-  override var hasErrors: Boolean = false
-    private set
+  override val hasErrors: Boolean
+    get() = loggedErrors.isNotEmpty()
+
+  override val errors: List<String>
+    get() = loggedErrors.immutable()
 
   override fun reportError(errorMessage: String, exception: Throwable?) {
-    hasErrors = true
+    loggedErrors += errorMessage
     logger.error(errorMessage, exception)
   }
 }
