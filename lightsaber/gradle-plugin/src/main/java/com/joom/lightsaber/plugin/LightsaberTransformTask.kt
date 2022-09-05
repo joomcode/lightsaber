@@ -71,6 +71,8 @@ abstract class LightsaberTransformTask : DefaultTask() {
 
   @TaskAction
   fun process() {
+    clean()
+
     val output = outputDirectory.get().asFile.toPath()
     val parameters = LightsaberParameters(
       inputs = inputClasses.get().map { it.asFile.toPath() },
@@ -91,6 +93,14 @@ abstract class LightsaberTransformTask : DefaultTask() {
       processor.process()
     } catch (exception: Exception) {
       throw GradleScriptException("Lightsaber processor failed to process files", exception)
+    }
+  }
+
+  private fun clean() {
+    val output = outputDirectory.get().asFile
+
+    if (output.exists()) {
+      output.deleteRecursively()
     }
   }
 
