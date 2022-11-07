@@ -30,11 +30,13 @@ import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
+import com.joom.lightsaber.processor.generation.ProviderClassGenerator
 import com.joom.lightsaber.processor.generation.getInstance
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Provider
 import com.joom.lightsaber.processor.generation.model.moduleType
 import com.joom.lightsaber.processor.generation.registerProvider
+import com.joom.lightsaber.processor.model.Contract
 import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
@@ -175,12 +177,31 @@ class ModulePatcher(
     loadModule(import.importPoint)
     loadArg(0)
 
+
     val constructor = when (val converter = import.importPoint.converter) {
       is ImportPoint.Converter.Adapter -> MethodDescriptor.forConstructor(converter.adapterType, Types.INJECTOR_TYPE)
       is ImportPoint.Converter.Instance -> MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
     }
 
     invokeConstructor(provider.type, constructor)
+  }
+
+  private fun GeneratorAdapter.instantiateContract(converter: ImportPoint.Converter) {
+    when (converter) {
+      is ImportPoint.Converter.Adapter -> {
+        when (converter.adapterType) {
+          Types.LAZY_TYPE -> {
+            invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+          }
+          Types.KOTLIN_LAZY_TYPE -> {
+            invokeInterface(Types.KOTLIN_LAZY_TYPE, GET_VALUE_METHOD)
+          }
+          else -> {
+            error("Cannot import contract with adapter ${converter.adapterType.className}")
+          }
+        }
+      }
+    }
   }
 
   private fun GeneratorAdapter.configureInjector() {
@@ -235,6 +256,11 @@ class ModulePatcher(
   }
 
   private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
+    if (shouldInstantiateImmediately(import.contract)) {
+      loadModule(import.importPoint)
+      instantiateContract(import.importPoint.converter)
+    }
+
     generationContext.findProvidersByContractType(import.contract.type).forEach { provider ->
       loadArg(0)
 
@@ -255,7 +281,29 @@ class ModulePatcher(
     }
   }
 
+  private fun shouldInstantiateImmediately(contract: Contract): Boolean {
+    val dependencies = contract.provisionPoints.map { it.injectee.dependency }.toHashSet()
+
+    val configuration = injectionContext.contractConfigurations.firstOrNull { it.contract == contract } ?: return false
+
+    for (module in configuration.defaultModule.getModulesWithDescendants()) {
+      for (provisionPoint in module.provisionPoints) {
+        if (provisionPoint.scope.isEager && dependencies.contains(provisionPoint.dependency)) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
   companion object {
+    private val GET_VALUE_METHOD =
+      MethodDescriptor.forMethod("getValue", Types.OBJECT_TYPE)
+
+    private val GET_METHOD =
+      MethodDescriptor.forMethod("get", Types.OBJECT_TYPE)
+
     private val CONFIGURE_INJECTOR_METHOD =
       MethodDescriptor.forMethod("configureInjector", Type.Primitive.Void, LightsaberTypes.LIGHTSABER_INJECTOR_TYPE)
   }
