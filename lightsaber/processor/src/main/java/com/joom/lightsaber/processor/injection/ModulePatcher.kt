@@ -22,6 +22,8 @@ import com.joom.grip.mirrors.Type
 import com.joom.grip.mirrors.isStatic
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
+import com.joom.lightsaber.processor.commons.Methods.GET_METHOD
+import com.joom.lightsaber.processor.commons.Methods.GET_VALUE_METHOD
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.exhaustive
 import com.joom.lightsaber.processor.commons.invokeMethod
@@ -177,7 +179,6 @@ class ModulePatcher(
     loadModule(import.importPoint)
     loadArg(0)
 
-
     val constructor = when (val converter = import.importPoint.converter) {
       is ImportPoint.Converter.Adapter -> MethodDescriptor.forConstructor(converter.adapterType, Types.INJECTOR_TYPE)
       is ImportPoint.Converter.Instance -> MethodDescriptor.forConstructor(import.contract.type, Types.INJECTOR_TYPE)
@@ -298,12 +299,6 @@ class ModulePatcher(
   }
 
   companion object {
-    private val GET_VALUE_METHOD =
-      MethodDescriptor.forMethod("getValue", Types.OBJECT_TYPE)
-
-    private val GET_METHOD =
-      MethodDescriptor.forMethod("get", Types.OBJECT_TYPE)
-
     private val CONFIGURE_INJECTOR_METHOD =
       MethodDescriptor.forMethod("configureInjector", Type.Primitive.Void, LightsaberTypes.LIGHTSABER_INJECTOR_TYPE)
   }

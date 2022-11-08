@@ -23,4 +23,7 @@ object Methods {
   val HASH_CODE_METHOD = MethodDescriptor.forMethod("hashCode", Type.Primitive.Int)
   val EQUALS_METHOD = MethodDescriptor.forMethod("equals", Type.Primitive.Boolean, Types.OBJECT_TYPE)
   val TO_STRING_METHOD = MethodDescriptor.forMethod("toString", Types.STRING_TYPE)
+
+  val GET_VALUE_METHOD = MethodDescriptor.forMethod("getValue", Types.OBJECT_TYPE)
+  val GET_METHOD = MethodDescriptor.forMethod("get", Types.OBJECT_TYPE)
 }
