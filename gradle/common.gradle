@@ -1,4 +1,4 @@
-version = '1.0.0-alpha18'
+version = '1.0.0-alpha19'
 group = 'com.joom.lightsaber'
 
 ext.javaVersion = JavaVersion.VERSION_1_8
