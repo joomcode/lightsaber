@@ -187,9 +187,11 @@ class ModulePatcher(
     invokeConstructor(provider.type, constructor)
   }
 
-  private fun GeneratorAdapter.instantiateContract(converter: ImportPoint.Converter) {
-    when (converter) {
+  private fun GeneratorAdapter.instantiateContract(importPoint: ImportPoint) {
+    when (val converter = importPoint.converter) {
       is ImportPoint.Converter.Adapter -> {
+        loadModule(importPoint)
+
         when (converter.adapterType) {
           Types.LAZY_TYPE -> {
             invokeInterface(Types.LAZY_TYPE, GET_METHOD)
@@ -202,6 +204,8 @@ class ModulePatcher(
           }
         }
       }
+
+      ImportPoint.Converter.Instance -> Unit
     }
   }
 
@@ -257,9 +261,13 @@ class ModulePatcher(
   }
 
   private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
-    if (shouldInstantiateImmediately(import.contract)) {
-      loadModule(import.importPoint)
-      instantiateContract(import.importPoint.converter)
+    val maybeLazy = when (import.importPoint.converter) {
+      is ImportPoint.Converter.Adapter -> true
+      ImportPoint.Converter.Instance -> false
+    }
+
+    if (maybeLazy && shouldInstantiateImmediately(import.contract)) {
+      instantiateContract(import.importPoint)
     }
 
     generationContext.findProvidersByContractType(import.contract.type).forEach { provider ->
