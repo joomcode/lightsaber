@@ -263,7 +263,7 @@ class ModulePatcher(
   private fun GeneratorAdapter.configureInjectorWithContract(import: Import.Contract) {
     val maybeLazy = when (import.importPoint.converter) {
       is ImportPoint.Converter.Adapter -> true
-      ImportPoint.Converter.Instance -> false
+      is ImportPoint.Converter.Instance -> false
     }
 
     if (maybeLazy && shouldInstantiateImmediately(import.contract)) {
