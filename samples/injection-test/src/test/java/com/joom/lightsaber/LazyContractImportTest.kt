@@ -20,9 +20,11 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Provider
+import javax.inject.Singleton
 
 class LazyContractImportTest {
   @Test
@@ -244,6 +246,94 @@ class LazyContractImportTest {
     assertNotResolves(injector, String::class.java, named("Base"))
     assertResolves(injector, String::class.java, named("Annotated"))
   }
+
+  @Test
+  fun testEagerComponent() {
+    val lightsaber = Lightsaber.Builder().build()
+    val nestedEagerContractConfiguration = NestedEagerContractConfiguration()
+    val component = EagerComponent(
+      lazy {
+        lightsaber.createContract(nestedEagerContractConfiguration)
+      }
+    )
+
+    assertEquals(0, nestedEagerContractConfiguration.counter.get())
+    val injector = lightsaber.createInjector(component)
+    assertEquals(1, nestedEagerContractConfiguration.counter.get())
+    assertEquals("0", injector.getInstance<String>())
+    assertEquals(1, nestedEagerContractConfiguration.counter.get())
+  }
+
+  @Test
+  fun testEagerContract() {
+    val lightsaber = Lightsaber.Builder().build()
+    val nestedEagerContractConfiguration = NestedEagerContractConfiguration()
+    var contractWithoutEagerInstantiated = false
+    val configuration = EagerDependencyContractConfiguration(
+      lazy {
+        lightsaber.createContract(nestedEagerContractConfiguration)
+      },
+      lazy {
+        object : DummyContract {
+          init {
+            contractWithoutEagerInstantiated = true
+          }
+
+          override val int: Int
+            get() = 1
+        }
+      }
+    )
+
+    assertEquals(0, nestedEagerContractConfiguration.counter.get())
+    val contract = lightsaber.createContract(configuration)
+    assertEquals(1, nestedEagerContractConfiguration.counter.get())
+    assertEquals("0", contract.string)
+    assertEquals(1, nestedEagerContractConfiguration.counter.get())
+    assertEquals(false, contractWithoutEagerInstantiated)
+    assertEquals(1, contract.int)
+    assertEquals(true, contractWithoutEagerInstantiated)
+  }
+
+  @Test
+  fun testNonDirectEagerContract() {
+    val lightsaber = Lightsaber.Builder().build()
+    val nestedEagerContractConfiguration = NestedEagerContractConfiguration()
+    val nestedEagerContract = lazy {
+      lightsaber.createContract(nestedEagerContractConfiguration)
+    }
+    val configuration = NonDirectEagerDependencyContractConfiguration(nestedEagerContract)
+
+    assertEquals(0, nestedEagerContractConfiguration.counter.get())
+    val contract = lightsaber.createContract(configuration)
+    assertEquals(1, nestedEagerContractConfiguration.counter.get())
+    assertEquals("0", nestedEagerContract.value.string)
+    assertEquals(1, contract.int)
+    assertEquals(1, nestedEagerContractConfiguration.counter.get())
+  }
+
+  @Test
+  fun testEagerContractWithNonEagerConfiguration() {
+    val lightsaber = Lightsaber.Builder().build()
+    var contractWithoutEagerInstantiated = false
+    val configuration = EagerDependencyContractConfiguration(
+      lazy {
+        contractWithoutEagerInstantiated = true
+        lightsaber.createContract(NestedNonEagerContractConfiguration())
+      },
+      lazy {
+        object : DummyContract {
+          override val int: Int
+            get() = 1
+        }
+      }
+    )
+
+    val contract = lightsaber.createContract(configuration)
+
+    assertEquals(true, contractWithoutEagerInstantiated)
+  }
+
 
   @Component
   class ContractComponent(
@@ -521,6 +611,9 @@ class LazyContractImportTest {
   @Component
   class OverrideComponent5(@Import @Contract private val contract: kotlin.Lazy<OverrideContract5>)
 
+  @Component
+  class EagerComponent(@Import @Contract private val contract: kotlin.Lazy<NestedEagerContract>)
+
   interface BaseContract1 {
     val string: CharSequence
   }
@@ -532,6 +625,55 @@ class LazyContractImportTest {
   interface BaseContract3 : BaseContract2 {
     @get:Named("Base")
     override val string: String
+  }
+
+  interface EagerDependencyContract {
+    val string: String
+    val int: Int
+  }
+
+  interface DummyContract {
+    val int: Int
+  }
+
+  class EagerDependencyContractConfiguration(
+    @Import @Contract private val contract: kotlin.Lazy<NestedEagerContract>,
+    @Import @Contract private val dummyContract: kotlin.Lazy<DummyContract>
+  ) : ContractConfiguration<EagerDependencyContract>()
+
+  interface NonDirectEagerDependencyContract {
+    val int: Int
+  }
+
+  class NonDirectEagerDependencyContractConfiguration(
+    @Import @Contract private val contract: kotlin.Lazy<NestedEagerContract>
+  ) : ContractConfiguration<NonDirectEagerDependencyContract>() {
+    @Provide
+    @Eager
+    @Singleton
+    fun provideInt(): Int = 1
+  }
+
+
+  interface NestedEagerContract {
+    val string: String
+  }
+
+  class NestedEagerContractConfiguration : ContractConfiguration<NestedEagerContract>() {
+    val counter = AtomicInteger()
+
+    @Provide
+    @Eager
+    @Singleton
+    fun provideString(): String = counter.getAndIncrement().toString()
+  }
+
+  class NestedNonEagerContractConfiguration : ContractConfiguration<NestedEagerContract>() {
+    val counter = AtomicInteger()
+
+    @Provide
+    @Singleton
+    fun provideString(): String = counter.getAndIncrement().toString()
   }
 
   interface OverrideContract1 : BaseContract1, BaseContract2 {

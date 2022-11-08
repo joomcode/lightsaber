@@ -22,6 +22,8 @@ import com.joom.grip.mirrors.getObjectType
 import com.joom.grip.mirrors.isPrimitive
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
+import com.joom.lightsaber.processor.commons.Methods.GET_METHOD
+import com.joom.lightsaber.processor.commons.Methods.GET_VALUE_METHOD
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.commons.exhaustive
@@ -316,10 +318,6 @@ class ProviderClassGenerator(
 
     private val CONSTRUCTOR_WITH_INJECTOR = MethodDescriptor.forConstructor(Types.INJECTOR_TYPE)
 
-    private val GET_VALUE_METHOD =
-      MethodDescriptor.forMethod("getValue", Types.OBJECT_TYPE)
-    private val GET_METHOD =
-      MethodDescriptor.forMethod("get", Types.OBJECT_TYPE)
     private val INJECT_MEMBERS_METHOD =
       MethodDescriptor.forMethod("injectMembers", Type.Primitive.Void, Types.OBJECT_TYPE)
   }
