@@ -285,12 +285,12 @@ class ModulePatcher(
   private fun shouldInstantiateImmediately(contract: Contract): Boolean {
     val dependencies = contract.provisionPoints.map { it.injectee.dependency }.toHashSet()
 
-    val configuration = injectionContext.contractConfigurations.firstOrNull { it.contract == contract } ?: return false
-
-    for (module in configuration.defaultModule.getModulesWithDescendants()) {
-      for (provisionPoint in module.provisionPoints) {
-        if (provisionPoint.scope.isEager && dependencies.contains(provisionPoint.dependency)) {
-          return true
+    for (configuration in injectionContext.contractConfigurations.filter { it.contract == contract }) {
+      for (module in configuration.getModulesWithDescendants()) {
+        for (provisionPoint in module.provisionPoints) {
+          if (provisionPoint.scope.isEager && dependencies.contains(provisionPoint.dependency)) {
+            return true
+          }
         }
       }
     }

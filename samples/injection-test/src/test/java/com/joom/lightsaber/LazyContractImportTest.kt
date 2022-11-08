@@ -312,6 +312,29 @@ class LazyContractImportTest {
     assertEquals(1, nestedEagerContractConfiguration.counter.get())
   }
 
+  @Test
+  fun testEagerContractWithNonEagerConfiguration() {
+    val lightsaber = Lightsaber.Builder().build()
+    var contractWithoutEagerInstantiated = false
+    val configuration = EagerDependencyContractConfiguration(
+      lazy {
+        contractWithoutEagerInstantiated = true
+        lightsaber.createContract(NestedNonEagerContractConfiguration())
+      },
+      lazy {
+        object : DummyContract {
+          override val int: Int
+            get() = 1
+        }
+      }
+    )
+
+    val contract = lightsaber.createContract(configuration)
+
+    assertEquals(true, contractWithoutEagerInstantiated)
+  }
+
+
   @Component
   class ContractComponent(
     @Import
@@ -641,6 +664,14 @@ class LazyContractImportTest {
 
     @Provide
     @Eager
+    @Singleton
+    fun provideString(): String = counter.getAndIncrement().toString()
+  }
+
+  class NestedNonEagerContractConfiguration : ContractConfiguration<NestedEagerContract>() {
+    val counter = AtomicInteger()
+
+    @Provide
     @Singleton
     fun provideString(): String = counter.getAndIncrement().toString()
   }
