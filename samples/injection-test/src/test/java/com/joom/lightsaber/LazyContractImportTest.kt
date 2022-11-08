@@ -290,9 +290,9 @@ class LazyContractImportTest {
     assertEquals(1, nestedEagerContractConfiguration.counter.get())
     assertEquals("0", contract.string)
     assertEquals(1, nestedEagerContractConfiguration.counter.get())
-    assertEquals(contractWithoutEagerInstantiated, false)
+    assertEquals(false, contractWithoutEagerInstantiated)
     assertEquals(1, contract.int)
-    assertEquals(contractWithoutEagerInstantiated, true)
+    assertEquals(true, contractWithoutEagerInstantiated)
   }
 
   @Test
