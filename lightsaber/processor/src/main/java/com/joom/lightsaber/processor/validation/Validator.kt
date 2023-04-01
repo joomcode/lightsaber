@@ -19,6 +19,7 @@ package com.joom.lightsaber.processor.validation
 import com.joom.grip.ClassRegistry
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
+import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.commons.getDescription
 import com.joom.lightsaber.processor.commons.getInjectees
 import com.joom.lightsaber.processor.graph.findCycles
@@ -36,8 +37,17 @@ class Validator(
   private val errorReporter: ErrorReporter,
   private val context: InjectionContext,
   private val dependencyResolverFactory: DependencyResolverFactory,
-  private val hintsBuilder: HintsBuilder
+  private val hintsBuilder: HintsBuilder,
+  private val parameters: LightsaberParameters
 ) {
+  private val unusedImportsCalculator by lazy {
+    UnusedImportsCalculator(
+      DependencyResolverFactory(
+        injectionContext = context,
+        includeAllDependenciesInGraph = true
+      )
+    )
+  }
 
   private val leafComponents: Collection<Component> by lazy {
     val leafComponentTypes = context.components.mapTo(LinkedHashSet()) { it.type }
@@ -122,6 +132,10 @@ class Validator(
       validateNoDependencyDuplicates(contractConfiguration)
       validateDependenciesAreResolved(contractConfiguration)
       validateNoDependencyCycles(contractConfiguration)
+
+      if (parameters.validateUnusedImports) {
+        validateNoUnusedImports(contractConfiguration)
+      }
     }
   }
 
@@ -150,6 +164,32 @@ class Validator(
       append("Dependency cycle in contract ")
       append(contractConfiguration.type.getDescription())
       append(":")
+    }
+  }
+
+  private fun validateNoUnusedImports(contractConfiguration: ContractConfiguration) {
+    val unusedImports = unusedImportsCalculator.findUnusedImports(contractConfiguration)
+
+    if (unusedImports.isEmpty()) {
+      return
+    }
+
+    errorReporter.reportError {
+      append("Found unused imports in a contract configuration ${contractConfiguration.type.getDescription()}:")
+
+      unusedImports.forEach { import ->
+        when (import) {
+          is Import.Contract -> {
+            appendLine()
+            append("  - Contract ${import.contract.type.getDescription()}")
+          }
+
+          is Import.Module -> {
+            appendLine()
+            append("  - Module ${import.module.type.getDescription()}")
+          }
+        }
+      }
     }
   }
 

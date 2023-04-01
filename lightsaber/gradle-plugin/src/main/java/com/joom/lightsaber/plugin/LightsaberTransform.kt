@@ -72,6 +72,7 @@ class LightsaberTransform(
       bootClasspath = extension.bootClasspath.map { it.toPath() },
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$'),
       validateUsage = extension.validateUsage,
+      validateUnusedImports = extension.validateUnusedImports,
       dumpDebugReport = extension.dumpDebugReport,
       reportDirectory = reportDirectory,
       sharedBuildCache = LightsaberSharedBuildCache.create(),
@@ -101,6 +102,7 @@ class LightsaberTransform(
   override fun getParameterInputs(): MutableMap<String, Any> {
     return mutableMapOf(
       "validateUsage" to extension.validateUsage,
+      "validateUnusedImports" to extension.validateUnusedImports,
       "dumpDebugReport" to extension.dumpDebugReport,
       "cacheable" to extension.cacheable,
       "bootClasspath" to extension.bootClasspath
