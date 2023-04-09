@@ -181,17 +181,18 @@ class AnalyzerHelperImpl(
   }
 
   private fun GenericType.toDependency(qualifier: AnnotationMirror?): Dependency {
-    when (rawType) {
+    return when (rawType) {
       Types.PROVIDER_TYPE,
       Types.LAZY_TYPE ->
         if (this is GenericType.Parameterized) {
-          return Dependency(typeArguments[0], qualifier)
+          Dependency(typeArguments[0], qualifier)
         } else {
           throw ProcessingException("Type $this must be parameterized")
         }
+      else -> {
+        Dependency(this, qualifier)
+      }
     }
-
-    return Dependency(this, qualifier)
   }
 
   private val Annotated.name: String

@@ -231,8 +231,26 @@ class AnnotationProxyGenerator(
 
   private fun convertFieldValue(generator: GeneratorAdapter, fieldType: Type) {
     when (fieldType) {
-      is Type.Primitive.Float -> generator.invokeStatic(Types.BOXED_FLOAT_TYPE, FLOAT_TO_INT_BITS_METHOD)
-      is Type.Primitive.Double -> generator.invokeStatic(Types.BOXED_DOUBLE_TYPE, DOUBLE_TO_LONG_BITS_METHOD)
+      is Type.Primitive.Float -> {
+        generator.invokeStatic(Types.BOXED_FLOAT_TYPE, FLOAT_TO_INT_BITS_METHOD)
+      }
+
+      is Type.Primitive.Double -> {
+        generator.invokeStatic(Types.BOXED_DOUBLE_TYPE, DOUBLE_TO_LONG_BITS_METHOD)
+      }
+
+      is Type.Primitive.Void,
+      is Type.Primitive.Boolean,
+      is Type.Primitive.Char,
+      is Type.Primitive.Byte,
+      is Type.Primitive.Short,
+      is Type.Primitive.Int,
+      is Type.Primitive.Long,
+      is Type.Array,
+      is Type.Object,
+      is Type.Method -> {
+        // nothing to do here
+      }
     }
   }
 
