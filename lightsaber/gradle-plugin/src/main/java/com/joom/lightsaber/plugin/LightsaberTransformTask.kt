@@ -23,6 +23,7 @@ import org.gradle.api.GradleScriptException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -34,9 +35,13 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import java.io.File
+import javax.inject.Inject
 
 @CacheableTask
-abstract class LightsaberTransformTask : DefaultTask() {
+abstract class LightsaberTransformTask @Inject constructor(
+  private val projectLayout: ProjectLayout
+) : DefaultTask() {
   @get:InputFiles
   @get:Classpath
   abstract val inputClasses: ListProperty<Directory>
@@ -63,6 +68,9 @@ abstract class LightsaberTransformTask : DefaultTask() {
   @get:Input
   abstract val validateUsage: Property<Boolean>
 
+  @get:Input
+  abstract val dumpDebugReport: Property<Boolean>
+
   private val projectName = formatProjectName()
 
   init {
@@ -73,7 +81,9 @@ abstract class LightsaberTransformTask : DefaultTask() {
   fun process() {
     clean()
 
-    val output = outputDirectory.get().asFile.toPath()
+    val output = computeOutputDirectory().toPath()
+    val reports = computeReportDirectory().toPath()
+
     val parameters = LightsaberParameters(
       inputs = inputClasses.get().map { it.asFile.toPath() },
       outputs = List(inputClasses.get().size) { output },
@@ -83,6 +93,8 @@ abstract class LightsaberTransformTask : DefaultTask() {
       gen = output,
       projectName = projectName,
       validateUsage = validateUsage.get(),
+      dumpDebugReport = dumpDebugReport.get(),
+      reportDirectory = reports,
       sharedBuildCache = sharedBuildCacheService.get().cache,
     )
 
@@ -97,11 +109,24 @@ abstract class LightsaberTransformTask : DefaultTask() {
   }
 
   private fun clean() {
-    val output = outputDirectory.get().asFile
+    val output = computeOutputDirectory()
+    val reports = computeReportDirectory()
 
     if (output.exists()) {
       output.deleteRecursively()
     }
+
+    if (reports.exists()) {
+      reports.deleteRecursively()
+    }
+  }
+
+  private fun computeOutputDirectory(): File {
+    return outputDirectory.get().asFile
+  }
+
+  private fun computeReportDirectory(): File {
+    return File(projectLayout.buildDirectory.get().asFile, "reports/lightsaber")
   }
 
   companion object {
