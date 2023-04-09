@@ -35,5 +35,3 @@ inline fun <reified T> Any.cast(): T =
 
 inline fun <T : Any> given(condition: Boolean, body: () -> T): T? =
   if (condition) body() else null
-
-fun exhaustive(@Suppress("UNUSED_PARAMETER") ignored: Any?) = Unit
