@@ -25,14 +25,12 @@ import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Methods.GET_METHOD
 import com.joom.lightsaber.processor.commons.Methods.GET_VALUE_METHOD
 import com.joom.lightsaber.processor.commons.Types
-import com.joom.lightsaber.processor.commons.exhaustive
 import com.joom.lightsaber.processor.commons.invokeMethod
 import com.joom.lightsaber.processor.commons.newMethod
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
 import com.joom.lightsaber.processor.commons.toMethodDescriptor
 import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
-import com.joom.lightsaber.processor.generation.ProviderClassGenerator
 import com.joom.lightsaber.processor.generation.getInstance
 import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.Provider
@@ -64,13 +62,11 @@ class ModulePatcher(
 
   init {
     for (provisionPoint in module.provisionPoints) {
-      exhaustive(
-        when (provisionPoint) {
-          is ProvisionPoint.Field -> providableFields.add(provisionPoint.field.toFieldDescriptor())
-          is ProvisionPoint.Constructor -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
-          is ProvisionPoint.Method -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
-        }
-      )
+      when (provisionPoint) {
+        is ProvisionPoint.Field -> providableFields.add(provisionPoint.field.toFieldDescriptor())
+        is ProvisionPoint.Constructor -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
+        is ProvisionPoint.Method -> providableMethods.add(provisionPoint.method.toMethodDescriptor())
+      }
     }
   }
 

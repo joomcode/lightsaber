@@ -26,7 +26,6 @@ import com.joom.lightsaber.processor.analysis.Analyzer
 import com.joom.lightsaber.processor.analysis.SourceResolverImpl
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.closeQuietly
-import com.joom.lightsaber.processor.commons.exhaustive
 import com.joom.lightsaber.processor.generation.GenerationContextFactory
 import com.joom.lightsaber.processor.generation.Generator
 import com.joom.lightsaber.processor.generation.model.GenerationContext
@@ -182,16 +181,14 @@ class ClassProcessor(
     val nextIntent = "$indent  "
     logger.debug("${indent}Module: {}", type)
     for (provisionPoint in provisionPoints) {
-      exhaustive(
-        when (provisionPoint) {
-          is ProvisionPoint.Constructor ->
-            logger.debug("${nextIntent}Constructor: {}", provisionPoint.method)
-          is ProvisionPoint.Method ->
-            logger.debug("${nextIntent}Method: {}", provisionPoint.method)
-          is ProvisionPoint.Field ->
-            logger.debug("${nextIntent}Field: {}", provisionPoint.field)
-        }
-      )
+      when (provisionPoint) {
+        is ProvisionPoint.Constructor ->
+          logger.debug("${nextIntent}Constructor: {}", provisionPoint.method)
+        is ProvisionPoint.Method ->
+          logger.debug("${nextIntent}Method: {}", provisionPoint.method)
+        is ProvisionPoint.Field ->
+          logger.debug("${nextIntent}Field: {}", provisionPoint.field)
+      }
     }
 
     for (binding in bindings) {
@@ -209,12 +206,10 @@ class ClassProcessor(
     logger.debug("${nextIntent}Imports:")
     val importIndent = "  $nextIntent"
     for (import in imports) {
-      exhaustive(
-        when (import) {
-          is Import.Module -> import.module.dump(importIndent)
-          is Import.Contract -> import.contract.dump(importIndent)
-        }
-      )
+      when (import) {
+        is Import.Module -> import.module.dump(importIndent)
+        is Import.Contract -> import.contract.dump(importIndent)
+      }
     }
   }
 

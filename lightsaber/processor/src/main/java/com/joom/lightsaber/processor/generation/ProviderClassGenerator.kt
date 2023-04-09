@@ -26,7 +26,6 @@ import com.joom.lightsaber.processor.commons.Methods.GET_METHOD
 import com.joom.lightsaber.processor.commons.Methods.GET_VALUE_METHOD
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.Types
-import com.joom.lightsaber.processor.commons.exhaustive
 import com.joom.lightsaber.processor.commons.newMethod
 import com.joom.lightsaber.processor.commons.rawType
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
@@ -138,15 +137,13 @@ class ProviderClassGenerator(
 
   private fun generateGetMethod(classVisitor: ClassVisitor) {
     classVisitor.newMethod(ACC_PUBLIC, GET_METHOD) {
-      exhaustive(
-        when (val medium = provider.medium) {
-          is ProviderMedium.ProvisionPoint -> provideFromProvisionPoint(medium.provisionPoint)
-          is ProviderMedium.Binding -> provideFromBinding(medium.binding)
-          is ProviderMedium.Factory -> provideFactory(medium.factory)
-          is ProviderMedium.Contract -> provideContract(medium.contract)
-          is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.converter, medium.contractProvisionPoint)
-        }
-      )
+      when (val medium = provider.medium) {
+        is ProviderMedium.ProvisionPoint -> provideFromProvisionPoint(medium.provisionPoint)
+        is ProviderMedium.Binding -> provideFromBinding(medium.binding)
+        is ProviderMedium.Factory -> provideFactory(medium.factory)
+        is ProviderMedium.Contract -> provideContract(medium.contract)
+        is ProviderMedium.ContractProvisionPoint -> provideFromContractProvisionPoint(medium.contractType, medium.converter, medium.contractProvisionPoint)
+      }
 
       valueOf(provider.dependency.type.rawType)
     }
@@ -157,13 +154,11 @@ class ProviderClassGenerator(
     if (bridge != null) {
       provideFromMethod(bridge)
     } else {
-      exhaustive(
-        when (provisionPoint) {
-          is ProvisionPoint.Field -> provideFromField(provisionPoint)
-          is ProvisionPoint.Constructor -> provideFromConstructor(provisionPoint)
-          is ProvisionPoint.Method -> provideFromMethod(provisionPoint)
-        }
-      )
+      when (provisionPoint) {
+        is ProvisionPoint.Field -> provideFromField(provisionPoint)
+        is ProvisionPoint.Constructor -> provideFromConstructor(provisionPoint)
+        is ProvisionPoint.Method -> provideFromMethod(provisionPoint)
+      }
     }
   }
 
@@ -269,18 +264,16 @@ class ProviderClassGenerator(
 
     visitLabel(resultIsNullLabel)
 
-    exhaustive(
-      when (val provisionPointConverter = contractProvisionPoint.injectee.converter) {
-        is Converter.Identity -> invokeInterface(Types.PROVIDER_TYPE, GET_METHOD)
-        is Converter.Instance -> Unit
-        is Converter.Adapter ->
-          if (provisionPointConverter.adapterType == LightsaberTypes.LAZY_ADAPTER_TYPE) {
-            invokeInterface(Types.LAZY_TYPE, GET_METHOD)
-          } else {
-            error("Cannot import contract's dependency with adapter ${provisionPointConverter.adapterType.className}")
-          }
-      }
-    )
+    when (val provisionPointConverter = contractProvisionPoint.injectee.converter) {
+      is Converter.Identity -> invokeInterface(Types.PROVIDER_TYPE, GET_METHOD)
+      is Converter.Instance -> Unit
+      is Converter.Adapter ->
+        if (provisionPointConverter.adapterType == LightsaberTypes.LAZY_ADAPTER_TYPE) {
+          invokeInterface(Types.LAZY_TYPE, GET_METHOD)
+        } else {
+          error("Cannot import contract's dependency with adapter ${provisionPointConverter.adapterType.className}")
+        }
+    }
   }
 
   private fun GeneratorAdapter.getContractInstance(
