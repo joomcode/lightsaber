@@ -28,8 +28,6 @@ import com.joom.grip.withField
 import com.joom.grip.withMethod
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.ErrorReporter
-import com.joom.lightsaber.processor.analysis.FactoryParser
-import com.joom.lightsaber.processor.analysis.SourceResolver
 import com.joom.lightsaber.processor.commons.Types
 import com.joom.lightsaber.processor.model.Factory
 import java.nio.file.Path
