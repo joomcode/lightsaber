@@ -37,6 +37,7 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.net.URI
 import java.nio.file.FileSystems
+import java.nio.file.Paths
 import javax.inject.Inject
 
 abstract class LightsaberTask @Inject constructor(
@@ -149,7 +150,7 @@ abstract class LightsaberTask @Inject constructor(
   }
 
   private fun computeReportDirectory(): File {
-    return File(projectLayout.buildDirectory.get().asFile, "reports/lightsaber")
+    return Paths.get(projectLayout.buildDirectory.get().asFile.path, "reports", "lightsaber").toFile()
   }
 
   companion object {

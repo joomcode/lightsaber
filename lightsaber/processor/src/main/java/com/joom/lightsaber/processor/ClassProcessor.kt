@@ -97,12 +97,7 @@ class ClassProcessor(
     val hintsBuilder = HintsBuilder(grip.classRegistry)
 
     if (parameters.dumpDebugReport) {
-      val report = File(parameters.reportDirectory.toFile(), "debug-dump.txt")
-
-      report.parentFile.mkdirs()
-      report.createNewFile()
-
-      FileDumpContext(report).use { dumpContext ->
+      FileDumpContext(getOrCreateReportFile()).use { dumpContext ->
         DebugReport.dump(context, dumpContext)
       }
     }
@@ -162,6 +157,16 @@ class ClassProcessor(
       .forEach {
         grip.classRegistry.getClassMirror(it)
       }
+  }
+
+  private fun getOrCreateReportFile(): File {
+    val report = File(parameters.reportDirectory.toFile(), "debug-dump.txt")
+    report.parentFile.mkdirs()
+    report.createNewFile()
+    if (!report.exists()) {
+      error("Unable to create a report file $report")
+    }
+    return report
   }
 
   private fun checkErrors() {

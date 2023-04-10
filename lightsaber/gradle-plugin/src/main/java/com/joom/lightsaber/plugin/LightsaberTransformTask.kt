@@ -36,6 +36,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import java.io.File
+import java.nio.file.Paths
 import javax.inject.Inject
 
 @CacheableTask
@@ -126,7 +127,7 @@ abstract class LightsaberTransformTask @Inject constructor(
   }
 
   private fun computeReportDirectory(): File {
-    return File(projectLayout.buildDirectory.get().asFile, "reports/lightsaber")
+    return Paths.get(projectLayout.buildDirectory.get().asFile.path, "reports", "lightsaber").toFile()
   }
 
   companion object {

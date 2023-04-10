@@ -30,6 +30,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
 import java.io.File
+import java.nio.file.Paths
 
 abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
@@ -173,7 +174,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private fun computeReportDirectory(): File {
-    return File(project.buildDir, "reports/lightsaber")
+    return Paths.get(project.buildDir.path, "reports", "lightsaber").toFile()
   }
 
   private companion object {
