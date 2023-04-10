@@ -31,10 +31,12 @@ import com.joom.lightsaber.processor.LightsaberSharedBuildCache
 import com.joom.lightsaber.processor.logging.getLogger
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.util.EnumSet
 
 class LightsaberTransform(
-  private val extension: AndroidLightsaberPluginExtension
+  private val extension: AndroidLightsaberPluginExtension,
+  private val reportDirectory: Path
 ) : Transform() {
   private val logger = getLogger()
 
@@ -69,7 +71,9 @@ class LightsaberTransform(
       modulesClasspath = emptyList(),
       bootClasspath = extension.bootClasspath.map { it.toPath() },
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$'),
-      validateUsage = false,
+      validateUsage = extension.validateUsage,
+      dumpDebugReport = extension.dumpDebugReport,
+      reportDirectory = reportDirectory,
       sharedBuildCache = LightsaberSharedBuildCache.create(),
     )
     logger.info("Starting Lightsaber processor: {}", parameters)
@@ -96,6 +100,8 @@ class LightsaberTransform(
 
   override fun getParameterInputs(): MutableMap<String, Any> {
     return mutableMapOf(
+      "validateUsage" to extension.validateUsage,
+      "dumpDebugReport" to extension.dumpDebugReport,
       "cacheable" to extension.cacheable,
       "bootClasspath" to extension.bootClasspath
         .map { it.absolutePath }

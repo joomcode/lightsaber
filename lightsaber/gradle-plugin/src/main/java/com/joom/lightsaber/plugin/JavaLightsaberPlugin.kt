@@ -40,9 +40,9 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     project.afterEvaluate {
       val buildCacheService = registerBuildCacheService<LightsaberTask>()
       if (project.plugins.hasPlugin("java")) {
-        setupLightsaberForJava(buildCacheService, lightsaber.validateUsage)
+        setupLightsaberForJava(buildCacheService, lightsaber)
         if (lightsaber.processTest) {
-          setupLightsaberForJavaTest(buildCacheService, lightsaber.validateUsage)
+          setupLightsaberForJavaTest(buildCacheService, lightsaber)
         }
       } else {
         throw GradleException("Project should use Java plugin")
@@ -55,14 +55,27 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     addDependencies(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME)
   }
 
-  private fun setupLightsaberForJava(buildCacheService: Provider<LightsaberSharedBuildCacheService>, validateUsage: Boolean) {
+  private fun setupLightsaberForJava(buildCacheService: Provider<LightsaberSharedBuildCacheService>, extension: JavaLightsaberPluginExtension) {
     logger.info("Setting up Lightsaber task for Java project {}...", project.name)
-    createTasks(project.sourceSets.main, project.tasks.compileJava, project.tasks.classes, buildCacheService, validateUsage)
+    createTasks(
+      sourceSet = project.sourceSets.main,
+      compileTask = project.tasks.compileJava,
+      classesTask = project.tasks.classes,
+      buildCacheService = buildCacheService,
+      extension = extension,
+    )
   }
 
-  private fun setupLightsaberForJavaTest(buildCacheService: Provider<LightsaberSharedBuildCacheService>, validateUsage: Boolean) {
+  private fun setupLightsaberForJavaTest(buildCacheService: Provider<LightsaberSharedBuildCacheService>, extension: JavaLightsaberPluginExtension) {
     logger.info("Setting up Lightsaber task for Java test project {}...", project.name)
-    createTasks(project.sourceSets.test, project.tasks.compileTestJava, project.tasks.testClasses, buildCacheService, validateUsage, "test")
+    createTasks(
+      sourceSet = project.sourceSets.test,
+      compileTask = project.tasks.compileTestJava,
+      classesTask = project.tasks.testClasses,
+      buildCacheService = buildCacheService,
+      extension = extension,
+      nameSuffix = "test"
+    )
   }
 
   private fun createTasks(
@@ -70,7 +83,7 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     compileTask: JavaCompile,
     classesTask: Task,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>,
-    validateUsage: Boolean,
+    extension: JavaLightsaberPluginExtension,
     nameSuffix: String = ""
   ) {
     val suffix = nameSuffix.capitalize()
@@ -80,23 +93,29 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     val sourceDir = File(lightsaberDir, "src")
     val classpath = compileTask.classpath.toList() - classesDirs.toSet()
     val modulesClasspath = modulesClasspathProvider(project.configurations.named(sourceSet.runtimeClasspathConfigurationName))
-    val bootClasspath =
-      compileTask.options.bootstrapClasspath?.toList()
-        ?: System.getProperty("sun.boot.class.path")?.split(File.pathSeparator)?.map { File(it) }
-        ?: emptyList()
-    val lightsaberTask =
-      createLightsaberProcessTask(
-        "${LightsaberTask.TASK_PREFIX}$suffix",
-        classesDirs,
-        backupDirs,
-        sourceDir,
-        classpath,
-        modulesClasspath,
-        bootClasspath,
-        buildCacheService,
-        validateUsage
-      )
-    val backupTask = createBackupClassFilesTask("lightsaberBackupClasses$suffix", classesDirs, backupDirs)
+
+    val bootClasspath = compileTask.options.bootstrapClasspath?.toList()
+      ?: System.getProperty("sun.boot.class.path")?.split(File.pathSeparator)?.map { File(it) }
+      ?: emptyList()
+
+    val lightsaberTask = createLightsaberProcessTask(
+      taskName = "${LightsaberTask.TASK_PREFIX}$suffix",
+      classesDirs = classesDirs,
+      backupDirs = backupDirs,
+      sourceDir = sourceDir,
+      classpath = classpath,
+      modulesClasspath = modulesClasspath,
+      bootClasspath = bootClasspath,
+      buildEntityService = buildCacheService,
+      extension = extension
+    )
+
+    val backupTask = createBackupClassFilesTask(
+      taskName = "lightsaberBackupClasses$suffix",
+      classesDirs = classesDirs,
+      backupDirs = backupDirs
+    )
+
     configureTasks(lightsaberTask, backupTask, compileTask, classesTask)
   }
 
@@ -150,7 +169,7 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     modulesClasspath: Provider<FileCollection>,
     bootClasspath: Collection<File>,
     buildEntityService: Provider<LightsaberSharedBuildCacheService>,
-    validateUsage: Boolean,
+    extension: JavaLightsaberPluginExtension,
   ): LightsaberTask {
     logger.info("Creating Lightsaber task {}...", taskName)
     logger.info("  Source classes directories: {}", backupDirs)
@@ -165,7 +184,8 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
       task.modulesClasspath.from(modulesClasspath)
       task.bootClasspath.from(bootClasspath)
       task.sharedBuildCacheService.set(buildEntityService)
-      task.validateUsage.set(validateUsage)
+      task.validateUsage.set(extension.validateUsage)
+      task.dumpDebugReport.set(extension.dumpDebugReport)
       @Suppress("UnstableApiUsage")
       task.usesService(buildEntityService)
     }

@@ -23,6 +23,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleScriptException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
@@ -33,10 +34,15 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 import java.net.URI
 import java.nio.file.FileSystems
+import java.nio.file.Paths
+import javax.inject.Inject
 
-abstract class LightsaberTask : DefaultTask() {
+abstract class LightsaberTask @Inject constructor(
+  private val projectLayout: ProjectLayout
+) : DefaultTask() {
   @get:InputFiles
   @get:Classpath
   abstract val backupDirs: ConfigurableFileCollection
@@ -66,6 +72,9 @@ abstract class LightsaberTask : DefaultTask() {
   @get:Input
   abstract val validateUsage: Property<Boolean>
 
+  @get:Input
+  abstract val dumpDebugReport: Property<Boolean>
+
   private val projectName = formatProjectName()
 
   init {
@@ -88,6 +97,8 @@ abstract class LightsaberTask : DefaultTask() {
       projectName = projectName,
       sharedBuildCache = sharedBuildCacheService.get().cache,
       validateUsage = validateUsage.get(),
+      dumpDebugReport = dumpDebugReport.get(),
+      reportDirectory = computeReportDirectory().toPath()
     )
 
     logger.info("Starting Lightsaber processor: {}", parameters)
@@ -127,6 +138,8 @@ abstract class LightsaberTask : DefaultTask() {
       logger.info("Removing a directory with generated source files: {}", sourceDir)
       sourceDir.get().asFile.deleteRecursively()
     }
+
+    computeReportDirectory().deleteRecursively()
   }
 
   private fun validate() {
@@ -134,6 +147,10 @@ abstract class LightsaberTask : DefaultTask() {
     require(!backupDirs.isEmpty) { "backupDirs is not set" }
     require(classesDirs.files.size == backupDirs.files.size) { "classesDirs and backupDirs must have equal size" }
     require(sourceDir.isPresent) { "sourceDir is not set" }
+  }
+
+  private fun computeReportDirectory(): File {
+    return Paths.get(projectLayout.buildDirectory.get().asFile.path, "reports", "lightsaber").toFile()
   }
 
   companion object {

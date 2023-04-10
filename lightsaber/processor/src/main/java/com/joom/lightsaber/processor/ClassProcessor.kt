@@ -32,15 +32,7 @@ import com.joom.lightsaber.processor.generation.model.GenerationContext
 import com.joom.lightsaber.processor.generation.model.ProviderFactoryImpl
 import com.joom.lightsaber.processor.injection.Patcher
 import com.joom.lightsaber.processor.logging.getLogger
-import com.joom.lightsaber.processor.model.Component
-import com.joom.lightsaber.processor.model.Contract
-import com.joom.lightsaber.processor.model.ContractConfiguration
-import com.joom.lightsaber.processor.model.Import
 import com.joom.lightsaber.processor.model.InjectionContext
-import com.joom.lightsaber.processor.model.InjectionPoint
-import com.joom.lightsaber.processor.model.InjectionTarget
-import com.joom.lightsaber.processor.model.Module
-import com.joom.lightsaber.processor.model.ProvisionPoint
 import com.joom.lightsaber.processor.validation.DependencyResolverFactory
 import com.joom.lightsaber.processor.validation.HintsBuilder
 import com.joom.lightsaber.processor.validation.UsageValidator
@@ -48,6 +40,7 @@ import com.joom.lightsaber.processor.validation.Validator
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.Closeable
+import java.io.File
 import java.nio.file.Path
 
 class ClassProcessor(
@@ -70,11 +63,19 @@ class ClassProcessor(
 
   fun processClasses() {
     warmUpGripCaches(grip, parameters.inputs)
+
     val injectionContext = performAnalysisAndValidation()
     val providerFactory = ProviderFactoryImpl(grip.fileRegistry, parameters.projectName)
-    val generationContextFactory = GenerationContextFactory(sourceResolver, grip.fileRegistry, grip.classRegistry, providerFactory, parameters.projectName)
+
+    val generationContextFactory = GenerationContextFactory(
+      sourceResolver = sourceResolver,
+      fileRegistry = grip.fileRegistry,
+      classRegistry = grip.classRegistry,
+      providerFactory = providerFactory,
+      projectName = parameters.projectName
+    )
+
     val generationContext = generationContextFactory.createGenerationContext(injectionContext)
-    injectionContext.dump()
     copyAndPatchClasses(injectionContext, generationContext)
     performGeneration(injectionContext, generationContext)
   }
@@ -94,7 +95,20 @@ class ClassProcessor(
     val context = Analyzer(grip, errorReporter, parameters.projectName).analyze(parameters.inputs)
     val dependencyResolverFactory = DependencyResolverFactory(context)
     val hintsBuilder = HintsBuilder(grip.classRegistry)
-    Validator(grip.classRegistry, errorReporter, context, dependencyResolverFactory, hintsBuilder).validate()
+
+    if (parameters.dumpDebugReport) {
+      FileDumpContext(getOrCreateReportFile()).use { dumpContext ->
+        DebugReport.dump(context, dumpContext)
+      }
+    }
+
+    Validator(
+      classRegistry = grip.classRegistry,
+      errorReporter = errorReporter,
+      context = context,
+      dependencyResolverFactory = dependencyResolverFactory,
+      hintsBuilder = hintsBuilder,
+    ).validate()
 
     if (parameters.validateUsage) {
       UsageValidator(grip, errorReporter).validateUsage(parameters.modulesClasspath)
@@ -145,89 +159,19 @@ class ClassProcessor(
       }
   }
 
+  private fun getOrCreateReportFile(): File {
+    val report = File(parameters.reportDirectory.toFile(), "debug-dump.txt")
+    report.parentFile.mkdirs()
+    report.createNewFile()
+    if (!report.exists()) {
+      error("Unable to create a report file $report")
+    }
+    return report
+  }
+
   private fun checkErrors() {
     if (errorReporter.hasErrors) {
       throw ProcessingException(errorReporter.errors.joinToString(prefix = "Errors found:\n", separator = "\n"))
-    }
-  }
-
-  private fun InjectionContext.dump() {
-    if (!logger.isDebugEnabled) {
-      return
-    }
-
-    components.forEach { it.dump() }
-    contractConfigurations.forEach { it.dump() }
-    injectableTargets.forEach { it.dump("Injectable") }
-    providableTargets.forEach { it.dump("Providable") }
-  }
-
-  private fun Component.dump() {
-    logger.debug("Component: {}", type)
-    defaultModule.dump("  ")
-
-    for (subcomponent in subcomponents) {
-      logger.debug("  Subcomponent: {}", subcomponent)
-    }
-  }
-
-  private fun ContractConfiguration.dump() {
-    logger.debug("Contract Configuration: {}", type)
-    contract.dump("  ")
-    defaultModule.dump("  ")
-  }
-
-  private fun Module.dump(indent: String = "") {
-    val nextIntent = "$indent  "
-    logger.debug("${indent}Module: {}", type)
-    for (provisionPoint in provisionPoints) {
-      when (provisionPoint) {
-        is ProvisionPoint.Constructor ->
-          logger.debug("${nextIntent}Constructor: {}", provisionPoint.method)
-        is ProvisionPoint.Method ->
-          logger.debug("${nextIntent}Method: {}", provisionPoint.method)
-        is ProvisionPoint.Field ->
-          logger.debug("${nextIntent}Field: {}", provisionPoint.field)
-      }
-    }
-
-    for (binding in bindings) {
-      logger.debug("${nextIntent}Binding: {} -> {}", binding.ancestor, binding.dependency)
-    }
-
-    for (factory in factories) {
-      logger.debug("${nextIntent}Factory: {}", factory.type)
-    }
-
-    for (contract in contracts) {
-      contract.dump(nextIntent)
-    }
-
-    logger.debug("${nextIntent}Imports:")
-    val importIndent = "  $nextIntent"
-    for (import in imports) {
-      when (import) {
-        is Import.Module -> import.module.dump(importIndent)
-        is Import.Contract -> import.contract.dump(importIndent)
-      }
-    }
-  }
-
-  private fun Contract.dump(indent: String = "") {
-    val nextIntent = "$indent  "
-    logger.debug("${indent}Contract: {}", type)
-    for (provisionPoint in provisionPoints) {
-      logger.debug("${nextIntent}Method: {}", provisionPoint.method)
-    }
-  }
-
-  private fun InjectionTarget.dump(name: String) {
-    logger.debug("{}: {}", name, type)
-    for (injectionPoint in injectionPoints) {
-      when (injectionPoint) {
-        is InjectionPoint.Field -> logger.debug("  Field: {}", injectionPoint.field)
-        is InjectionPoint.Method -> logger.debug("  Method: {}", injectionPoint.method)
-      }
     }
   }
 

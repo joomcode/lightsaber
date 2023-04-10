@@ -29,6 +29,8 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
+import java.io.File
+import java.nio.file.Paths
 
 abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
@@ -54,30 +56,44 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     }
   }
 
-  private fun configureTransformWithComponents(extension: AndroidLightsaberPluginExtension, buildCacheService: Provider<LightsaberSharedBuildCacheService>) {
+  private fun configureTransformWithComponents(
+    extension: AndroidLightsaberPluginExtension,
+    buildCacheService: Provider<LightsaberSharedBuildCacheService>
+  ) {
     val validateUsage = project.provider { extension.validateUsage }
+    val dumpDebugReport = project.provider { extension.dumpDebugReport }
 
     project.applicationAndroidComponents?.apply {
       onVariants { variant ->
-        variant.registerLightsaberTask(validateUsage, buildCacheService)
+        variant.registerLightsaberTask(
+          validateUsage = validateUsage,
+          dumpDebugReport = dumpDebugReport,
+          buildCacheService = buildCacheService
+        )
       }
     }
 
     project.libraryAndroidComponents?.apply {
       onVariants { variant ->
-        variant.registerLightsaberTask(validateUsage, buildCacheService)
+        variant.registerLightsaberTask(
+          validateUsage = validateUsage,
+          dumpDebugReport = dumpDebugReport,
+          buildCacheService = buildCacheService
+        )
       }
     }
   }
 
   private fun <T> T.registerLightsaberTask(
     validateUsage: Provider<Boolean>,
+    dumpDebugReport: Provider<Boolean>,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>
   ) where T : Variant, T : HasAndroidTest {
     val runtimeClasspath = runtimeClasspathConfiguration()
 
     registerLightsaberTask(
       validateUsage = validateUsage,
+      dumpDebugReport = dumpDebugReport,
       classpathProvider = classpathProvider(runtimeClasspath),
       modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath),
       buildCacheService = buildCacheService,
@@ -88,6 +104,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
 
       androidTest.registerLightsaberTask(
         validateUsage = validateUsage,
+        dumpDebugReport = dumpDebugReport,
         classpathProvider = classpathProvider(androidTestRuntimeClasspath),
         modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath),
         buildCacheService = buildCacheService,
@@ -97,6 +114,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
 
   private fun Component.registerLightsaberTask(
     validateUsage: Provider<Boolean>,
+    dumpDebugReport: Provider<Boolean>,
     classpathProvider: Provider<FileCollection>,
     modulesClasspathProvider: Provider<FileCollection>,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>,
@@ -118,6 +136,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       task.bootClasspath.from(project.androidComponents!!.sdkComponents.bootClasspath)
       task.sharedBuildCacheService.set(buildCacheService)
       task.validateUsage.set(validateUsage)
+      task.dumpDebugReport.set(dumpDebugReport)
 
       @Suppress("UnstableApiUsage")
       task.usesService(buildCacheService)
@@ -145,12 +164,17 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       return
     }
 
-    val transform = LightsaberTransform(extension)
+    val reportDirectory = computeReportDirectory()
+    val transform = LightsaberTransform(extension, reportDirectory.toPath())
     project.android.registerTransform(transform)
 
     project.afterEvaluate {
       extension.bootClasspath = project.android.bootClasspath
     }
+  }
+
+  private fun computeReportDirectory(): File {
+    return Paths.get(project.buildDir.path, "reports", "lightsaber").toFile()
   }
 
   private companion object {
