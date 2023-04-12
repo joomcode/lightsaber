@@ -37,6 +37,7 @@ import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.ProvisionPoint
+import com.joom.lightsaber.processor.reportError
 import org.objectweb.asm.Opcodes
 
 class SanityChecker(
@@ -64,6 +65,7 @@ class SanityChecker(
             if (injectionPoint.field.isStatic) {
               errorReporter.reportError("Static field injection is not supported yet: " + injectionPoint.field)
             }
+
           is InjectionPoint.Method ->
             if (injectionPoint.method.isStatic) {
               errorReporter.reportError("Static method injection is not supported yet: " + injectionPoint.method)
@@ -174,12 +176,7 @@ class SanityChecker(
       return
     }
 
-    if (mirror.interfaces.isNotEmpty()) {
-      errorReporter.reportError("Factory ${mirror.type.className} mustn't extend any interfaces")
-      return
-    }
-
-    if (mirror.methods.isEmpty()) {
+    if (factory.provisionPoints.isEmpty()) {
       errorReporter.reportError("Factory ${mirror.type.className} must contain at least one method")
       return
     }

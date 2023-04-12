@@ -147,14 +147,6 @@ class SanityCheckerTest {
   }
 
   @Test
-  fun test_check_fails_when_factory_extends_interface() {
-    integrationTestRule.assertInvalidProject(
-      sourceCodeDir = "factory_extends_interface",
-      message = "Factory test_case_projects.sanity.factory_extends_interface.FactoryInterface mustn't extend any interfaces"
-    )
-  }
-
-  @Test
   fun test_check_fails_when_factory_does_not_have_any_methods() {
     integrationTestRule.assertInvalidProject(
       sourceCodeDir = "factory_without_methods",

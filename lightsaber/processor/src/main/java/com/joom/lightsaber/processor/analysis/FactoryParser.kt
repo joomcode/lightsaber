@@ -62,9 +62,45 @@ class FactoryParserImpl(
     val implementationType = Factory.computeImplementationType(mirror.type)
     val qualifier = analyzerHelper.findQualifier(mirror)
     val dependency = Dependency(GenericType.Raw(mirror.type), qualifier)
-    val provisionPoints = mirror.methods.mapNotNull { maybeCreateFactoryProvisionPoint(mirror, it) }
+    val provisionPoints = computeProvisionPointCandidates(mirror).mapNotNull { maybeCreateFactoryProvisionPoint(mirror, it) }
     return Factory(mirror.type, implementationType, dependency, provisionPoints)
   }
+
+  private fun computeProvisionPointCandidates(mirror: ClassMirror): Collection<MethodMirror> {
+    val hashes = HashSet<MethodHash>()
+    val result = ArrayList<MethodMirror>()
+
+    fun collect(method: MethodMirror) {
+      if (hashes.add(method.toHash())) {
+        result += method
+      }
+    }
+
+    mirror.methods.forEach { method ->
+      collect(method)
+    }
+
+    mirror.interfaces.forEach { parent ->
+      computeProvisionPointCandidates(grip.classRegistry.getClassMirror(parent)).forEach { method ->
+        collect(method)
+      }
+    }
+
+    return result
+  }
+
+  private fun MethodMirror.toHash(): MethodHash {
+    return MethodHash(
+      name = name,
+      // MethodSignatureMirror returns a list without equals/hashCode implementation so we need to make copy
+      parameters = signature.parameterTypes.toList()
+    )
+  }
+
+  private data class MethodHash(
+    val name: String,
+    val parameters: List<GenericType>
+  )
 
   private fun maybeCreateFactoryProvisionPoint(mirror: ClassMirror, method: MethodMirror): FactoryProvisionPoint? {
     val returnType = tryExtractReturnTypeFromFactoryMethod(mirror, method) ?: return null
