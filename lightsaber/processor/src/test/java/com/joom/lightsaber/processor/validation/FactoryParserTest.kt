@@ -69,4 +69,26 @@ class FactoryParserTest {
           "Dependency(type=java.lang.String, qualifier=null)"
     )
   }
+
+  @Test
+  fun test_check_fails_when_factory_has_misconfigured_methods() {
+    integrationTestRule.assertInvalidProject(
+      sourceCodeDir = "factory_with_misconfigured_inheritance",
+      message = "Class test_case_projects.factory_parser.factory_with_misconfigured_inheritance.Bar must have a constructor annotated with @Factory.Inject"
+    )
+  }
+
+  @Test
+  fun test_check_works_when_using_factories_with_inheritance() {
+    integrationTestRule.assertValidProject(
+      sourceCodeDir = "factory_with_inheritance"
+    )
+  }
+
+  @Test
+  fun test_check_works_when_using_factories_with_multiple_inheritance() {
+    integrationTestRule.assertValidProject(
+      sourceCodeDir = "factory_with_multiple_inheritance"
+    )
+  }
 }
