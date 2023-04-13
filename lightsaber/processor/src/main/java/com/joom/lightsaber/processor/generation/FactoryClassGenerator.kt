@@ -17,7 +17,10 @@
 package com.joom.lightsaber.processor.generation
 
 import com.joom.grip.ClassRegistry
+import com.joom.grip.mirrors.ClassMirror
+import com.joom.grip.mirrors.MethodMirror
 import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.StandaloneClassWriter
 import com.joom.lightsaber.processor.commons.Types
@@ -37,6 +40,7 @@ import org.objectweb.asm.Opcodes.ACC_FINAL
 import org.objectweb.asm.Opcodes.ACC_PRIVATE
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_SUPER
+import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 import org.objectweb.asm.Opcodes.V1_6
 
 class FactoryClassGenerator(
@@ -61,6 +65,7 @@ class FactoryClassGenerator(
     generateFields(classVisitor)
     generateConstructor(classVisitor)
     generateMethods(classVisitor)
+    generateBridges(classVisitor)
 
     classVisitor.visitEnd()
     return classWriter.toByteArray()
@@ -99,6 +104,65 @@ class FactoryClassGenerator(
       }
     }
   }
+
+  private fun generateBridges(classVisitor: ClassVisitor) {
+    val hashToReturnType = HashMap<BridgeHash, GenericType>()
+    val hashToBridgeTypes = HashMap<BridgeHash, HashSet<GenericType>>()
+    val hashToBridgeMethods = HashMap<BridgeHash, ArrayList<MethodMirror>>()
+
+    factory.provisionPoints.forEach { provisionPoint ->
+      hashToReturnType[provisionPoint.method.toBridgeHash()] = provisionPoint.method.signature.returnType
+    }
+
+    fun collectBridges(mirror: ClassMirror) {
+      mirror.methods.forEach { method ->
+        val hash = method.toBridgeHash()
+        val returnType = hashToReturnType[hash] ?: return@forEach
+
+        if (method.signature.returnType != returnType) {
+          if (hashToBridgeTypes.getOrPut(hash) { HashSet() }.add(method.signature.returnType)) {
+            hashToBridgeMethods.getOrPut(hash) { ArrayList() }.add(method)
+          }
+        }
+      }
+
+      mirror.interfaces.forEach { parent ->
+        collectBridges(classRegistry.getClassMirror(parent))
+      }
+    }
+
+    classRegistry.getClassMirror(factory.type).interfaces.forEach { parent ->
+      collectBridges(classRegistry.getClassMirror(parent))
+    }
+
+    factory.provisionPoints.forEach { provisionPoint ->
+      hashToBridgeMethods[provisionPoint.method.toBridgeHash()].orEmpty().forEach { bridge ->
+        generateBridge(classVisitor, bridge, provisionPoint)
+      }
+    }
+  }
+
+  private fun generateBridge(classVisitor: ClassVisitor, from: MethodMirror, provisionPoint: FactoryProvisionPoint) {
+    classVisitor.newMethod(ACC_PUBLIC or ACC_SYNTHETIC, from.toMethodDescriptor()) {
+      loadThis()
+      loadArgs()
+      invokeInterface(provisionPoint.containerType, provisionPoint.method.toMethodDescriptor())
+    }
+  }
+
+  private data class BridgeHash(
+    val name: String,
+    val parameters: List<GenericType>
+  )
+
+  private fun MethodMirror.toBridgeHash(): BridgeHash {
+    return BridgeHash(
+      name = name,
+      // MethodSignatureMirror returns a list without equals/hashCode implementation so we need to make copy
+      parameters = signature.parameterTypes.toList()
+    )
+  }
+
 
   private fun GeneratorAdapter.newProvisionPoint(provisionPoint: FactoryProvisionPoint) {
     val dependencyType = provisionPoint.injectionPoint.containerType
