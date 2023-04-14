@@ -36,6 +36,10 @@ import java.util.EnumSet
 
 class LightsaberTransform(
   private val extension: AndroidLightsaberPluginExtension,
+  private val validateUsageByDefault: Boolean,
+  private val validateUnusedImportsByDefault: Boolean,
+  private val validateUnusedImportsVerboseByDefault: Boolean,
+  private val dumpDebugReportByDefault: Boolean,
   private val reportDirectory: Path
 ) : Transform() {
   private val logger = getLogger()
@@ -71,9 +75,10 @@ class LightsaberTransform(
       modulesClasspath = emptyList(),
       bootClasspath = extension.bootClasspath.map { it.toPath() },
       projectName = invocation.context.path.replace(":transformClassesWithLightsaberFor", ":").replace(':', '$'),
-      validateUsage = extension.validateUsage,
-      validateUnusedImports = extension.validateUnusedImports,
-      dumpDebugReport = extension.dumpDebugReport,
+      validateUsage = extension.validateUsage ?: validateUsageByDefault,
+      validateUnusedImports = extension.validateUnusedImports ?: validateUnusedImportsByDefault,
+      validateUnusedImportsVerbose = extension.validateUnusedImportsVerbose ?: validateUnusedImportsVerboseByDefault,
+      dumpDebugReport = extension.dumpDebugReport ?: dumpDebugReportByDefault,
       reportDirectory = reportDirectory,
       sharedBuildCache = LightsaberSharedBuildCache.create(),
     )
@@ -101,9 +106,10 @@ class LightsaberTransform(
 
   override fun getParameterInputs(): MutableMap<String, Any> {
     return mutableMapOf(
-      "validateUsage" to extension.validateUsage,
-      "validateUnusedImports" to extension.validateUnusedImports,
-      "dumpDebugReport" to extension.dumpDebugReport,
+      "validateUsage" to (extension.validateUsage ?: validateUsageByDefault),
+      "validateUnusedImports" to (extension.validateUnusedImports ?: validateUnusedImportsByDefault),
+      "validateUnusedImportsVerbose" to (extension.validateUnusedImportsVerbose ?: validateUnusedImportsVerboseByDefault),
+      "dumpDebugReport" to (extension.dumpDebugReport ?: dumpDebugReportByDefault),
       "cacheable" to extension.cacheable,
       "bootClasspath" to extension.bootClasspath
         .map { it.absolutePath }

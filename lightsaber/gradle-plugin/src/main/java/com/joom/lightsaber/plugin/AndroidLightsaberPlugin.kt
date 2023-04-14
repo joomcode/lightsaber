@@ -60,15 +60,22 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     extension: AndroidLightsaberPluginExtension,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>
   ) {
-    val validateUsage = project.provider { extension.validateUsage }
-    val validateUnusedImports = project.provider { extension.validateUnusedImports }
-    val dumpDebugReport = project.provider { extension.dumpDebugReport }
+    val validateUsageByDefault = Flags.validateUsageByDefault(project)
+    val validateUnusedImportsByDefault = Flags.validateUnusedImportsByDefault(project)
+    val validateUnusedImportsVerboseByDefault = Flags.validateUnusedImportsVerboseByDefault(project)
+    val dumpDebugReportByDefault = Flags.dumpDebugReportByDefault(project)
+
+    val validateUsage = project.provider { extension.validateUsage ?: validateUsageByDefault }
+    val validateUnusedImports = project.provider { extension.validateUnusedImports ?: validateUnusedImportsByDefault }
+    val validateUnusedImportsVerbose = project.provider { extension.validateUnusedImportsVerbose ?: validateUnusedImportsVerboseByDefault }
+    val dumpDebugReport = project.provider { extension.dumpDebugReport ?: dumpDebugReportByDefault }
 
     project.applicationAndroidComponents?.apply {
       onVariants { variant ->
         variant.registerLightsaberTask(
           validateUsage = validateUsage,
           validateUnusedImports = validateUnusedImports,
+          validateUnusedImportsVerbose = validateUnusedImportsVerbose,
           dumpDebugReport = dumpDebugReport,
           buildCacheService = buildCacheService
         )
@@ -80,6 +87,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
         variant.registerLightsaberTask(
           validateUsage = validateUsage,
           validateUnusedImports = validateUnusedImports,
+          validateUnusedImportsVerbose = validateUnusedImportsVerbose,
           dumpDebugReport = dumpDebugReport,
           buildCacheService = buildCacheService
         )
@@ -90,6 +98,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   private fun <T> T.registerLightsaberTask(
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
+    validateUnusedImportsVerbose: Provider<Boolean>,
     dumpDebugReport: Provider<Boolean>,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>
   ) where T : Variant, T : HasAndroidTest {
@@ -98,6 +107,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     registerLightsaberTask(
       validateUsage = validateUsage,
       validateUnusedImports = validateUnusedImports,
+      validateUnusedImportsVerbose = validateUnusedImportsVerbose,
       dumpDebugReport = dumpDebugReport,
       classpathProvider = classpathProvider(runtimeClasspath),
       modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath),
@@ -110,6 +120,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       androidTest.registerLightsaberTask(
         validateUsage = validateUsage,
         validateUnusedImports = validateUnusedImports,
+        validateUnusedImportsVerbose = validateUnusedImportsVerbose,
         dumpDebugReport = dumpDebugReport,
         classpathProvider = classpathProvider(androidTestRuntimeClasspath),
         modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath),
@@ -121,6 +132,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   private fun Component.registerLightsaberTask(
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
+    validateUnusedImportsVerbose: Provider<Boolean>,
     dumpDebugReport: Provider<Boolean>,
     classpathProvider: Provider<FileCollection>,
     modulesClasspathProvider: Provider<FileCollection>,
@@ -144,6 +156,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       task.sharedBuildCacheService.set(buildCacheService)
       task.validateUsage.set(validateUsage)
       task.validateUnusedImports.set(validateUnusedImports)
+      task.validateUnusedImportsVerbose.set(validateUnusedImportsVerbose)
       task.dumpDebugReport.set(dumpDebugReport)
 
       @Suppress("UnstableApiUsage")
@@ -172,8 +185,15 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       return
     }
 
-    val reportDirectory = computeReportDirectory()
-    val transform = LightsaberTransform(extension, reportDirectory.toPath())
+    val transform = LightsaberTransform(
+      extension = extension,
+      validateUsageByDefault = Flags.validateUsageByDefault(project),
+      validateUnusedImportsByDefault = Flags.validateUnusedImportsByDefault(project),
+      validateUnusedImportsVerboseByDefault = Flags.validateUnusedImportsVerboseByDefault(project),
+      dumpDebugReportByDefault = Flags.dumpDebugReportByDefault(project),
+      reportDirectory = computeReportDirectory().toPath()
+    )
+
     project.android.registerTransform(transform)
 
     project.afterEvaluate {

@@ -41,7 +41,7 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
       val buildCacheService = registerBuildCacheService<LightsaberTask>()
       if (project.plugins.hasPlugin("java")) {
         setupLightsaberForJava(buildCacheService, lightsaber)
-        if (lightsaber.processTest) {
+        if (lightsaber.processTest ?: Flags.processTestByDefault(project)) {
           setupLightsaberForJavaTest(buildCacheService, lightsaber)
         }
       } else {
@@ -175,6 +175,11 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
     logger.info("  Source classes directories: {}", backupDirs)
     logger.info("  Processed classes directories: {}", classesDirs)
 
+    val validateUsage = extension.validateUsage ?: Flags.validateUsageByDefault(project)
+    val validateUnusedImports = extension.validateUnusedImports ?: Flags.validateUnusedImportsByDefault(project)
+    val validateUnusedImportsVerbose = extension.validateUnusedImportsVerbose ?: Flags.validateUnusedImportsVerboseByDefault(project)
+    val dumpDebugReport = extension.dumpDebugReport ?: Flags.dumpDebugReportByDefault(project)
+
     return project.tasks.create(taskName, LightsaberTask::class.java) { task ->
       task.description = "Processes .class files with Lightsaber Processor."
       task.backupDirs.from(backupDirs)
@@ -184,9 +189,10 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
       task.modulesClasspath.from(modulesClasspath)
       task.bootClasspath.from(bootClasspath)
       task.sharedBuildCacheService.set(buildEntityService)
-      task.validateUsage.set(extension.validateUsage)
-      task.validateUnusedImports.set(extension.validateUnusedImports)
-      task.dumpDebugReport.set(extension.dumpDebugReport)
+      task.validateUsage.set(validateUsage)
+      task.validateUnusedImports.set(validateUnusedImports)
+      task.validateUnusedImportsVerbose.set(validateUnusedImportsVerbose)
+      task.dumpDebugReport.set(dumpDebugReport)
       @Suppress("UnstableApiUsage")
       task.usesService(buildEntityService)
     }

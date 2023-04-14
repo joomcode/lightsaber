@@ -110,6 +110,7 @@ class IntegrationTestRule(
       errorReporter = errorReporter,
       validateUsage = validateUsage,
       validateUnusedImports = validateUnusedImports,
+      validateUnusedImportsVerbose = false,
       dumpDebugReport = dumpDebugReport,
       reportDirectory = reportDirectory,
       sharedBuildCache = LightsaberSharedBuildCache.create(),

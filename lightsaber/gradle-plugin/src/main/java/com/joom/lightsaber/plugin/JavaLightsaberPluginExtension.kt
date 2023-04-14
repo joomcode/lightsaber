@@ -17,8 +17,9 @@
 package com.joom.lightsaber.plugin
 
 open class JavaLightsaberPluginExtension {
-  var processTest: Boolean = true
-  var validateUsage: Boolean = true
-  var validateUnusedImports: Boolean = false
-  var dumpDebugReport: Boolean = false
+  var processTest: Boolean? = null
+  var validateUsage: Boolean? = null
+  var validateUnusedImports: Boolean? = null
+  var validateUnusedImportsVerbose: Boolean? = null
+  var dumpDebugReport: Boolean? = null
 }
