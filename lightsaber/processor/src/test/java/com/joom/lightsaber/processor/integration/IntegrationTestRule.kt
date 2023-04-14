@@ -93,7 +93,8 @@ class IntegrationTestRule(
     modules: List<Path> = emptyList(),
     ignoreErrors: Boolean = false,
     validateUsage: Boolean = true,
-    dumpDebugReport: Boolean = false
+    validateUnusedImports: Boolean = false,
+    dumpDebugReport: Boolean = false,
   ): Path {
     val outputDirectory = processedDirectory.resolve(projectName)
     val reportDirectory = reportDirectory.resolve(projectName)
@@ -108,6 +109,7 @@ class IntegrationTestRule(
       gen = outputDirectory,
       errorReporter = errorReporter,
       validateUsage = validateUsage,
+      validateUnusedImports = validateUnusedImports,
       dumpDebugReport = dumpDebugReport,
       reportDirectory = reportDirectory,
       sharedBuildCache = LightsaberSharedBuildCache.create(),

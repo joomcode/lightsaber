@@ -185,6 +185,7 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
       task.bootClasspath.from(bootClasspath)
       task.sharedBuildCacheService.set(buildEntityService)
       task.validateUsage.set(extension.validateUsage)
+      task.validateUnusedImports.set(extension.validateUnusedImports)
       task.dumpDebugReport.set(extension.dumpDebugReport)
       @Suppress("UnstableApiUsage")
       task.usesService(buildEntityService)

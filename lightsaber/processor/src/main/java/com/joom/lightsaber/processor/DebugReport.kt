@@ -34,7 +34,7 @@ import java.text.MessageFormat
 
 internal object DebugReport {
   fun dump(injectionContext: InjectionContext, dumpContext: DumpContext) {
-    val dependencyResolverFactory = DependencyResolverFactory(injectionContext)
+    val dependencyResolverFactory = DependencyResolverFactory(injectionContext, includeAllDependenciesInGraph = true)
     injectionContext.components.forEach { dumpContext.dump(it) }
     injectionContext.contractConfigurations.forEach { dumpContext.dump(it, dependencyResolverFactory) }
     injectionContext.injectableTargets.forEach { dumpContext.dump(it, "Injectable") }

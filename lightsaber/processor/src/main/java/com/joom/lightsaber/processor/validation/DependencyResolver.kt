@@ -72,7 +72,8 @@ interface MutableDependencyResolver : DependencyResolver {
 }
 
 class DependencyResolverImpl(
-  private val context: InjectionContext
+  private val context: InjectionContext,
+  private val includeAllDependenciesInGraph: Boolean
 ) : MutableDependencyResolver {
 
   private val imports = mutableMapOf<Type.Object, MutableCollection<DependencyResolverPath>>()
@@ -152,7 +153,7 @@ class DependencyResolverImpl(
     addProvidedDependency(provisionPoint.dependency, path, includeInjectableTargetDependencies = true)
     for (injectee in provisionPoint.getInjectees()) {
       addRequiredDependency(injectee.dependency, path)
-      if (injectee.converter == Converter.Instance) {
+      if (injectee.converter == Converter.Instance || includeAllDependenciesInGraph) {
         dependencyGraph.put(provisionPoint.dependency, injectee.dependency)
       }
     }
@@ -179,16 +180,19 @@ class DependencyResolverImpl(
   private fun add(factory: Factory, path: DependencyResolverPath) {
     addProvidedDependency(factory.dependency, path)
     for (factoryProvisionPoint in factory.provisionPoints) {
-      add(factoryProvisionPoint, path.with(factoryProvisionPoint))
+      add(factory, factoryProvisionPoint, path.with(factoryProvisionPoint))
     }
   }
 
-  private fun add(factoryProvisionPoint: FactoryProvisionPoint, path: DependencyResolverPath) {
+  private fun add(factory: Factory, factoryProvisionPoint: FactoryProvisionPoint, path: DependencyResolverPath) {
     val injectionPath = factoryProvisionPoint.injectionPoint
     add(injectionPath, path.with(injectionPath))
     for (injectee in factoryProvisionPoint.injectionPoint.injectees) {
       if (injectee is FactoryInjectee.FromInjector) {
         addRequiredDependency(injectee.dependency, path)
+        if (includeAllDependenciesInGraph) {
+          dependencyGraph.put(factory.dependency, injectee.dependency)
+        }
       }
     }
   }

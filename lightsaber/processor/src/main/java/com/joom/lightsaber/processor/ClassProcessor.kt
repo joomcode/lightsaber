@@ -108,6 +108,7 @@ class ClassProcessor(
       context = context,
       dependencyResolverFactory = dependencyResolverFactory,
       hintsBuilder = hintsBuilder,
+      parameters = parameters
     ).validate()
 
     if (parameters.validateUsage) {
@@ -177,7 +178,10 @@ class ClassProcessor(
 
   private fun createGrip(): Grip {
     return CombinedGripFactory.INSTANCE.create(
-      listOf(inputsGrip) + CachedGripFactory.create(parameters.sharedBuildCache, parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath)
+      listOf(inputsGrip) + CachedGripFactory.create(
+        parameters.sharedBuildCache,
+        parameters.classpath + parameters.modulesClasspath + parameters.bootClasspath
+      )
     )
   }
 }

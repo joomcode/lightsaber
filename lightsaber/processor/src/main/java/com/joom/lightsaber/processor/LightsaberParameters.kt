@@ -27,6 +27,7 @@ data class LightsaberParameters(
   val gen: Path,
   val projectName: String,
   val validateUsage: Boolean,
+  val validateUnusedImports: Boolean,
   val dumpDebugReport: Boolean,
   val reportDirectory: Path,
   val sharedBuildCache: LightsaberSharedBuildCache,

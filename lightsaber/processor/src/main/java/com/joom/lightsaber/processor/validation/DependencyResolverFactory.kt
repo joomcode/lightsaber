@@ -23,7 +23,8 @@ import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.Module
 
 class DependencyResolverFactory(
-  private val injectionContext: InjectionContext
+  private val injectionContext: InjectionContext,
+  private val includeAllDependenciesInGraph: Boolean = false
 ) {
 
   private val dependencyResolversByComponentType = mutableMapOf<Type.Object, DependencyResolver>()
@@ -31,7 +32,7 @@ class DependencyResolverFactory(
   private val dependencyResolversByModuleType = mutableMapOf<Type.Object, DependencyResolver>()
 
   fun createEmpty(): MutableDependencyResolver {
-    return DependencyResolverImpl(injectionContext)
+    return DependencyResolverImpl(injectionContext, includeAllDependenciesInGraph)
   }
 
   fun getOrCreate(component: Component): DependencyResolver {
