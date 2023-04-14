@@ -76,6 +76,9 @@ abstract class LightsaberTask @Inject constructor(
   abstract val validateUnusedImports: Property<Boolean>
 
   @get:Input
+  abstract val validateUnusedImportsVerbose: Property<Boolean>
+
+  @get:Input
   abstract val dumpDebugReport: Property<Boolean>
 
   private val projectName = formatProjectName()
@@ -101,6 +104,7 @@ abstract class LightsaberTask @Inject constructor(
       sharedBuildCache = sharedBuildCacheService.get().cache,
       validateUsage = validateUsage.get(),
       validateUnusedImports = validateUnusedImports.get(),
+      validateUnusedImportsVerbose = validateUnusedImportsVerbose.get(),
       dumpDebugReport = dumpDebugReport.get(),
       reportDirectory = computeReportDirectory().toPath()
     )

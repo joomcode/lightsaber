@@ -190,6 +190,24 @@ class Validator(
           }
         }
       }
+
+      if (parameters.validateUnusedImportsVerbose) {
+        appendLine()
+        appendLine()
+
+        appendLine(
+          """
+          Unused imports validation can be disabled for the entire project by putting "lightsaber.validate.unused.imports=false" to a root gradle.properties file.
+          
+          You can also disable it for a particular gradle module by putting the following code to a corresponding build.gradle:
+          lightsaber {
+            validateUnusedImports = false
+          }
+          
+          In case you already know how unused imports validation works and never want to see this message again, just put "lightsaber.validate.unused.imports.verbose=false" to a root gradle.properties file. 
+          """.trimIndent()
+        )
+      }
     }
   }
 
