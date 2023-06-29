@@ -1,7 +1,7 @@
 version = '1.0.0-alpha22'
 group = 'com.joom.lightsaber'
 
-ext.javaVersion = JavaVersion.VERSION_1_8
+ext.javaVersion = JavaVersion.VERSION_11
 ext.kotlinVersion = '1.7.21'
 ext.kotlinLanguageVersion = '1.7'
 ext.kotlinRuntimeVariant = '-jdk8'
