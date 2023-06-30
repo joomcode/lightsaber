@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.plugin
 
+import com.joom.lightsaber.processor.LightsaberOutputFactory
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
 import org.gradle.api.DefaultTask
@@ -93,11 +94,10 @@ abstract class LightsaberTransformTask @Inject constructor(
 
     val parameters = LightsaberParameters(
       inputs = inputClasses.get().map { it.asFile.toPath() },
-      outputs = List(inputClasses.get().size) { output },
+      outputFactory = LightsaberOutputFactory.create(output),
       classpath = classpath.map { it.toPath() },
       bootClasspath = bootClasspath.map { it.toPath() },
       modulesClasspath = modulesClasspath.map { it.toPath() },
-      gen = output,
       projectName = projectName,
       validateUsage = validateUsage.get(),
       validateUnusedImports = validateUnusedImports.get(),

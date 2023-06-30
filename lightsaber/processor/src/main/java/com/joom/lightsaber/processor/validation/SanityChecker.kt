@@ -37,7 +37,6 @@ import com.joom.lightsaber.processor.model.ImportPoint
 import com.joom.lightsaber.processor.model.InjectionContext
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.ProvisionPoint
-import com.joom.lightsaber.processor.reportError
 import org.objectweb.asm.Opcodes
 
 class SanityChecker(

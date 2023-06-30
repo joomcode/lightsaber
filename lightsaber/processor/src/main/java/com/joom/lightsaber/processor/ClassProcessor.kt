@@ -19,7 +19,6 @@ package com.joom.lightsaber.processor
 import com.joom.grip.CombinedGripFactory
 import com.joom.grip.Grip
 import com.joom.grip.GripFactory
-import com.joom.grip.io.DirectoryFileSink
 import com.joom.grip.io.FileSource
 import com.joom.grip.io.IoFactory
 import com.joom.lightsaber.processor.analysis.Analyzer
@@ -54,12 +53,8 @@ class ClassProcessor(
   private val errorReporter = parameters.errorReporter
   private val sourceResolver = SourceResolverImpl(grip.fileRegistry, parameters.inputs)
 
-  private val fileSourcesAndSinks = parameters.inputs.zip(parameters.outputs) { input, output ->
-    val source = IoFactory.createFileSource(input)
-    val sink = IoFactory.createFileSink(input, output)
-    source to sink
-  }
-  private val classSink = DirectoryFileSink(parameters.gen)
+  private val output = parameters.outputFactory.createOutput()
+  private val fileSourcesByInputs = parameters.inputs.associateWith { IoFactory.createFileSource(it) }
 
   fun processClasses() {
     warmUpGripCaches(grip, parameters.inputs)
@@ -81,11 +76,9 @@ class ClassProcessor(
   }
 
   override fun close() {
-    classSink.closeQuietly()
-
-    fileSourcesAndSinks.forEach {
-      it.first.closeQuietly()
-      it.second.closeQuietly()
+    output.closeQuietly()
+    fileSourcesByInputs.values.forEach {
+      it.closeQuietly()
     }
 
     inputsGrip.closeQuietly()
@@ -120,7 +113,8 @@ class ClassProcessor(
   }
 
   private fun copyAndPatchClasses(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    fileSourcesAndSinks.parallelStream().forEach { (fileSource, fileSink) ->
+    fileSourcesByInputs.entries.parallelStream().forEach { (input, fileSource) ->
+      val fileSink = output.getFileSink(input)
       logger.debug("Copy from {} to {}", fileSource, fileSink)
       fileSource.listFiles { path, type ->
         logger.debug("Copy file {} of type {}", path, type)
@@ -147,7 +141,7 @@ class ClassProcessor(
   }
 
   private fun performGeneration(injectionContext: InjectionContext, generationContext: GenerationContext) {
-    val generator = Generator(grip.classRegistry, errorReporter, classSink, parameters.projectName)
+    val generator = Generator(grip.classRegistry, errorReporter, output.getGenerationSink(), parameters.projectName)
     generator.generate(injectionContext, generationContext)
     checkErrors()
   }
