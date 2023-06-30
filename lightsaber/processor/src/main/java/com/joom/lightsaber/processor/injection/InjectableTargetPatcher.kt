@@ -21,15 +21,19 @@ import com.joom.grip.mirrors.getObjectTypeByInternalName
 import com.joom.lightsaber.LightsaberTypes
 import com.joom.lightsaber.processor.commons.GeneratorAdapter
 import com.joom.lightsaber.processor.commons.Types
+import com.joom.lightsaber.processor.commons.contains
 import com.joom.lightsaber.processor.commons.invokeMethod
 import com.joom.lightsaber.processor.commons.newMethod
 import com.joom.lightsaber.processor.commons.toFieldDescriptor
+import com.joom.lightsaber.processor.descriptors.FieldDescriptor
 import com.joom.lightsaber.processor.descriptors.MethodDescriptor
 import com.joom.lightsaber.processor.generation.getDependency
 import com.joom.lightsaber.processor.generation.model.KeyRegistry
 import com.joom.lightsaber.processor.model.InjectionPoint
 import com.joom.lightsaber.processor.model.InjectionTarget
 import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.FieldVisitor
+import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 
 class InjectableTargetPatcher(
@@ -39,6 +43,7 @@ class InjectableTargetPatcher(
   private val hasSuperMembersInjector: Boolean
 ) : BaseInjectionClassVisitor(classVisitor) {
 
+  private val fieldsByDescriptors: Map<FieldDescriptor, InjectionPoint.Field>
   private val fields: Collection<InjectionPoint.Field>
   private val methods: Collection<InjectionPoint.Method>
 
@@ -58,6 +63,16 @@ class InjectableTargetPatcher(
 
     this.fields = fields
     this.methods = methods
+    this.fieldsByDescriptors = fields.associateBy { it.field.toFieldDescriptor() }
+  }
+
+  override fun visitField(access: Int, name: String, descriptor: String, signature: String?, value: Any?): FieldVisitor {
+    if (FieldDescriptor(name, descriptor) in fieldsByDescriptors && Opcodes.ACC_FINAL in access) {
+      isDirty = true
+      return super.visitField(access xor Opcodes.ACC_FINAL, name, descriptor, signature, value)
+    }
+
+    return super.visitField(access, name, descriptor, signature, value)
   }
 
   override fun visit(
