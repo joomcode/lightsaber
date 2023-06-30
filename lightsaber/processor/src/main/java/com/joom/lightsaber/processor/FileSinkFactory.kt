@@ -30,7 +30,7 @@ internal fun createFileSink(outputFile: Path): FileSink {
   return when (outputFile.sourceType) {
     FileType.EMPTY -> EmptyFileSink
     FileType.DIRECTORY -> DirectoryFileSink(outputFile)
-    FileType.JAR -> PatchedJarFileSink(JarFileSink(outputFile))
+    FileType.JAR -> PatchedJarFileSink(JarFileSink(outputFile)).synchronized()
   }
 }
 
@@ -55,4 +55,35 @@ private enum class FileType {
   EMPTY,
   DIRECTORY,
   JAR,
+}
+
+private fun FileSink.synchronized(): FileSink {
+  return if (this !is SynchronizedFileSink) SynchronizedFileSink(this) else this
+}
+
+private class SynchronizedFileSink(private val delegate: FileSink) : FileSink by delegate {
+  private val lock = Any()
+  override fun createFile(path: String, data: ByteArray) {
+    synchronized(lock) {
+      delegate.createFile(path, data)
+    }
+  }
+
+  override fun createDirectory(path: String) {
+    synchronized(lock) {
+      delegate.createDirectory(path)
+    }
+  }
+
+  override fun close() {
+    synchronized(lock) {
+      delegate.close()
+    }
+  }
+
+  override fun flush() {
+    synchronized(lock) {
+      delegate.flush()
+    }
+  }
 }
