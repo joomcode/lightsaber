@@ -1,21 +1,55 @@
-allprojects {
-  buildscript {
+buildscript {
+  allprojects {
     apply from: "$rootDir/../gradle/common.gradle"
+
+    buildscript {
+      repositories {
+        google()
+        mavenCentral()
+      }
+
+      dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "com.android.tools.build:gradle:$androidToolsVersion"
+        classpath "io.michaelrocks.pablo:pablo:$pabloVersion"
+      }
+    }
 
     repositories {
       google()
       mavenCentral()
     }
+  }
+}
 
-    dependencies {
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-      classpath "com.android.tools.build:gradle:$androidToolsVersion"
-      classpath "io.michaelrocks.pablo:pablo:$pabloVersion"
+apply plugin: 'kotlin'
+
+sourceSets {
+  functionalTest {
+    java {
+      compileClasspath += main.output
+      runtimeClasspath += main.output
     }
   }
+}
 
-  repositories {
-    google()
-    mavenCentral()
+dependencies {
+  functionalTestImplementation gradleTestKit()
+  functionalTestImplementation "junit:junit:$junitVersion"
+}
+
+tasks.register("functionalTest", Test.class) {
+  description = "Runs functional tests."
+  group = "verification"
+
+  testClassesDirs = project.sourceSets.functionalTest.output.classesDirs
+  classpath = project.sourceSets.functionalTest.runtimeClasspath
+}
+
+afterEvaluate {
+  tasks.named("functionalTest") {
+    subprojects.each {
+      dependsOn(it.tasks.named("publishToMavenLocal"))
+    }
   }
 }
