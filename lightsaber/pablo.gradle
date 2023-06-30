@@ -41,4 +41,8 @@ pablo {
       url = 'https://github.com/joomcode/lightsaber'
     }
   }
+
+  signing {
+    enabled.set(providers.gradleProperty("development").map { !it.toBoolean() })
+  }
 }
