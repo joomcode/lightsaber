@@ -32,6 +32,9 @@ jobs:
       - name: Publish bootstrap artifacts
         run: ./gradlew -p lightsaber check publishToMavenLocal -Pdevelopment=false -Ppablo.shadow.enabled=true ${{ env.PABLO_OPTS }}
 
+      - name: Run functional tests
+        run: ./gradlew -p lightsaber functionalTest -Ppablo.shadow.enabled=true
+
       - name: Run unit tests
         run: ./gradlew check -Pdevelopment=false -Dorg.gradle.unsafe.configuration-cache=true --stacktrace
 
