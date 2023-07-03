@@ -71,7 +71,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     val dumpDebugReport = project.provider { extension.dumpDebugReport ?: dumpDebugReportByDefault }
 
     project.applicationAndroidComponents?.apply {
-      onVariants { variant ->
+      onVariants(selector().all()) { variant ->
         variant.registerLightsaberTask(
           validateUsage = validateUsage,
           validateUnusedImports = validateUnusedImports,
@@ -83,7 +83,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     }
 
     project.libraryAndroidComponents?.apply {
-      onVariants { variant ->
+      onVariants(selector().all()) { variant ->
         variant.registerLightsaberTask(
           validateUsage = validateUsage,
           validateUnusedImports = validateUnusedImports,
