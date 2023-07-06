@@ -37,6 +37,12 @@ jobs:
       - name: Run functional tests
         run: ./gradlew -p lightsaber functionalTest -Ppablo.shadow.enabled=true
 
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: functional-test-report
+          path: lightsaber/build/reports/tests/functionalTest
+
       - name: Run unit tests
         run: ./gradlew check -Pdevelopment=false -Dorg.gradle.unsafe.configuration-cache=true --stacktrace
 
