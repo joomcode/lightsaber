@@ -20,11 +20,10 @@ import java.nio.file.Path
 
 data class LightsaberParameters(
   val inputs: List<Path>,
-  val outputs: List<Path>,
   val classpath: List<Path>,
   val modulesClasspath: List<Path>,
   val bootClasspath: List<Path>,
-  val gen: Path,
+  val outputFactory: LightsaberOutputFactory,
   val projectName: String,
   val validateUsage: Boolean,
   val validateUnusedImports: Boolean,

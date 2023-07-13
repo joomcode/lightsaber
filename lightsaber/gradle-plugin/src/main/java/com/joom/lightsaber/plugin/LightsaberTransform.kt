@@ -25,6 +25,7 @@ import com.android.build.api.transform.Transform
 import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.api.transform.TransformOutputProvider
+import com.joom.lightsaber.processor.LightsaberOutputFactory
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.LightsaberSharedBuildCache
@@ -60,15 +61,15 @@ class LightsaberTransform(
       )
     }
 
+    val inputPaths = inputs.map { it.file.toPath() }
     val parameters = LightsaberParameters(
-      inputs = inputs.map { it.file.toPath() },
-      outputs = outputs.map { it.toPath() },
-      gen = invocation.outputProvider.getContentLocation(
+      inputs = inputPaths,
+      outputFactory = LightsaberOutputFactory.create(inputPaths, outputs.map { it.toPath() }, invocation.outputProvider.getContentLocation(
         "gen-lightsaber",
         QualifiedContent.DefaultContentType.CLASSES,
         QualifiedContent.Scope.PROJECT,
         Format.DIRECTORY
-      ).toPath(),
+      ).toPath()),
       classpath = invocation.referencedInputs.flatMap {
         it.jarInputs.map { it.file.toPath() } + it.directoryInputs.map { it.file.toPath() }
       },

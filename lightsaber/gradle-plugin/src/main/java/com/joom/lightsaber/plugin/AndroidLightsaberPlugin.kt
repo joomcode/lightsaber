@@ -17,7 +17,6 @@
 package com.joom.lightsaber.plugin
 
 import com.android.build.api.AndroidPluginVersion
-import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.HasAndroidTest
 import com.android.build.api.variant.Variant
@@ -45,18 +44,29 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     val extension = project.extensions.create("lightsaber", AndroidLightsaberPluginExtension::class.java)
     val componentsExtension = project.androidComponents
 
-    if (componentsExtension != null && componentsExtension.pluginVersion >= VARIANT_API_REQUIRED_VERSION) {
-      logger.info("Registering lightsaber with variant API")
+    when {
+      componentsExtension != null && componentsExtension.pluginVersion >= SCOPED_ARTIFACTS_VERSION -> {
+        logger.info("Registering lightsaber with scoped artifacts API")
 
-      configureTransformWithComponents(extension, registerBuildCacheService<LightsaberTransformTask>())
-    } else {
-      logger.info("Registering lightsaber with transform API")
+        configureTransformWithArtifactsApi(ScopedArtifactsRegistrar, extension, registerBuildCacheService<LightsaberTransformTask>())
+      }
 
-      configureTransform(extension)
+      componentsExtension != null && componentsExtension.pluginVersion >= ALL_CLASSES_TRANSFORM_API_VERSION -> {
+        logger.info("Registering lightsaber with all classes transform API")
+
+        configureTransformWithArtifactsApi(AllClassesTransformRegistrar, extension, registerBuildCacheService<LightsaberTransformTask>())
+      }
+
+      else -> {
+        logger.info("Registering lightsaber with transform API")
+
+        configureTransform(extension)
+      }
     }
   }
 
-  private fun configureTransformWithComponents(
+  private fun configureTransformWithArtifactsApi(
+    registrar: TransformTaskRegistrar,
     extension: AndroidLightsaberPluginExtension,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>
   ) {
@@ -73,6 +83,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     project.applicationAndroidComponents?.apply {
       onVariants(selector().all()) { variant ->
         variant.registerLightsaberTask(
+          registrar = registrar,
           validateUsage = validateUsage,
           validateUnusedImports = validateUnusedImports,
           validateUnusedImportsVerbose = validateUnusedImportsVerbose,
@@ -85,6 +96,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     project.libraryAndroidComponents?.apply {
       onVariants(selector().all()) { variant ->
         variant.registerLightsaberTask(
+          registrar = registrar,
           validateUsage = validateUsage,
           validateUnusedImports = validateUnusedImports,
           validateUnusedImportsVerbose = validateUnusedImportsVerbose,
@@ -96,15 +108,17 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private fun <T> T.registerLightsaberTask(
+    registrar: TransformTaskRegistrar,
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
     validateUnusedImportsVerbose: Provider<Boolean>,
     dumpDebugReport: Provider<Boolean>,
-    buildCacheService: Provider<LightsaberSharedBuildCacheService>
+    buildCacheService: Provider<LightsaberSharedBuildCacheService>,
   ) where T : Variant, T : HasAndroidTest {
     val runtimeClasspath = runtimeClasspathConfiguration()
 
     registerLightsaberTask(
+      registrar = registrar,
       validateUsage = validateUsage,
       validateUnusedImports = validateUnusedImports,
       validateUnusedImportsVerbose = validateUnusedImportsVerbose,
@@ -118,6 +132,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       val androidTestRuntimeClasspath = androidTest.runtimeClasspathConfiguration()
 
       androidTest.registerLightsaberTask(
+        registrar = registrar,
         validateUsage = validateUsage,
         validateUnusedImports = validateUnusedImports,
         validateUnusedImportsVerbose = validateUnusedImportsVerbose,
@@ -130,6 +145,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private fun Component.registerLightsaberTask(
+    registrar: TransformTaskRegistrar,
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
     validateUnusedImportsVerbose: Provider<Boolean>,
@@ -142,10 +158,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       LightsaberTransformTask.TASK_PREFIX + name.replaceFirstChar { it.uppercaseChar() }
     )
 
-    @Suppress("UnstableApiUsage")
-    artifacts.use(taskProvider)
-      .wiredWith(LightsaberTransformTask::inputClasses, LightsaberTransformTask::outputDirectory)
-      .toTransform(MultipleArtifact.ALL_CLASSES_DIRS)
+    registrar.register(this, taskProvider)
 
     taskProvider.configure { task ->
       task.classpath.setFrom(classpathProvider)
@@ -180,6 +193,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     return zip(other) { first, second -> first - second }
   }
 
+  @Suppress("DEPRECATION")
   private fun configureTransform(extension: AndroidLightsaberPluginExtension) {
     if (project.android !is AppExtension) {
       return
@@ -206,6 +220,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private companion object {
-    private val VARIANT_API_REQUIRED_VERSION = AndroidPluginVersion(major = 7, minor = 1, micro = 0)
+    private val SCOPED_ARTIFACTS_VERSION = AndroidPluginVersion(major = 7, minor = 4, micro = 0)
+    private val ALL_CLASSES_TRANSFORM_API_VERSION = AndroidPluginVersion(major = 7, minor = 1, micro = 0)
   }
 }

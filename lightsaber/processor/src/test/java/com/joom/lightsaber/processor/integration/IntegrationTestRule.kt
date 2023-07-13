@@ -18,6 +18,7 @@ package com.joom.lightsaber.processor.integration
 
 import com.joom.lightsaber.processor.ErrorReporter
 import com.joom.lightsaber.processor.JvmRuntimeUtil
+import com.joom.lightsaber.processor.LightsaberOutputFactory
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.LightsaberSharedBuildCache
@@ -101,12 +102,11 @@ class IntegrationTestRule(
 
     val parameters = LightsaberParameters(
       inputs = listOf(compiled),
-      outputs = listOf(outputDirectory),
+      outputFactory = LightsaberOutputFactory.create(outputDirectory),
       bootClasspath = classpath,
       modulesClasspath = modules,
       classpath = emptyList(),
       projectName = projectName,
-      gen = outputDirectory,
       errorReporter = errorReporter,
       validateUsage = validateUsage,
       validateUnusedImports = validateUnusedImports,

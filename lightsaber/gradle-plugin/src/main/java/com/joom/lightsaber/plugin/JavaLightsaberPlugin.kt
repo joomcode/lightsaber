@@ -182,8 +182,8 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
 
     return project.tasks.create(taskName, LightsaberTask::class.java) { task ->
       task.description = "Processes .class files with Lightsaber Processor."
-      task.backupDirs.from(backupDirs)
-      task.classesDirs.from(classesDirs)
+      task.inputDirectories.from(backupDirs)
+      task.outputDirectories.from(classesDirs)
       task.sourceDir.set(sourceDir)
       task.classpath.from(classpath)
       task.modulesClasspath.from(modulesClasspath)

@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.plugin
 
+import com.joom.lightsaber.processor.LightsaberOutputFactory
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
 import org.gradle.api.DefaultTask
@@ -24,16 +25,21 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.nio.file.Paths
@@ -45,7 +51,11 @@ abstract class LightsaberTransformTask @Inject constructor(
 ) : DefaultTask() {
   @get:InputFiles
   @get:Classpath
-  abstract val inputClasses: ListProperty<Directory>
+  abstract val inputClasses: ListProperty<RegularFile>
+
+  @get:InputFiles
+  @get:Classpath
+  abstract val inputDirectories: ListProperty<Directory>
 
   @get:InputFiles
   @get:CompileClasspath
@@ -59,7 +69,12 @@ abstract class LightsaberTransformTask @Inject constructor(
   @get:CompileClasspath
   abstract val modulesClasspath: ConfigurableFileCollection
 
+  @get:OutputFile
+  @get:Optional
+  abstract val output: RegularFileProperty
+
   @get:OutputDirectory
+  @get:Optional
   abstract val outputDirectory: DirectoryProperty
 
   @get:Internal
@@ -88,16 +103,15 @@ abstract class LightsaberTransformTask @Inject constructor(
   fun process() {
     clean()
 
-    val output = computeOutputDirectory().toPath()
+    val output = computeOutput().get().toPath()
     val reports = computeReportDirectory().toPath()
 
     val parameters = LightsaberParameters(
-      inputs = inputClasses.get().map { it.asFile.toPath() },
-      outputs = List(inputClasses.get().size) { output },
+      inputs = inputClasses.get().map { it.asFile.toPath() } + inputDirectories.get().map { it.asFile.toPath() },
+      outputFactory = LightsaberOutputFactory.create(output),
       classpath = classpath.map { it.toPath() },
       bootClasspath = bootClasspath.map { it.toPath() },
       modulesClasspath = modulesClasspath.map { it.toPath() },
-      gen = output,
       projectName = projectName,
       validateUsage = validateUsage.get(),
       validateUnusedImports = validateUnusedImports.get(),
@@ -118,11 +132,11 @@ abstract class LightsaberTransformTask @Inject constructor(
   }
 
   private fun clean() {
-    val output = computeOutputDirectory()
+    val output = computeOutput()
     val reports = computeReportDirectory()
 
-    if (output.exists()) {
-      output.deleteRecursively()
+    if (output.get().exists()) {
+      output.get().deleteRecursively()
     }
 
     if (reports.exists()) {
@@ -130,8 +144,12 @@ abstract class LightsaberTransformTask @Inject constructor(
     }
   }
 
-  private fun computeOutputDirectory(): File {
-    return outputDirectory.get().asFile
+  private fun computeOutput(): Provider<File> {
+    return when {
+      output.isPresent -> output.asFile
+      outputDirectory.isPresent -> outputDirectory.asFile
+      else -> error("output or outputDirectory is not set")
+    }
   }
 
   private fun computeReportDirectory(): File {

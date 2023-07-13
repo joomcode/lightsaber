@@ -16,6 +16,7 @@
 
 package com.joom.lightsaber.plugin
 
+import com.joom.lightsaber.processor.LightsaberOutputFactory
 import com.joom.lightsaber.processor.LightsaberParameters
 import com.joom.lightsaber.processor.LightsaberProcessor
 import com.joom.lightsaber.processor.watermark.WatermarkChecker
@@ -45,10 +46,10 @@ abstract class LightsaberTask @Inject constructor(
 ) : DefaultTask() {
   @get:InputFiles
   @get:Classpath
-  abstract val backupDirs: ConfigurableFileCollection
+  abstract val inputDirectories: ConfigurableFileCollection
 
   @get:OutputDirectories
-  abstract val classesDirs: ConfigurableFileCollection
+  abstract val outputDirectories: ConfigurableFileCollection
 
   @get:OutputDirectory
   abstract val sourceDir: DirectoryProperty
@@ -66,7 +67,6 @@ abstract class LightsaberTask @Inject constructor(
   abstract val bootClasspath: ConfigurableFileCollection
 
   @get:Internal
-  @Suppress("UnstableApiUsage")
   abstract val sharedBuildCacheService: Property<LightsaberSharedBuildCacheService>
 
   @get:Input
@@ -91,15 +91,16 @@ abstract class LightsaberTask @Inject constructor(
   fun process() {
     validate()
 
+    val inputPaths = inputDirectories.map { it.toPath() }
+    val outputPaths = outputDirectories.map { it.toPath() }
     val parameters = LightsaberParameters(
-      inputs = backupDirs.map { it.toPath() },
-      outputs = classesDirs.map { it.toPath() },
+      inputs = inputPaths,
+      outputFactory = LightsaberOutputFactory.create(inputPaths, outputPaths, outputPaths.first()),
       classpath = classpath.map { it.toPath() },
       modulesClasspath = modulesClasspath.map { it.toPath() },
       bootClasspath = bootClasspath.map { it.toPath() }.ifEmpty {
         listOfNotNull(FileSystems.getFileSystem(URI.create("jrt:/"))?.getPath("modules", "java.base"))
       },
-      gen = classesDirs.first().toPath(),
       projectName = projectName,
       sharedBuildCache = sharedBuildCacheService.get().cache,
       validateUsage = validateUsage.get(),
@@ -120,14 +121,14 @@ abstract class LightsaberTask @Inject constructor(
 
   fun clean() {
     validate()
-    logger.info("Removing patched files from {}", classesDirs)
+    logger.info("Removing patched files from {}", outputDirectories)
 
-    for (classesDir in classesDirs) {
-      if (!classesDir.exists()) {
+    for (outputDir in outputDirectories) {
+      if (!outputDir.exists()) {
         continue
       }
 
-      classesDir.walkBottomUp().forEach { file ->
+      outputDir.walkBottomUp().forEach { file ->
         if (file.isDirectory) {
           file.delete()
         } else {
@@ -151,9 +152,9 @@ abstract class LightsaberTask @Inject constructor(
   }
 
   private fun validate() {
-    require(!classesDirs.isEmpty) { "classesDirs is not set" }
-    require(!backupDirs.isEmpty) { "backupDirs is not set" }
-    require(classesDirs.files.size == backupDirs.files.size) { "classesDirs and backupDirs must have equal size" }
+    require(!outputDirectories.isEmpty) { "outputDirectories is not set" }
+    require(!inputDirectories.isEmpty) { "inputDirectories is not set" }
+    require(inputDirectories.files.size == outputDirectories.files.size) { "inputDirectories and outputDirectories must have equal size" }
     require(sourceDir.isPresent) { "sourceDir is not set" }
   }
 
