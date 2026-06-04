@@ -35,15 +35,8 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
     super.apply(project)
 
-    if (!project.hasAndroid) {
-      throw GradleException("Lightsaber plugin must be applied *AFTER* Android plugin")
-    }
-
     val androidComponents = project.androidComponents
-      ?: throw GradleException(
-        "Lightsaber Android plugin requires Android Gradle Plugin $MIN_AGP_VERSION or newer " +
-          "(androidComponents extension is missing)"
-      )
+      ?: throw GradleException("Lightsaber plugin must be applied *AFTER* Android plugin")
 
     if (androidComponents.pluginVersion < MIN_AGP_VERSION) {
       throw GradleException(
@@ -68,17 +61,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     val dumpDebugReport = project.provider { extension.dumpDebugReport ?: dumpDebugReportByDefault }
 
     configureVariants(
-      components = project.applicationAndroidComponents,
-      extension = extension,
-      validateUsage = validateUsage,
-      validateUnusedImports = validateUnusedImports,
-      validateUnusedImportsVerbose = validateUnusedImportsVerbose,
-      dumpDebugReport = dumpDebugReport,
-      buildCacheService = buildCacheService,
-    )
-
-    configureVariants(
-      components = project.libraryAndroidComponents,
+      components = androidComponents,
       extension = extension,
       validateUsage = validateUsage,
       validateUnusedImports = validateUnusedImports,
@@ -89,7 +72,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   }
 
   private fun configureVariants(
-    components: AndroidComponentsExtension<*, *, *>?,
+    components: AndroidComponentsExtension<*, *, *>,
     extension: AndroidLightsaberPluginExtension,
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
@@ -97,7 +80,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     dumpDebugReport: Provider<Boolean>,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>,
   ) {
-    components?.onVariants(components.selector().all()) { variant ->
+    components.onVariants(components.selector().all()) { variant ->
       variant.registerLightsaberTasks(
         extension = extension,
         validateUsage = validateUsage,

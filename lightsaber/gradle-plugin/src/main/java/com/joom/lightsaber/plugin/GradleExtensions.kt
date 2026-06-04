@@ -17,9 +17,6 @@
 package com.joom.lightsaber.plugin
 
 import com.android.build.api.variant.AndroidComponentsExtension
-import com.android.build.api.variant.ApplicationAndroidComponentsExtension
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -45,11 +42,6 @@ val Project.sourceSets: SourceSetContainer
     return extension.sourceSets
   }
 
-val Project.hasAndroid: Boolean
-  get() = extensions.findByName("android") is BaseExtension
-val Project.android: BaseExtension
-  get() = extensions.getByName("android") as BaseExtension
-
 val SourceSetContainer.main: SourceSet
   get() = getByName("main")
 val SourceSetContainer.test: SourceSet
@@ -70,10 +62,6 @@ operator fun TaskContainer.get(name: String): Task? {
 
 val Project.androidComponents: AndroidComponentsExtension<*, *, *>?
   get() = extensions.findByName("androidComponents") as? AndroidComponentsExtension<*, *, *>
-val Project.applicationAndroidComponents: ApplicationAndroidComponentsExtension?
-  get() = androidComponents as? ApplicationAndroidComponentsExtension
-val Project.libraryAndroidComponents: LibraryAndroidComponentsExtension?
-  get() = androidComponents as? LibraryAndroidComponentsExtension
 
 inline fun <reified T : Task> Project.registerTask(name: String): TaskProvider<T> {
   return tasks.register(name, T::class.java)

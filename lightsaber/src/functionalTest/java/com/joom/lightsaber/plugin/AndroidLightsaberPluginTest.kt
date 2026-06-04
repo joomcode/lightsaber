@@ -44,6 +44,7 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
         TestCase(agpVersion = "7.4.2", GradleDistribution.GRADLE_8_14, expectedTaskName = ":lightsaberTransformClassesDebug"),
         TestCase(agpVersion = "8.1.2", GradleDistribution.GRADLE_8_14, expectedTaskName = ":lightsaberTransformClassesDebug"),
         TestCase(agpVersion = "8.12.0", GradleDistribution.GRADLE_9_5, expectedTaskName = ":lightsaberTransformClassesDebug"),
+        TestCase(agpVersion = "9.2.1", GradleDistribution.GRADLE_9_5, expectedTaskName = ":lightsaberTransformClassesDebug"),
       )
     }
 
