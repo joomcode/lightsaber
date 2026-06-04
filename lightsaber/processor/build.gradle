@@ -43,6 +43,10 @@ dependencies {
   testImplementation "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
 }
 
+shadow {
+  addShadowVariantIntoJavaComponent = false
+}
+
 tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configure {
   configurations = [project.configurations.runtimeClasspath, project.configurations.relocate]
   relocate('com.joom.grip', 'com.joom.lightsaber.grip')

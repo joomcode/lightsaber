@@ -22,8 +22,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Build lightsaber modules
+        run: ./gradlew -p lightsaber check -Plightsaber.shadow.enabled=true
+
       - name: Publish bootstrap artifacts
-        run: ./gradlew -p lightsaber check publishToMavenLocal -Plightsaber.shadow.enabled=true
+        run: ./gradlew -p lightsaber publishToMavenLocal -Plightsaber.shadow.enabled=true
 
       - name: Run functional tests
         run: ./gradlew -p lightsaber functionalTest -Plightsaber.shadow.enabled=true

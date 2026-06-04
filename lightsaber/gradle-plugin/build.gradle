@@ -1,10 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+evaluationDependsOn(':processor')
+
 apply plugin: 'java'
 apply plugin: 'org.jetbrains.kotlin.jvm'
 apply plugin: 'idea'
 apply plugin: 'com.gradleup.shadow'
-apply from: "$rootDir/shadow-common.gradle"
 apply from: "$rootDir/publish.gradle"
 apply from: "$rootDir/shadow-publish.gradle"
 
@@ -25,9 +26,12 @@ mavenPublishing {
   coordinates(project.group.toString(), 'lightsaber-gradle-plugin', project.version.toString())
 }
 
+shadow {
+  addShadowVariantIntoJavaComponent = false
+}
+
 dependencies {
   implementation project(':processor')
-  relocate project(':processor')
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
   compileOnly gradleApi()
@@ -35,8 +39,17 @@ dependencies {
   compileOnly "com.android.tools.build:gradle-api:$androidToolsVersion"
 }
 
-tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configure {
-  configurations = [project.configurations.runtimeClasspath, project.configurations.relocate]
+afterEvaluate {
+  def processorShadowJar = project(':processor').tasks.named('shadowJar')
+
+  tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configure {
+    dependsOn(processorShadowJar)
+    configurations = [project.configurations.runtimeClasspath]
+    dependencies {
+      exclude(project(':processor'))
+    }
+    from(processorShadowJar.flatMap { it.archiveFile }.map { zipTree(it) })
+  }
 }
 
 def generatedDir = new File(projectDir, "generated")

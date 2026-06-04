@@ -6,7 +6,7 @@ ext.kotlinVersion = '2.4.0'
 ext.kotlinLanguageVersion = '2.2'
 ext.kotlinRuntimeVariant = ''
 ext.mavenPublishVersion = '0.36.0'
-ext.shadowVersion = '9.0.2'
+ext.shadowVersion = '9.1.0'
 
 ext.javaxInjectVersion = '1'
 ext.jsr305Version = '3.0.2'
