@@ -205,6 +205,21 @@ class FactoryInjectionTest {
     assertEquals("Default", target.injectedString)
   }
 
+  @Test
+  fun testFactoryWithReturnAnnotationAndDefaultParameters() {
+    val lightsaber = Lightsaber.Builder().build()
+    val injector = lightsaber.createInjector(ParentFactoryComponent())
+    val factory = injector.getInstance<FactoryWithReturnAnnotationAndDefaultParameters>()
+
+    val targetWithExplicitName = factory.createTarget("String")
+    assertEquals("String", targetWithExplicitName.string)
+    assertEquals("Default", targetWithExplicitName.injectedString)
+
+    val targetWithDefaultName = factory.createTarget()
+    assertEquals("from-default", targetWithDefaultName.string)
+    assertEquals("Default", targetWithDefaultName.injectedString)
+  }
+
   @Component
   private class ParentFactoryComponent {
 
@@ -648,6 +663,14 @@ class FactoryInjectionTest {
 
     @Factory.Return(TargetImpl::class)
     fun createTarget(string: String): Target
+  }
+
+  @Factory
+  @ProvidedBy(ParentFactoryModule::class)
+  interface FactoryWithReturnAnnotationAndDefaultParameters {
+
+    @Factory.Return(TargetImpl::class)
+    fun createTarget(name: String = "from-default"): Target
   }
 
   interface Target {

@@ -25,6 +25,7 @@ import com.joom.grip.methods
 import com.joom.grip.mirrors.ClassMirror
 import com.joom.grip.mirrors.MethodMirror
 import com.joom.grip.mirrors.Type
+import com.joom.grip.mirrors.isSynthetic
 import com.joom.grip.mirrors.signature.GenericType
 import com.joom.lightsaber.Factory.Return
 import com.joom.lightsaber.processor.ErrorReporter
@@ -77,7 +78,10 @@ class FactoryParserImpl(
     }
 
     mirror.methods.forEach { method ->
-      collect(method)
+      // Kotlin generates synthetic methods for default parameters without copying annotations.
+      if (!method.isSynthetic) {
+        collect(method)
+      }
     }
 
     mirror.interfaces.forEach { parent ->

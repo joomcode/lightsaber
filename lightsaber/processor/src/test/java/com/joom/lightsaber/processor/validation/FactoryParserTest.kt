@@ -16,7 +16,14 @@
 
 package com.joom.lightsaber.processor.validation
 
+import com.joom.grip.GripFactory
+import com.joom.grip.mirrors.getObjectType
+import com.joom.grip.mirrors.getObjectTypeByInternalName
+import com.joom.grip.mirrors.isSynthetic
+import com.joom.lightsaber.Factory
 import com.joom.lightsaber.processor.integration.IntegrationTestRule
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -90,5 +97,31 @@ class FactoryParserTest {
     integrationTestRule.assertValidProject(
       sourceCodeDir = "factory_with_multiple_inheritance"
     )
+  }
+
+  @Test
+  fun test_check_works_when_factory_has_default_parameters() {
+    integrationTestRule.assertValidProject(
+      sourceCodeDir = "factory_with_default_parameters"
+    )
+  }
+
+  @Test
+  fun test_kotlin_default_parameters_generate_synthetic_method_without_factory_return() {
+    val compiled = integrationTestRule.compileProject("factory_with_default_parameters")
+    val grip = GripFactory.INSTANCE.create(compiled)
+    val mirror = grip.classRegistry.getClassMirror(
+      getObjectTypeByInternalName(
+        "test_case_projects/factory_parser/factory_with_default_parameters/FactoryWithDefaultParameters"
+      )
+    )
+
+    val originalMethod = mirror.methods.single { it.name == "createTarget" && !it.isSynthetic }
+    val syntheticMethod = mirror.methods.single { it.name.startsWith("createTarget") && it.isSynthetic }
+
+    val factoryReturnType = getObjectType<Factory.Return>()
+
+    assertTrue(factoryReturnType in originalMethod.annotations)
+    assertFalse(factoryReturnType in syntheticMethod.annotations)
   }
 }
