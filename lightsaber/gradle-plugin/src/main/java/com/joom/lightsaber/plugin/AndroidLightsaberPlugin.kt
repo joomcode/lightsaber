@@ -17,10 +17,12 @@
 package com.joom.lightsaber.plugin
 
 import com.android.build.api.AndroidPluginVersion
+import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.Variant
-import com.android.build.gradle.AppExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -28,8 +30,6 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
-import java.io.File
-import java.nio.file.Paths
 
 abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
   override fun apply(project: Project) {
@@ -39,31 +39,24 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       throw GradleException("Lightsaber plugin must be applied *AFTER* Android plugin")
     }
 
+    val androidComponents = project.androidComponents
+      ?: throw GradleException(
+        "Lightsaber Android plugin requires Android Gradle Plugin $MIN_AGP_VERSION or newer " +
+          "(androidComponents extension is missing)"
+      )
+
+    if (androidComponents.pluginVersion < MIN_AGP_VERSION) {
+      throw GradleException(
+        "Lightsaber Android plugin requires Android Gradle Plugin $MIN_AGP_VERSION or newer, " +
+          "but ${androidComponents.pluginVersion} is used"
+      )
+    }
+
     addDependencies(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
 
     val extension = project.extensions.create("lightsaber", AndroidLightsaberPluginExtension::class.java)
-    val componentsExtension = project.androidComponents
+    val buildCacheService = registerBuildCacheService<LightsaberTransformTask>()
 
-    when {
-      componentsExtension != null && componentsExtension.pluginVersion >= SCOPED_ARTIFACTS_VERSION -> {
-        logger.info("Registering lightsaber with scoped artifacts API")
-
-        configureTransformWithArtifactsApi(ScopedArtifactsRegistrar, extension, registerBuildCacheService<LightsaberTransformTask>())
-      }
-
-      else -> {
-        logger.info("Registering lightsaber with transform API")
-
-        configureTransform(extension)
-      }
-    }
-  }
-
-  private fun configureTransformWithArtifactsApi(
-    registrar: TransformTaskRegistrar,
-    extension: AndroidLightsaberPluginExtension,
-    buildCacheService: Provider<LightsaberSharedBuildCacheService>
-  ) {
     val validateUsageByDefault = Flags.validateUsageByDefault(project)
     val validateUnusedImportsByDefault = Flags.validateUnusedImportsByDefault(project)
     val validateUnusedImportsVerboseByDefault = Flags.validateUnusedImportsVerboseByDefault(project)
@@ -74,45 +67,59 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     val validateUnusedImportsVerbose = project.provider { extension.validateUnusedImportsVerbose ?: validateUnusedImportsVerboseByDefault }
     val dumpDebugReport = project.provider { extension.dumpDebugReport ?: dumpDebugReportByDefault }
 
-    project.applicationAndroidComponents?.apply {
-      onVariants(selector().all()) { variant ->
-        variant.registerLightsaberTask(
-          registrar = registrar,
-          validateUsage = validateUsage,
-          validateUnusedImports = validateUnusedImports,
-          validateUnusedImportsVerbose = validateUnusedImportsVerbose,
-          dumpDebugReport = dumpDebugReport,
-          buildCacheService = buildCacheService
-        )
-      }
-    }
+    configureVariants(
+      components = project.applicationAndroidComponents,
+      extension = extension,
+      validateUsage = validateUsage,
+      validateUnusedImports = validateUnusedImports,
+      validateUnusedImportsVerbose = validateUnusedImportsVerbose,
+      dumpDebugReport = dumpDebugReport,
+      buildCacheService = buildCacheService,
+    )
 
-    project.libraryAndroidComponents?.apply {
-      onVariants(selector().all()) { variant ->
-        variant.registerLightsaberTask(
-          registrar = registrar,
-          validateUsage = validateUsage,
-          validateUnusedImports = validateUnusedImports,
-          validateUnusedImportsVerbose = validateUnusedImportsVerbose,
-          dumpDebugReport = dumpDebugReport,
-          buildCacheService = buildCacheService
-        )
-      }
-    }
+    configureVariants(
+      components = project.libraryAndroidComponents,
+      extension = extension,
+      validateUsage = validateUsage,
+      validateUnusedImports = validateUnusedImports,
+      validateUnusedImportsVerbose = validateUnusedImportsVerbose,
+      dumpDebugReport = dumpDebugReport,
+      buildCacheService = buildCacheService,
+    )
   }
 
-  private fun <T> T.registerLightsaberTask(
-    registrar: TransformTaskRegistrar,
+  private fun configureVariants(
+    components: AndroidComponentsExtension<*, *, *>?,
+    extension: AndroidLightsaberPluginExtension,
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
     validateUnusedImportsVerbose: Provider<Boolean>,
     dumpDebugReport: Provider<Boolean>,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>,
-  ) where T : Variant, T : HasAndroidTest {
+  ) {
+    components?.onVariants(components.selector().all()) { variant ->
+      variant.registerLightsaberTasks(
+        extension = extension,
+        validateUsage = validateUsage,
+        validateUnusedImports = validateUnusedImports,
+        validateUnusedImportsVerbose = validateUnusedImportsVerbose,
+        dumpDebugReport = dumpDebugReport,
+        buildCacheService = buildCacheService,
+      )
+    }
+  }
+
+  private fun Variant.registerLightsaberTasks(
+    extension: AndroidLightsaberPluginExtension,
+    validateUsage: Provider<Boolean>,
+    validateUnusedImports: Provider<Boolean>,
+    validateUnusedImportsVerbose: Provider<Boolean>,
+    dumpDebugReport: Provider<Boolean>,
+    buildCacheService: Provider<LightsaberSharedBuildCacheService>,
+  ) {
     val runtimeClasspath = runtimeClasspathConfiguration()
 
     registerLightsaberTask(
-      registrar = registrar,
       validateUsage = validateUsage,
       validateUnusedImports = validateUnusedImports,
       validateUnusedImportsVerbose = validateUnusedImportsVerbose,
@@ -120,26 +127,25 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       classpathProvider = classpathProvider(runtimeClasspath),
       modulesClasspathProvider = modulesClasspathProvider(runtimeClasspath),
       buildCacheService = buildCacheService,
+      cacheable = extension.cacheable,
     )
 
-    androidTest?.let { androidTest ->
-      val androidTestRuntimeClasspath = androidTest.runtimeClasspathConfiguration()
-
-      androidTest.registerLightsaberTask(
-        registrar = registrar,
+    if (this is HasAndroidTest) {
+      val androidTestComponent = androidTest ?: return
+      androidTestComponent.registerLightsaberTask(
         validateUsage = validateUsage,
         validateUnusedImports = validateUnusedImports,
         validateUnusedImportsVerbose = validateUnusedImportsVerbose,
         dumpDebugReport = dumpDebugReport,
-        classpathProvider = classpathProvider(androidTestRuntimeClasspath),
-        modulesClasspathProvider = modulesClasspathProvider(androidTestRuntimeClasspath) - modulesClasspathProvider(runtimeClasspath),
+        classpathProvider = classpathProvider(androidTestComponent.runtimeClasspathConfiguration()),
+        modulesClasspathProvider = modulesClasspathProvider(androidTestComponent.runtimeClasspathConfiguration()) - modulesClasspathProvider(runtimeClasspath),
         buildCacheService = buildCacheService,
+        cacheable = extension.cacheable,
       )
     }
   }
 
   private fun Component.registerLightsaberTask(
-    registrar: TransformTaskRegistrar,
     validateUsage: Provider<Boolean>,
     validateUnusedImports: Provider<Boolean>,
     validateUnusedImportsVerbose: Provider<Boolean>,
@@ -147,12 +153,20 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     classpathProvider: Provider<FileCollection>,
     modulesClasspathProvider: Provider<FileCollection>,
     buildCacheService: Provider<LightsaberSharedBuildCacheService>,
+    cacheable: Boolean,
   ) {
     val taskProvider = project.registerTask<LightsaberTransformTask>(
       LightsaberTransformTask.TASK_PREFIX + name.replaceFirstChar { it.uppercaseChar() }
     )
 
-    registrar.register(this, taskProvider)
+    artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+      .use(taskProvider)
+      .toTransform(
+        ScopedArtifact.CLASSES,
+        LightsaberTransformTask::allJars,
+        LightsaberTransformTask::allDirectories,
+        LightsaberTransformTask::output,
+      )
 
     taskProvider.configure { task ->
       task.classpath.setFrom(classpathProvider)
@@ -165,6 +179,10 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
       task.validateUnusedImports.set(validateUnusedImports)
       task.validateUnusedImportsVerbose.set(validateUnusedImportsVerbose)
       task.dumpDebugReport.set(dumpDebugReport)
+
+      if (!cacheable) {
+        task.outputs.doNotCacheIf("lightsaber.cacheable is false") { true }
+      }
 
       @Suppress("UnstableApiUsage")
       task.usesService(buildCacheService)
@@ -187,33 +205,7 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
     return zip(other) { first, second -> first - second }
   }
 
-  @Suppress("DEPRECATION")
-  private fun configureTransform(extension: AndroidLightsaberPluginExtension) {
-    if (project.android !is AppExtension) {
-      return
-    }
-
-    val transform = LightsaberTransform(
-      extension = extension,
-      validateUsageByDefault = Flags.validateUsageByDefault(project),
-      validateUnusedImportsByDefault = Flags.validateUnusedImportsByDefault(project),
-      validateUnusedImportsVerboseByDefault = Flags.validateUnusedImportsVerboseByDefault(project),
-      dumpDebugReportByDefault = Flags.dumpDebugReportByDefault(project),
-      reportDirectory = computeReportDirectory().toPath()
-    )
-
-    project.android.registerTransform(transform)
-
-    project.afterEvaluate {
-      extension.bootClasspath = project.android.bootClasspath
-    }
-  }
-
-  private fun computeReportDirectory(): File {
-    return Paths.get(project.buildDir.path, "reports", "lightsaber").toFile()
-  }
-
   private companion object {
-    private val SCOPED_ARTIFACTS_VERSION = AndroidPluginVersion(major = 7, minor = 4, micro = 0)
+    private val MIN_AGP_VERSION = AndroidPluginVersion(major = 7, minor = 4, micro = 0)
   }
 }
