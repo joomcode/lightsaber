@@ -28,7 +28,7 @@ jobs:
       - name: Run functional tests
         run: ./gradlew -p lightsaber functionalTest -Plightsaber.shadow.enabled=true
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: functional-test-report
