@@ -2,6 +2,12 @@ afterEvaluate {
   def shadowJarTask = tasks.named('shadowJar').get()
   shadowJarTask.archiveClassifier.set('')
 
+  // shadowJar and jar share the same archive name; do not let the thin jar overwrite the fat one.
+  tasks.named('jar', Jar).configure { jarTask ->
+    jarTask.dependsOn(shadowJarTask)
+    jarTask.actions.clear()
+  }
+
   publishing.publications.configureEach { publication ->
     if (publication instanceof MavenPublication) {
       publication.artifacts.clear()

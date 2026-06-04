@@ -39,22 +39,17 @@ dependencies {
 }
 
 afterEvaluate {
-  def processorShadowJar = project(':processor').tasks.named('shadowJar')
+  def processorProject = project(':processor')
+  def processorJar = processorProject.tasks.named('jar')
+  def processorShadowJar = processorProject.tasks.named('shadowJar')
 
   tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configure {
-    dependsOn(processorShadowJar)
+    dependsOn(processorShadowJar, processorJar)
     configurations = [project.configurations.runtimeClasspath]
     dependencies {
       exclude(project(':processor'))
     }
     from(processorShadowJar.flatMap { it.archiveFile }.map { zipTree(it) })
-  }
-
-  // includeBuild resolves the plugin via `jar`; shadowJar writes the fat archive (same path).
-  def shadowJarTask = tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar)
-  tasks.named('jar', Jar).configure { jarTask ->
-    jarTask.dependsOn(shadowJarTask)
-    jarTask.actions.clear()
   }
 }
 
