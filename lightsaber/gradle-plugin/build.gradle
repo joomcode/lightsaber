@@ -31,7 +31,6 @@ shadow {
 }
 
 dependencies {
-  implementation project(':processor')
   implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
 
   compileOnly gradleApi()
@@ -75,6 +74,24 @@ sourceSets {
   main {
     java.srcDirs += generatedJavaSourcesDir
   }
+}
+
+def processorCompileClasses = {
+  def processor = project(':processor')
+  [processor, processor.layout.buildDirectory.dir('classes/kotlin/main'), processor.tasks.named('classes')]
+}
+
+// Shadow packaging replaces the processor project dependency, but compile tasks still need its classes.
+tasks.named('compileKotlin', KotlinCompile).configure { compileTask ->
+  def (processor, processorClasses, processorClassesTask) = processorCompileClasses()
+  compileTask.dependsOn(processorClassesTask)
+  compileTask.libraries.from(processorClasses)
+}
+
+tasks.named('compileJava').configure { compileTask ->
+  def (processor, processorClasses, processorClassesTask) = processorCompileClasses()
+  compileTask.dependsOn(processorClassesTask)
+  compileTask.classpath += processor.files(processorClasses)
 }
 
 tasks.matching { it instanceof AbstractCompile || it instanceof KotlinCompile }.configureEach {
