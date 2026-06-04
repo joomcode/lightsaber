@@ -15,9 +15,6 @@ afterEvaluate {
       publication.artifact(tasks.named('sourcesJar').get()) {
         classifier = 'sources'
       }
-      publication.artifact(tasks.named('javadocJar').get()) {
-        classifier = 'javadoc'
-      }
     }
   }
 
