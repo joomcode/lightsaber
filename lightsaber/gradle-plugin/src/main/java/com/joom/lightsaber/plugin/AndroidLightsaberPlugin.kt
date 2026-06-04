@@ -51,12 +51,6 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
         configureTransformWithArtifactsApi(ScopedArtifactsRegistrar, extension, registerBuildCacheService<LightsaberTransformTask>())
       }
 
-      componentsExtension != null && componentsExtension.pluginVersion >= ALL_CLASSES_TRANSFORM_API_VERSION -> {
-        logger.info("Registering lightsaber with all classes transform API")
-
-        configureTransformWithArtifactsApi(AllClassesTransformRegistrar, extension, registerBuildCacheService<LightsaberTransformTask>())
-      }
-
       else -> {
         logger.info("Registering lightsaber with transform API")
 
@@ -221,6 +215,5 @@ abstract class AndroidLightsaberPlugin : BaseLightsaberPlugin() {
 
   private companion object {
     private val SCOPED_ARTIFACTS_VERSION = AndroidPluginVersion(major = 7, minor = 4, micro = 0)
-    private val ALL_CLASSES_TRANSFORM_API_VERSION = AndroidPluginVersion(major = 7, minor = 1, micro = 0)
   }
 }

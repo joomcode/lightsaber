@@ -2,8 +2,8 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.joom.lightsaber.android'
 
 android {
+  namespace 'com.joom.lightsaber.sample.library'
   compileSdk androidCompileSdkVersion
-  buildToolsVersion androidBuildToolsVersion
 
   defaultConfig {
     minSdkVersion androidMinSdkVersion
@@ -19,7 +19,7 @@ android {
     targetCompatibility javaVersion
   }
 
-  lintOptions {
+  lint {
     checkReleaseBuilds false
   }
 }

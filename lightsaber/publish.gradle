@@ -1,16 +1,14 @@
-apply plugin: 'io.michaelrocks.pablo'
+apply plugin: 'com.vanniktech.maven.publish'
 
-def shadowEnabled = project.providers.gradleProperty("pablo.shadow.enabled").map { it.toBoolean() }
-configurations.getByName("relocate") { relocateConfiguration ->
-  if (shadowEnabled.get()) {
-    return
+def isDevelopment = providers.gradleProperty('development').map { it.toBoolean() }.getOrElse(true)
+
+mavenPublishing {
+  publishToMavenCentral(true)
+
+  if (!isDevelopment) {
+    signAllPublications()
   }
 
-  configurations.getByName(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(relocateConfiguration)
-  configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(relocateConfiguration)
-}
-
-pablo {
   pom {
     name = 'Lightsaber'
     description = 'Compile time dependency injection framework for JVM languages.'
@@ -40,9 +38,5 @@ pablo {
       developerConnection = 'scm:git:ssh://git@github.com/joomcode/lightsaber.git'
       url = 'https://github.com/joomcode/lightsaber'
     }
-  }
-
-  signing {
-    enabled.set(providers.gradleProperty("development").map { !it.toBoolean() })
   }
 }

@@ -6,6 +6,7 @@ allprojects {
       mavenLocal()
       google()
       mavenCentral()
+      gradlePluginPortal()
     }
 
     dependencies {
@@ -19,5 +20,9 @@ allprojects {
     mavenLocal()
     google()
     mavenCentral()
+  }
+
+  tasks.withType(Test).configureEach {
+    failOnNoDiscoveredTests = false
   }
 }

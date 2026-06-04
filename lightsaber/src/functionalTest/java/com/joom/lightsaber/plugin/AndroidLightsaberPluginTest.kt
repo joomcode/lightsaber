@@ -41,9 +41,9 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
     @JvmStatic
     fun parameters(): List<TestCase> {
       return listOf(
-        TestCase(agpVersion = "7.0.4", GradleDistribution.GRADLE_7_5, expectedTaskName = ":transformClassesWithLightsaberForDebug"),
-        TestCase(agpVersion = "7.2.0", GradleDistribution.GRADLE_7_5, expectedTaskName = ":lightsaberTransformClassesDebug"),
-        TestCase(agpVersion = "8.1.2", GradleDistribution.GRADLE_8_0, expectedTaskName = ":lightsaberTransformClassesDebug"),
+        TestCase(agpVersion = "7.4.2", GradleDistribution.GRADLE_8_14, expectedTaskName = ":lightsaberTransformClassesDebug"),
+        TestCase(agpVersion = "8.1.2", GradleDistribution.GRADLE_8_14, expectedTaskName = ":lightsaberTransformClassesDebug"),
+        TestCase(agpVersion = "8.12.0", GradleDistribution.GRADLE_9_5, expectedTaskName = ":lightsaberTransformClassesDebug"),
       )
     }
 

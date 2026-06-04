@@ -6,12 +6,14 @@ buildscript {
       repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
       }
 
       dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "com.android.tools.build:gradle:$androidToolsVersion"
-        classpath "io.michaelrocks.pablo:pablo:$pabloVersion"
+        classpath "com.vanniktech:gradle-maven-publish-plugin:$mavenPublishVersion"
+        classpath "com.gradleup.shadow:shadow-gradle-plugin:$shadowVersion"
       }
     }
 
@@ -22,7 +24,7 @@ buildscript {
   }
 }
 
-apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.kotlin.jvm'
 
 sourceSets {
   functionalTest {

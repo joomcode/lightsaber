@@ -21,35 +21,30 @@ import org.gradle.api.Project
 internal object Flags {
   fun processTestByDefault(project: Project): Boolean {
     return project.providers.gradleProperty("lightsaber.process.test")
-      .forUseAtConfigurationTime()
       .getOrElse("true")
       .toBoolean()
   }
 
   fun validateUsageByDefault(project: Project): Boolean {
     return project.providers.gradleProperty("lightsaber.validate.usage")
-      .forUseAtConfigurationTime()
       .getOrElse("true")
       .toBoolean()
   }
 
   fun validateUnusedImportsByDefault(project: Project): Boolean {
     return project.providers.gradleProperty("lightsaber.validate.unused.imports")
-      .forUseAtConfigurationTime()
       .getOrElse("true")
       .toBoolean()
   }
 
   fun validateUnusedImportsVerboseByDefault(project: Project): Boolean {
     return project.providers.gradleProperty("lightsaber.validate.unused.imports.verbose")
-      .forUseAtConfigurationTime()
       .getOrElse("true")
       .toBoolean()
   }
 
   fun dumpDebugReportByDefault(project: Project): Boolean {
     return project.providers.gradleProperty("lightsaber.dump.debug.report")
-      .forUseAtConfigurationTime()
       .getOrElse("false")
       .toBoolean()
   }
