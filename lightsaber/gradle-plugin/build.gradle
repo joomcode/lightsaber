@@ -49,6 +49,13 @@ afterEvaluate {
     }
     from(processorShadowJar.flatMap { it.archiveFile }.map { zipTree(it) })
   }
+
+  // includeBuild resolves the plugin via `jar`; shadowJar writes the fat archive (same path).
+  def shadowJarTask = tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar)
+  tasks.named('jar', Jar).configure { jarTask ->
+    jarTask.dependsOn(shadowJarTask)
+    jarTask.actions.clear()
+  }
 }
 
 def generatedDir = new File(projectDir, "generated")

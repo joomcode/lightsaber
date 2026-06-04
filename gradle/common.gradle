@@ -10,7 +10,7 @@ ext.shadowVersion = '9.1.0'
 
 ext.javaxInjectVersion = '1'
 ext.jsr305Version = '3.0.2'
-ext.asmVersion = '9.2'
+ext.asmVersion = '9.7'
 ext.gripVersion = '0.11.0'
 ext.bimapVersion = '1.1.0'
 ext.logbackVersion = '1.2.11'
