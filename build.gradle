@@ -1,4 +1,6 @@
 allprojects {
+  apply from: "$rootDir/gradle/common.gradle"
+
   buildscript {
     apply from: "$rootDir/gradle/common.gradle"
 

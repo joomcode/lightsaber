@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'com.joom.lightsaber.android'
 
 android {
@@ -19,12 +18,12 @@ android {
   buildTypes {
     debug {
       minifyEnabled false
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.pro'
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.pro'
     }
 
     release {
       minifyEnabled true
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.pro'
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.pro'
     }
   }
 

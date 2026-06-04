@@ -124,12 +124,13 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
       }
 
       android {
-        compileSdk $compileSdk
-        buildToolsVersion "$buildToolsVersion"
+        compileSdk = $compileSdk
 
         defaultConfig {
           applicationId "com.joom.lightsaber.test"
           namespace "com.joom.lightsaber.test"
+          minSdk = 21
+          targetSdk = $compileSdk
           versionCode 1
           versionName "1"
         }
