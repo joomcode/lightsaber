@@ -23,7 +23,7 @@ jobs:
           java-version: 17
 
       - name: Publish bootstrap artifacts
-        run: ./gradlew -p lightsaber check publishToMavenLocal -Plightsaber.shadow.enabled=true -Pdevelopment=false
+        run: ./gradlew -p lightsaber check publishToMavenLocal -Plightsaber.shadow.enabled=true
 
       - name: Run functional tests
         run: ./gradlew -p lightsaber functionalTest -Plightsaber.shadow.enabled=true

@@ -2,13 +2,10 @@ configurations {
   relocate
 }
 
-def shadowEnabled = providers.gradleProperty('lightsaber.shadow.enabled').map { it.toBoolean() }.orElse(false)
-
-if (!shadowEnabled.get()) {
-  configurations.named(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME).configure {
-    extendsFrom(configurations.relocate)
-  }
-  configurations.named(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).configure {
-    extendsFrom(configurations.relocate)
-  }
+// Relocated dependencies must stay on the compile classpath; shadow only affects packaging.
+configurations.named(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME).configure {
+  extendsFrom(configurations.relocate)
+}
+configurations.named(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).configure {
+  extendsFrom(configurations.relocate)
 }
