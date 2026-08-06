@@ -18,6 +18,5 @@
 package com.joom.lightsaber.plugin
 
 enum class GradleDistribution(val url: String) {
-  GRADLE_8_14("https://services.gradle.org/distributions/gradle-8.14.5-all.zip"),
   GRADLE_9_5("https://services.gradle.org/distributions/gradle-9.5.1-all.zip"),
 }

@@ -13,6 +13,8 @@ The Kotlin compiler plugin supports Kotlin declarations only. Do not add partial
 
 The library currently defaults to `BYTECODE`; consumers may select KCP through `lightsaber.processing.mode`. Do not change the library default or remove the fallback as an incidental part of another change.
 
+The supported and tested build toolchain is Gradle 9.5.1, Android Gradle Plugin 9.2.1, Kotlin Gradle Plugin 2.4.0, and build JDK 17. Do not add compatibility workarounds or test matrices for older Gradle, AGP, or KGP versions unless a task explicitly changes this support policy.
+
 ## Implementation map
 
 - Compiler entry point and option parsing:

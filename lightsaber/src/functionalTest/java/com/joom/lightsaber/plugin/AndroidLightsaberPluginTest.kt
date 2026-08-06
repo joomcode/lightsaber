@@ -25,28 +25,15 @@ import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
-import org.junit.runners.Parameterized.Parameters
 import java.io.File
 import java.net.URI
 
-@RunWith(Parameterized::class)
-internal class AndroidLightsaberPluginTest(private val case: TestCase) {
+internal class AndroidLightsaberPluginTest {
   @get:Rule
   val temporaryFolder = TemporaryFolder()
 
   private companion object {
-    @Parameters(name = "{0}")
-    @JvmStatic
-    fun parameters(): List<TestCase> {
-      return listOf(
-        TestCase(agpVersion = "7.4.2", GradleDistribution.GRADLE_8_14, expectedTaskName = ":lightsaberTransformClassesDebug"),
-        TestCase(agpVersion = "8.1.2", GradleDistribution.GRADLE_8_14, expectedTaskName = ":lightsaberTransformClassesDebug"),
-        TestCase(agpVersion = "8.12.0", GradleDistribution.GRADLE_9_5, expectedTaskName = ":lightsaberTransformClassesDebug"),
-        TestCase(agpVersion = "9.2.1", GradleDistribution.GRADLE_9_5, expectedTaskName = ":lightsaberTransformClassesDebug"),
-      )
-    }
+    private const val TRANSFORM_TASK = ":lightsaberTransformClassesDebug"
 
     @Language("xml")
     private const val ANDROID_MANIFEST = """
@@ -56,25 +43,37 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
   }
 
   @Test
-  fun test() {
-    val projectRoot = createProjectDirectory(agpVersion = case.agpVersion)
+  fun testBytecodeModeRegistersTransformTask() {
+    val projectRoot = createProjectDirectory(TestProcessingMode.BYTECODE)
 
-    val result = createGradleRunner(projectRoot, case.gradleDistribution).build()
+    val result = createGradleRunner(projectRoot).build()
 
     val tasks = result.parseDryRunExecution()
-    Assert.assertTrue(tasks.any { it.path == case.expectedTaskName })
+    Assert.assertTrue(tasks.any { it.path == TRANSFORM_TASK })
   }
 
-  private fun createProjectDirectory(agpVersion: String): File {
+  @Test
+  fun testKotlinCompilerPluginModeDoesNotRegisterTransformTask() {
+    val projectRoot = createProjectDirectory(TestProcessingMode.KOTLIN_COMPILER_PLUGIN)
+
+    val result = createGradleRunner(projectRoot).build()
+
+    val tasks = result.parseDryRunExecution()
+    Assert.assertFalse(tasks.any { it.path == TRANSFORM_TASK })
+    Assert.assertTrue(tasks.any { it.path == ":compileDebugKotlin" })
+  }
+
+  private fun createProjectDirectory(processingMode: TestProcessingMode): File {
     val projectRoot = temporaryFolder.newFolder()
-    writeText(createBuildGradle(agpVersion), File(projectRoot, "build.gradle"))
+    writeText(createBuildGradle(processingMode), File(projectRoot, "build.gradle"))
     writeText(ANDROID_MANIFEST, File(projectRoot, "src/main/AndroidManifest.xml"))
+    writeText("package com.joom.lightsaber.test\n", File(projectRoot, "src/main/kotlin/Source.kt"))
     return projectRoot
   }
 
-  private fun createGradleRunner(projectDir: File, gradle: GradleDistribution): GradleRunner {
+  private fun createGradleRunner(projectDir: File): GradleRunner {
     return GradleRunner.create()
-      .withGradleDistribution(URI.create(gradle.url))
+      .withGradleDistribution(URI.create(GradleDistribution.GRADLE_9_5.url))
       .forwardOutput()
       .withProjectDir(projectDir)
       .withArguments("assembleDebug", "--dry-run", "--stacktrace")
@@ -101,7 +100,11 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
   }
 
   @Language("gradle")
-  private fun createBuildGradle(agpVersion: String, compileSdk: Int = 31, buildToolsVersion: String = "30.0.3"): String {
+  private fun createBuildGradle(processingMode: TestProcessingMode): String {
+    val agpVersion = checkNotNull(System.getProperty("android.tools.version"))
+    val compileSdk = checkNotNull(System.getProperty("android.compile.sdk.version"))
+    val kotlinVersion = checkNotNull(System.getProperty("kotlin.version"))
+    val lightsaberVersion = checkNotNull(System.getProperty("lightsaber.version"))
     return """
       buildscript {
         repositories {
@@ -112,12 +115,17 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
 
         dependencies {
           classpath "com.android.tools.build:gradle:$agpVersion"
-          classpath "com.joom.lightsaber:lightsaber-gradle-plugin:+"
+          classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+          classpath "com.joom.lightsaber:lightsaber-gradle-plugin:$lightsaberVersion"
         }
       }
 
       apply plugin: "com.android.application"
       apply plugin: "com.joom.lightsaber.android"
+
+      lightsaber {
+        processingMode = com.joom.lightsaber.plugin.ProcessingMode.${processingMode.name}
+      }
 
       repositories {
         google()
@@ -151,10 +159,9 @@ internal class AndroidLightsaberPluginTest(private val case: TestCase) {
       return outcome
     }
   }
-}
 
-internal data class TestCase(
-  val agpVersion: String,
-  val gradleDistribution: GradleDistribution,
-  val expectedTaskName: String
-)
+  private enum class TestProcessingMode {
+    BYTECODE,
+    KOTLIN_COMPILER_PLUGIN,
+  }
+}

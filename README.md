@@ -19,6 +19,16 @@ time so that the library can be used with almost any JVM language and on Android
 Usage
 -----
 
+### Supported build toolchain
+
+The Gradle plugin is tested against Gradle 9.5.1, Android Gradle Plugin 9.2.1,
+Kotlin Gradle Plugin 2.4.0, and JDK 17. Older Gradle, AGP, and Kotlin Gradle
+Plugin versions are not supported.
+
+The Kotlin compiler plugin backend processes Kotlin declarations only. The
+legacy bytecode backend remains available as a rollback mode on the supported
+toolchain, but it does not extend support to older build tool versions.
+
 ### Configuration
 
 ```groovy
