@@ -1,0 +1,5 @@
+apply plugin: "com.joom.lightsaber"
+
+lightsaber {
+  processingMode = com.joom.lightsaber.plugin.ProcessingMode.KOTLIN_COMPILER_PLUGIN
+}

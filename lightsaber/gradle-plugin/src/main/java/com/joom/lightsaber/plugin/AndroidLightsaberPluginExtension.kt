@@ -7,4 +7,10 @@ open class AndroidLightsaberPluginExtension {
   var dumpDebugReport: Boolean? = null
 
   var cacheable: Boolean = false
+  var processingMode: ProcessingMode = ProcessingMode.BYTECODE
+}
+
+enum class ProcessingMode {
+  BYTECODE,
+  KOTLIN_COMPILER_PLUGIN,
 }

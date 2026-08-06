@@ -18,4 +18,7 @@ package com.joom.lightsaber.internal;
 
 public interface InjectorConfigurator {
   void configureInjector(LightsaberInjector injector);
+
+  default void initializeEager(LightsaberInjector injector) {
+  }
 }

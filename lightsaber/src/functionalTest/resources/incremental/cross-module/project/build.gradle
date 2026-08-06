@@ -1,0 +1,36 @@
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:%KOTLIN_VERSION%"
+    classpath "com.joom.lightsaber:lightsaber-gradle-plugin:%LIGHTSABER_VERSION%"
+  }
+}
+
+subprojects {
+  apply plugin: "org.jetbrains.kotlin.jvm"
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+}
+
+project(":impl") {
+  apply plugin: "com.joom.lightsaber"
+
+  dependencies {
+    implementation project(":bridge")
+    testImplementation "junit:junit:4.13.2"
+  }
+}
+
+project(":bridge") {
+  apply plugin: "java-library"
+
+  dependencies {
+    api project(":api")
+  }
+}

@@ -48,6 +48,7 @@ public class LightsaberGenericTest {
     final Injector injector = lightsaber.createInjector(parentComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
+    verify(parentComponent).initializeEager((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     assertEquals(Collections.singletonList("Parent List"), injector.getInstance(getJvmStringListType()));
     assertEquals(Collections.singletonList("Parent List"), injector.getInstance(Key.of(getJvmStringListType())));

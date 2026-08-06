@@ -1,0 +1,35 @@
+apply plugin: 'java'
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'com.joom.lightsaber'
+
+java {
+  sourceCompatibility = javaVersion
+  targetCompatibility = javaVersion
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.fromVersion(kotlinLanguageVersion)
+    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.fromVersion(kotlinLanguageVersion)
+  }
+}
+
+lightsaber {
+  processingMode = com.joom.lightsaber.plugin.ProcessingMode.KOTLIN_COMPILER_PLUGIN
+}
+
+sourceSets {
+  test {
+    java.srcDir project(':samples:injection-test').file('src/test/java')
+    java.exclude '**/*.java'
+  }
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
+
+  testImplementation "com.joom.lightsaber:lightsaber-core-kotlin:$version"
+  testImplementation "com.joom.lightsaber:lightsaber-test:$version"
+  testImplementation "junit:junit:$junitVersion"
+}

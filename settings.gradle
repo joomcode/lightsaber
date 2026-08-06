@@ -18,6 +18,7 @@ if (isDevelopment) {
       substitute module('com.joom.lightsaber:lightsaber-core') using project(':core')
       substitute module('com.joom.lightsaber:lightsaber-core-kotlin') using project(':core-kotlin')
       substitute module('com.joom.lightsaber:lightsaber-test') using project(':core-test')
+      substitute module('com.joom.lightsaber:lightsaber-compiler-plugin') using project(':compiler-plugin')
       substitute module('com.joom.lightsaber:lightsaber-processor') using project(':processor')
       substitute module('com.joom.lightsaber:lightsaber-gradle-plugin') using project(':gradle-plugin')
     }
@@ -26,10 +27,12 @@ if (isDevelopment) {
 
 
 include ':samples:injection-test'
+include ':samples:injection-test-native'
 include ':samples:sample-java'
 include ':samples:sample-kotlin'
 include ':samples:sample-android-kotlin'
 include ':samples:sample-android-library'
+include ':samples:native-ir-smoke'
 include ':samples:sample-kotlin-modular:app'
 include ':samples:sample-kotlin-modular:library-contract'
 include ':samples:sample-kotlin-modular:library-module'

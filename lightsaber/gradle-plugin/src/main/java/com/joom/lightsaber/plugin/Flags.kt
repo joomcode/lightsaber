@@ -19,6 +19,12 @@ package com.joom.lightsaber.plugin
 import org.gradle.api.Project
 
 internal object Flags {
+  fun processingModeByDefault(project: Project): ProcessingMode {
+    return project.providers.gradleProperty("lightsaber.processing.mode")
+      .map { ProcessingMode.valueOf(it) }
+      .getOrElse(ProcessingMode.BYTECODE)
+  }
+
   fun processTestByDefault(project: Project): Boolean {
     return project.providers.gradleProperty("lightsaber.process.test")
       .getOrElse("true")

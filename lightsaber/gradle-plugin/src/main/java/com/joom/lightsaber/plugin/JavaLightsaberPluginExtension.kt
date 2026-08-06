@@ -17,6 +17,7 @@
 package com.joom.lightsaber.plugin
 
 open class JavaLightsaberPluginExtension {
+  var processingMode: ProcessingMode = ProcessingMode.BYTECODE
   var processTest: Boolean? = null
   var validateUsage: Boolean? = null
   var validateUnusedImports: Boolean? = null

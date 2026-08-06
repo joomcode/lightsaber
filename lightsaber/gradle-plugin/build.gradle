@@ -35,6 +35,7 @@ dependencies {
 
   compileOnly gradleApi()
   compileOnly project(':processor')
+  compileOnly "org.jetbrains.kotlin:kotlin-gradle-plugin-api:$kotlinVersion"
   compileOnly "com.android.tools.build:gradle:$androidToolsVersion"
   compileOnly "com.android.tools.build:gradle-api:$androidToolsVersion"
 }
