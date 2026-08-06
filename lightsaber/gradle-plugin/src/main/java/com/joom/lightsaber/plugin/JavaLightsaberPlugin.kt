@@ -27,27 +27,81 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetOutput
 import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
+import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import java.io.File
 
-abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
-  override fun apply(project: Project) {
-    super.apply(project)
+abstract class JavaLightsaberPlugin : BaseLightsaberPlugin(), KotlinCompilerPluginSupportPlugin {
+  @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
+  override fun apply(target: Project) {
+    super<BaseLightsaberPlugin>.apply(target)
+    val project = target
 
-    val lightsaber = project.extensions.create("lightsaber", JavaLightsaberPluginExtension::class.java)
+    val lightsaber = project.extensions.create("lightsaber", JavaLightsaberPluginExtension::class.java).apply {
+      processingMode = Flags.processingModeByDefault(project)
+    }
 
     addDependencies()
 
     project.afterEvaluate {
-      val buildCacheService = registerBuildCacheService<LightsaberTask>()
       if (project.plugins.hasPlugin("java")) {
-        setupLightsaberForJava(buildCacheService, lightsaber)
-        if (lightsaber.processTest ?: Flags.processTestByDefault(project)) {
-          setupLightsaberForJavaTest(buildCacheService, lightsaber)
+        if (lightsaber.processingMode == ProcessingMode.BYTECODE) {
+          val buildCacheService = registerBuildCacheService<LightsaberTask>()
+          setupLightsaberForJava(buildCacheService, lightsaber)
+          if (lightsaber.processTest ?: Flags.processTestByDefault(project)) {
+            setupLightsaberForJavaTest(buildCacheService, lightsaber)
+          }
         }
       } else {
         throw GradleException("Project should use Java plugin")
       }
     }
+  }
+
+  override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean {
+    val extension = kotlinCompilation.target.project.extensions.findByType(JavaLightsaberPluginExtension::class.java)
+      ?: return false
+    if (extension.processingMode != ProcessingMode.KOTLIN_COMPILER_PLUGIN) {
+      return false
+    }
+    return kotlinCompilation.name != SourceSet.TEST_SOURCE_SET_NAME ||
+      (extension.processTest ?: Flags.processTestByDefault(project))
+  }
+
+  override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
+    val extension = checkNotNull(
+      kotlinCompilation.target.project.extensions.findByType(JavaLightsaberPluginExtension::class.java)
+    )
+    project.registerLightsaberCompilerValidation(
+      compilation = kotlinCompilation,
+      includeAndroidJavaSourceDirectories = false,
+      bootClasspath = project.files(),
+      validateUsage = project.provider { extension.validateUsage ?: Flags.validateUsageByDefault(project) },
+      validateUnusedImports = project.provider {
+        extension.validateUnusedImports ?: Flags.validateUnusedImportsByDefault(project)
+      },
+      validateUnusedImportsVerbose = project.provider {
+        extension.validateUnusedImportsVerbose ?: Flags.validateUnusedImportsVerboseByDefault(project)
+      },
+      dumpDebugReport = project.provider {
+        extension.dumpDebugReport ?: Flags.dumpDebugReportByDefault(project)
+      },
+    )
+    return project.provider {
+      project.lightsaberCompilerPluginOptions(kotlinCompilation)
+    }
+  }
+
+  override fun getCompilerPluginId(): String = LIGHTSABER_COMPILER_PLUGIN_ID
+
+  override fun getPluginArtifact(): SubpluginArtifact {
+    return SubpluginArtifact(
+      groupId = "com.joom.lightsaber",
+      artifactId = "lightsaber-compiler-plugin",
+      version = Build.VERSION,
+    )
   }
 
   private fun addDependencies() {
@@ -216,5 +270,6 @@ abstract class JavaLightsaberPlugin : BaseLightsaberPlugin() {
 
   companion object {
     private const val LIGHTSABER_PATH = "lightsaber"
+    private const val LIGHTSABER_COMPILER_PLUGIN_ID = "com.joom.lightsaber.compiler"
   }
 }

@@ -1,0 +1,34 @@
+buildscript {
+  repositories {
+    google()
+    mavenLocal()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.android.tools.build:gradle:%ANDROID_TOOLS_VERSION%"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:%KOTLIN_VERSION%"
+    classpath "com.joom.lightsaber:lightsaber-gradle-plugin:%LIGHTSABER_VERSION%"
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "com.joom.lightsaber.android"
+
+android {
+  namespace "com.example.incremental"
+  compileSdk %COMPILE_SDK%
+
+  defaultConfig {
+    minSdk 21
+  }
+}
+
+repositories {
+  google()
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  testImplementation "junit:junit:4.13.2"
+}

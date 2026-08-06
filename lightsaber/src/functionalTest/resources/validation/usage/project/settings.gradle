@@ -1,0 +1,2 @@
+rootProject.name = 'usage-validation-test'
+include ':dependency', ':consumer'

@@ -44,6 +44,7 @@ public class LightsaberInjector implements Injector {
 
     final InjectorConfigurator configurator = (InjectorConfigurator) component;
     configurator.configureInjector(this);
+    configurator.initializeEager(this);
   }
 
   @Nonnull
@@ -135,6 +136,28 @@ public class LightsaberInjector implements Injector {
       registerProviderInternal(key, provider);
     } else {
       registerProviderInternal(key.getType(), provider);
+    }
+  }
+
+  /** Fast path used by the native Kotlin compiler plugin. */
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public void registerNativeProvider(
+      final Object key,
+      final NativeProvisioner provisioner,
+      final int id,
+      final boolean singleton
+  ) {
+    Provider provider = new NativeProvider(provisioner, id, this);
+    if (singleton) {
+      provider = new SingletonProvider(provider);
+    }
+
+    if (key instanceof Key) {
+      registerProvider((Key) key, provider);
+    } else if (key instanceof Class) {
+      registerProvider((Class) key, provider);
+    } else {
+      registerProvider((Type) key, provider);
     }
   }
 

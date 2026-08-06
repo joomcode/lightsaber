@@ -46,6 +46,10 @@ tasks.register("functionalTest", Test.class) {
 
   testClassesDirs = project.sourceSets.functionalTest.output.classesDirs
   classpath = project.sourceSets.functionalTest.runtimeClasspath
+  systemProperty "lightsaber.version", project.version
+  systemProperty "kotlin.version", kotlinVersion
+  systemProperty "android.tools.version", androidToolsVersion
+  systemProperty "android.compile.sdk.version", androidCompileSdkVersion
 }
 
 afterEvaluate {

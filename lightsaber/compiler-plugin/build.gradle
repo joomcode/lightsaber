@@ -1,0 +1,25 @@
+apply plugin: 'java-library'
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply from: "$rootDir/publish.gradle"
+
+java {
+  sourceCompatibility = javaVersion
+  targetCompatibility = javaVersion
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.fromVersion(kotlinLanguageVersion)
+    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.fromVersion(kotlinLanguageVersion)
+  }
+}
+
+mavenPublishing {
+  coordinates(project.group.toString(), 'lightsaber-compiler-plugin', project.version.toString())
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib$kotlinRuntimeVariant:$kotlinVersion"
+  compileOnly "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinVersion"
+}

@@ -1,0 +1,33 @@
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:%KOTLIN_VERSION%"
+    classpath "com.joom.lightsaber:lightsaber-gradle-plugin:%LIGHTSABER_VERSION%"
+  }
+}
+
+subprojects {
+  apply plugin: "org.jetbrains.kotlin.jvm"
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+}
+
+project(":dependency") {
+  dependencies {
+    implementation "com.joom.lightsaber:lightsaber-core:%LIGHTSABER_VERSION%"
+  }
+}
+
+project(":consumer") {
+  apply plugin: "com.joom.lightsaber"
+
+  dependencies {
+    implementation project(":dependency")
+  }
+}

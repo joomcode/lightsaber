@@ -45,6 +45,7 @@ public class LightsaberTest {
     final Injector injector = lightsaber.createInjector(parentComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
+    verify(parentComponent).initializeEager((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     assertSame(injector, injector.getInstance(Key.of(Injector.class)));
     assertEquals("Parent String", injector.getInstance(String.class));
@@ -61,8 +62,10 @@ public class LightsaberTest {
     final Injector childInjector = injector.createChildInjector(childComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
+    verify(parentComponent).initializeEager((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     verify(childComponent).configureInjector((LightsaberInjector) childInjector);
+    verify(childComponent).initializeEager((LightsaberInjector) childInjector);
     verifyNoMoreInteractions(childComponent);
     assertSame(injector, injector.getInstance(Key.of(Injector.class)));
     assertSame(childInjector, childInjector.getInstance(Key.of(Injector.class)));
@@ -82,8 +85,10 @@ public class LightsaberTest {
     final Injector childInjector = injector.createChildInjector(childAnnotatedComponent);
 
     verify(parentComponent).configureInjector((LightsaberInjector) injector);
+    verify(parentComponent).initializeEager((LightsaberInjector) injector);
     verifyNoMoreInteractions(parentComponent);
     verify(childAnnotatedComponent).configureInjector((LightsaberInjector) childInjector);
+    verify(childAnnotatedComponent).initializeEager((LightsaberInjector) childInjector);
     verifyNoMoreInteractions(childAnnotatedComponent);
     final Named annotation = createNamedAnnotation("Annotated");
     assertSame(injector, injector.getInstance(Key.of(Injector.class)));
